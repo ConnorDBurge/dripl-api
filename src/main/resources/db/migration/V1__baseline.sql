@@ -1,0 +1,2 @@
+-- Dripl schema baseline
+-- Future migrations will build on this
