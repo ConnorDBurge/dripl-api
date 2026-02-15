@@ -34,16 +34,20 @@ public abstract class BaseIntegrationTest {
     @Autowired
     protected TestRestTemplate restTemplate;
 
+    private static final String TEST_API_KEY = "dripl-dev-api-key";
+
     protected HttpHeaders authHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);
+        headers.set("X-API-Key", TEST_API_KEY);
         return headers;
     }
 
     protected HttpHeaders jsonHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", TEST_API_KEY);
         return headers;
     }
 
