@@ -10,6 +10,7 @@ import com.dripl.workspace.membership.dto.UpdateMembershipDto;
 import com.dripl.workspace.membership.entity.WorkspaceMembership;
 import com.dripl.workspace.membership.enums.MembershipStatus;
 import com.dripl.workspace.membership.enums.Role;
+import com.dripl.workspace.membership.event.MembershipDeletedEvent;
 import com.dripl.workspace.membership.repository.WorkspaceMembershipRepository;
 import com.dripl.workspace.membership.service.MembershipService;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +38,7 @@ class MembershipServiceTest {
     @Mock private WorkspaceMembershipRepository membershipRepository;
     @Mock private UserRepository userRepository;
     @Mock private WorkspaceRepository workspaceRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private MembershipService membershipService;
 
@@ -115,6 +118,7 @@ class MembershipServiceTest {
         membershipService.deleteMembership(userId, workspaceId);
 
         verify(membershipRepository).delete(testMembership);
+        verify(eventPublisher).publishEvent(any(MembershipDeletedEvent.class));
     }
 
     @Test

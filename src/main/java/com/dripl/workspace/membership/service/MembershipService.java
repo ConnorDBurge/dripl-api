@@ -10,8 +10,10 @@ import com.dripl.workspace.membership.repository.WorkspaceMembershipRepository;
 import com.dripl.workspace.membership.dto.UpdateMembershipDto;
 import com.dripl.workspace.membership.enums.MembershipStatus;
 import com.dripl.workspace.membership.enums.Role;
+import com.dripl.workspace.membership.event.MembershipDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class MembershipService {
     private final WorkspaceMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public WorkspaceMembership createMembership(UUID userId, UUID workspaceId, Set<Role> roles) {
@@ -81,5 +84,6 @@ public class MembershipService {
         WorkspaceMembership membership = membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
         membershipRepository.delete(membership);
+        eventPublisher.publishEvent(new MembershipDeletedEvent(workspaceId));
     }
 }

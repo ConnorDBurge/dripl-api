@@ -12,4 +12,5 @@ public interface WorkspaceMembershipRepository extends JpaRepository<WorkspaceMe
     List<WorkspaceMembership> findAllByWorkspaceId(UUID workspaceId);
     Optional<WorkspaceMembership> findByUserIdAndWorkspaceId(UUID userId, UUID workspaceId);
     boolean existsByUserIdAndWorkspaceNameIgnoreCase(UUID userId, String name);
+    long countByWorkspaceId(UUID workspaceId);
 }
