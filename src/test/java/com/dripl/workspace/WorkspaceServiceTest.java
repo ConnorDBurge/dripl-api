@@ -108,6 +108,7 @@ class WorkspaceServiceTest {
 
     @Test
     void provisionWorkspace_createsWorkspaceAndMembership() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(membershipService.existsByUserAndWorkspaceName(userId, "New Workspace")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
         when(membershipService.createMembership(eq(userId), eq(workspaceId), any()))
@@ -124,6 +125,7 @@ class WorkspaceServiceTest {
 
     @Test
     void provisionWorkspace_duplicateName_throwsConflict() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(membershipService.existsByUserAndWorkspaceName(userId, "Test Workspace")).thenReturn(true);
 
         CreateWorkspaceDto dto = CreateWorkspaceDto.builder().name("Test Workspace").build();

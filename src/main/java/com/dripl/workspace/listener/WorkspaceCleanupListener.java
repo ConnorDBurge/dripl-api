@@ -5,6 +5,7 @@ import com.dripl.workspace.membership.repository.WorkspaceMembershipRepository;
 import com.dripl.workspace.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,14 +24,21 @@ public class WorkspaceCleanupListener {
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleMembershipDeleted(MembershipDeletedEvent event) {
-        var workspaceId = event.getWorkspaceId();
-        long remaining = membershipRepository.countByWorkspaceId(workspaceId);
+        if (event.getCorrelationId() != null) {
+            MDC.put("correlationId", event.getCorrelationId());
+        }
+        try {
+            var workspaceId = event.getWorkspaceId();
+            long remaining = membershipRepository.countByWorkspaceId(workspaceId);
 
-        if (remaining == 0) {
-            workspaceRepository.findById(workspaceId).ifPresent(workspace -> {
-                log.info("Deleting orphaned workspace {}", workspaceId);
-                workspaceRepository.delete(workspace);
-            });
+            if (remaining == 0) {
+                workspaceRepository.findById(workspaceId).ifPresent(workspace -> {
+                    log.info("Deleting orphaned workspace '{}' ({})", workspace.getName(), workspaceId);
+                    workspaceRepository.delete(workspace);
+                });
+            }
+        } finally {
+            MDC.remove("correlationId");
         }
     }
 }

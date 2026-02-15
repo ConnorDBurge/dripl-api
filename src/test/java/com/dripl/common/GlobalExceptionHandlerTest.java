@@ -2,8 +2,10 @@ package com.dripl.common;
 
 import com.dripl.common.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,11 @@ class GlobalExceptionHandlerTest {
         handler = new GlobalExceptionHandler();
         request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v1/test");
+    }
+
+    @AfterEach
+    void tearDown() {
+        MDC.clear();
     }
 
     @Test
@@ -119,8 +126,8 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void correlationId_usesHeaderIfPresent() {
-        when(request.getHeader("X-Correlation-Id")).thenReturn("my-correlation-id");
+    void correlationId_usesMdcIfPresent() {
+        MDC.put("correlationId", "my-correlation-id");
 
         ResponseEntity<ErrorResponse> response = handler.handleBadRequest(
                 new BadRequestException("test"), request);
@@ -129,8 +136,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void correlationId_generatesUuidIfMissing() {
-        when(request.getHeader("X-Correlation-Id")).thenReturn(null);
+    void correlationId_generatesUuidIfMdcEmpty() {
 
         ResponseEntity<ErrorResponse> response = handler.handleBadRequest(
                 new BadRequestException("test"), request);

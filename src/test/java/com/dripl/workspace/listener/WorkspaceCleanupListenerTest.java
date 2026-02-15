@@ -33,7 +33,7 @@ class WorkspaceCleanupListenerTest {
         when(membershipRepository.countByWorkspaceId(workspaceId)).thenReturn(0L);
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(workspace));
 
-        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId));
+        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId, "test-corr-id"));
 
         verify(workspaceRepository).delete(workspace);
     }
@@ -44,7 +44,7 @@ class WorkspaceCleanupListenerTest {
 
         when(membershipRepository.countByWorkspaceId(workspaceId)).thenReturn(2L);
 
-        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId));
+        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId, "test-corr-id"));
 
         verify(workspaceRepository, never()).findById(any());
         verify(workspaceRepository, never()).delete(any());
@@ -57,7 +57,7 @@ class WorkspaceCleanupListenerTest {
         when(membershipRepository.countByWorkspaceId(workspaceId)).thenReturn(0L);
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.empty());
 
-        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId));
+        listener.handleMembershipDeleted(new MembershipDeletedEvent(workspaceId, "test-corr-id"));
 
         verify(workspaceRepository, never()).delete(any());
     }

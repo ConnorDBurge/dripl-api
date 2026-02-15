@@ -13,6 +13,7 @@ import com.dripl.workspace.membership.enums.Role;
 import com.dripl.workspace.membership.event.MembershipDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,6 @@ public class MembershipService {
         WorkspaceMembership membership = membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
         membershipRepository.delete(membership);
-        eventPublisher.publishEvent(new MembershipDeletedEvent(workspaceId));
+        eventPublisher.publishEvent(new MembershipDeletedEvent(workspaceId, MDC.get("correlationId")));
     }
 }

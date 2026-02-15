@@ -9,4 +9,5 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MembershipDeletedEvent {
     private final UUID workspaceId;
+    private final String correlationId;
 }

@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,6 +19,11 @@ import java.util.UUID;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private String resolveCorrelationId() {
+        String id = MDC.get("correlationId");
+        return (id != null && !id.isBlank()) ? id : UUID.randomUUID().toString();
+    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
@@ -51,7 +57,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        String correlationId = resolveCorrelationId(request);
+        String correlationId = resolveCorrelationId();
         String path = safePath(request);
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -68,7 +74,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
-        String correlationId = resolveCorrelationId(request);
+        String correlationId = resolveCorrelationId();
         String path = safePath(request);
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -81,7 +87,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> buildAndLog(HttpStatus status, String message, HttpServletRequest request) {
-        String correlationId = resolveCorrelationId(request);
+        String correlationId = resolveCorrelationId();
         String path = safePath(request);
         ErrorResponse body = ErrorResponse.builder()
                 .status(status.value())
@@ -91,11 +97,6 @@ public class GlobalExceptionHandler {
                 .build();
         log.warn("{} at {}: {}", status, path, message);
         return ResponseEntity.status(status).body(body);
-    }
-
-    private String resolveCorrelationId(HttpServletRequest request) {
-        String id = request.getHeader("X-Correlation-Id");
-        return (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
     }
 
     private String safePath(HttpServletRequest request) {

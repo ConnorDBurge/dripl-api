@@ -60,12 +60,15 @@ public class WorkspaceService {
             workspace.setName(dto.getName());
         }
 
-        log.info("Updating workspace {}", workspaceId);
+        log.info("Updating workspace '{}' ({})", workspace.getName(), workspaceId);
         return workspaceRepository.save(workspace);
     }
 
     @Transactional
     public Workspace provisionWorkspace(UUID userId, CreateWorkspaceDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         if (membershipService.existsByUserAndWorkspaceName(userId, dto.getName())) {
             throw new ConflictException("You already have a workspace named '" + dto.getName() + "'");
         }
@@ -78,13 +81,12 @@ public class WorkspaceService {
         membershipService.createMembership(userId, workspace.getId(),
                 Set.of(Role.OWNER, Role.WRITE, Role.READ));
 
-        log.info("Provisioned workspace {} for user {}", workspace.getId(), userId);
+        log.info("Provisioned workspace '{}' ({}) for user {} ({})", workspace.getName(), workspace.getId(), user.getEmail(), userId);
         return workspace;
     }
 
     @Transactional
     public Workspace switchWorkspace(UUID userId, UUID workspaceId) {
-        log.info("User {} switching to workspace {}", userId, workspaceId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -96,7 +98,7 @@ public class WorkspaceService {
         user.setLastWorkspaceId(workspace.getId());
         userRepository.save(user);
 
-        log.info("Successfully switched user {} to workspace {}", userId, workspace.getId());
+        log.info("User {} ({}) switching to workspace '{}' ({})", user.getEmail(), userId, workspace.getName(), workspace.getId());
         return workspace;
     }
 
@@ -104,7 +106,7 @@ public class WorkspaceService {
     public void deleteWorkspace(UUID workspaceId) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
-        log.info("Deleting workspace {}", workspaceId);
+        log.info("Deleting workspace '{}' ({})", workspace.getName(), workspaceId);
         workspaceRepository.delete(workspace);
     }
 }
