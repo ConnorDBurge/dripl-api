@@ -1,6 +1,7 @@
 package com.dripl.workspace;
 
 import com.dripl.common.exception.AccessDeniedException;
+import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.User;
 import com.dripl.user.UserRepository;
@@ -39,6 +40,10 @@ public class WorkspaceService {
 
     @Transactional
     public Workspace provisionWorkspace(UUID userId, CreateWorkspaceDto dto) {
+        if (workspaceRepository.existsByUserMembershipAndName(userId, dto.getName())) {
+            throw new ConflictException("You already have a workspace named '" + dto.getName() + "'");
+        }
+
         Workspace workspace = workspaceRepository.save(Workspace.builder()
                 .name(dto.getName())
                 .status(WorkspaceStatus.ACTIVE)

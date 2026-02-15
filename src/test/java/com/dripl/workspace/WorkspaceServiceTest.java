@@ -1,6 +1,7 @@
 package com.dripl.workspace;
 
 import com.dripl.common.exception.AccessDeniedException;
+import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.User;
 import com.dripl.user.UserRepository;
@@ -99,6 +100,7 @@ class WorkspaceServiceTest {
 
     @Test
     void provisionWorkspace_createsWorkspaceAndMembership() {
+        when(workspaceRepository.existsByUserMembershipAndName(userId, "New Workspace")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
         when(membershipService.createMembership(eq(userId), eq(workspaceId), any()))
                 .thenReturn(WorkspaceMembership.builder().build());
@@ -110,6 +112,19 @@ class WorkspaceServiceTest {
         verify(workspaceRepository).save(any(Workspace.class));
         verify(membershipService).createMembership(eq(userId), eq(workspaceId),
                 eq(Set.of(Role.OWNER, Role.WRITE, Role.READ)));
+    }
+
+    @Test
+    void provisionWorkspace_duplicateName_throwsConflict() {
+        when(workspaceRepository.existsByUserMembershipAndName(userId, "Test Workspace")).thenReturn(true);
+
+        CreateWorkspaceDto dto = CreateWorkspaceDto.builder().name("Test Workspace").build();
+
+        assertThatThrownBy(() -> workspaceService.provisionWorkspace(userId, dto))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("You already have a workspace named 'Test Workspace'");
+
+        verify(workspaceRepository, never()).save(any());
     }
 
     @Test
