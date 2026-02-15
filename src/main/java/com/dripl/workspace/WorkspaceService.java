@@ -40,7 +40,7 @@ public class WorkspaceService {
 
     @Transactional
     public Workspace provisionWorkspace(UUID userId, CreateWorkspaceDto dto) {
-        if (workspaceRepository.existsByUserMembershipAndName(userId, dto.getName())) {
+        if (membershipService.existsByUserAndWorkspaceName(userId, dto.getName())) {
             throw new ConflictException("You already have a workspace named '" + dto.getName() + "'");
         }
 

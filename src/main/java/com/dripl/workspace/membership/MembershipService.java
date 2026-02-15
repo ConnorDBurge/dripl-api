@@ -53,6 +53,11 @@ public class MembershipService {
         return membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId);
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsByUserAndWorkspaceName(UUID userId, String workspaceName) {
+        return membershipRepository.existsByUserIdAndWorkspaceNameIgnoreCase(userId, workspaceName);
+    }
+
     @Transactional
     public void deleteMembership(UUID userId, UUID workspaceId) {
         WorkspaceMembership membership = membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
