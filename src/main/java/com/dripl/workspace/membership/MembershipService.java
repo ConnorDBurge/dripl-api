@@ -49,6 +49,11 @@ public class MembershipService {
     }
 
     @Transactional(readOnly = true)
+    public List<WorkspaceMembership> listAllWorkspaceMemberships(UUID workspaceId) {
+        return membershipRepository.findAllByWorkspaceId(workspaceId);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<WorkspaceMembership> findMembership(UUID userId, UUID workspaceId) {
         return membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId);
     }
@@ -56,6 +61,14 @@ public class MembershipService {
     @Transactional(readOnly = true)
     public boolean existsByUserAndWorkspaceName(UUID userId, String workspaceName) {
         return membershipRepository.existsByUserIdAndWorkspaceNameIgnoreCase(userId, workspaceName);
+    }
+
+    @Transactional
+    public WorkspaceMembership updateMembership(UUID userId, UUID workspaceId, UpdateMembershipDto dto) {
+        WorkspaceMembership membership = membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
+        membership.setRoles(dto.getRoles());
+        return membershipRepository.save(membership);
     }
 
     @Transactional

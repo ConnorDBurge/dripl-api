@@ -6,6 +6,7 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.User;
 import com.dripl.user.UserRepository;
 import com.dripl.workspace.membership.MembershipService;
+import com.dripl.workspace.membership.MembershipStatus;
 import com.dripl.workspace.membership.Role;
 import com.dripl.workspace.membership.WorkspaceMembership;
 import org.junit.jupiter.api.BeforeEach;
@@ -179,5 +180,50 @@ class WorkspaceServiceTest {
 
         assertThatThrownBy(() -> workspaceService.deleteWorkspace(workspaceId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void listAllMembers_returnsMemberships() {
+        WorkspaceMembership membership = WorkspaceMembership.builder()
+                .user(testUser)
+                .workspace(testWorkspace)
+                .roles(Set.of(Role.OWNER))
+                .status(MembershipStatus.ACTIVE)
+                .build();
+
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(membershipService.listAllWorkspaceMemberships(workspaceId)).thenReturn(List.of(membership));
+
+        List<WorkspaceMembership> result = workspaceService.listAllMembers(workspaceId);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getUser().getId()).isEqualTo(userId);
+    }
+
+    @Test
+    void updateWorkspace_validName_updatesWorkspace() {
+        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().name("Renamed").build();
+
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(membershipService.existsByUserAndWorkspaceName(userId, "Renamed")).thenReturn(false);
+        when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
+
+        Workspace result = workspaceService.updateWorkspace(workspaceId, userId, dto);
+
+        assertThat(result).isNotNull();
+        verify(workspaceRepository).save(any(Workspace.class));
+    }
+
+    @Test
+    void updateWorkspace_duplicateName_throwsConflict() {
+        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().name("Existing Name").build();
+
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(membershipService.existsByUserAndWorkspaceName(userId, "Existing Name")).thenReturn(true);
+
+        assertThatThrownBy(() -> workspaceService.updateWorkspace(workspaceId, userId, dto))
+                .isInstanceOf(ConflictException.class);
+
+        verify(workspaceRepository, never()).save(any());
     }
 }

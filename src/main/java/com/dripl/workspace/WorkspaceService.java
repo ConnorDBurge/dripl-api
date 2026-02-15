@@ -38,6 +38,27 @@ public class WorkspaceService {
                 .stream().map(WorkspaceMembership::getWorkspace).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<WorkspaceMembership> listAllMembers(UUID workspaceId) {
+        getWorkspace(workspaceId);
+        return membershipService.listAllWorkspaceMemberships(workspaceId);
+    }
+
+    @Transactional
+    public Workspace updateWorkspace(UUID workspaceId, UUID userId, UpdateWorkspaceDto dto) {
+        Workspace workspace = getWorkspace(workspaceId);
+
+        if (dto.getName() != null) {
+            if (membershipService.existsByUserAndWorkspaceName(userId, dto.getName())) {
+                throw new ConflictException("You already have a workspace named '" + dto.getName() + "'");
+            }
+            workspace.setName(dto.getName());
+        }
+
+        log.info("Updating workspace {}", workspaceId);
+        return workspaceRepository.save(workspace);
+    }
+
     @Transactional
     public Workspace provisionWorkspace(UUID userId, CreateWorkspaceDto dto) {
         if (membershipService.existsByUserAndWorkspaceName(userId, dto.getName())) {
