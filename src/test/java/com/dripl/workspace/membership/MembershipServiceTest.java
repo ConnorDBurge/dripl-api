@@ -1,11 +1,17 @@
 package com.dripl.workspace.membership;
 
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.user.User;
-import com.dripl.user.UserRepository;
-import com.dripl.workspace.Workspace;
-import com.dripl.workspace.WorkspaceRepository;
-import com.dripl.workspace.WorkspaceStatus;
+import com.dripl.user.entity.User;
+import com.dripl.user.repository.UserRepository;
+import com.dripl.workspace.entity.Workspace;
+import com.dripl.workspace.repository.WorkspaceRepository;
+import com.dripl.workspace.enums.WorkspaceStatus;
+import com.dripl.workspace.membership.dto.UpdateMembershipDto;
+import com.dripl.workspace.membership.entity.WorkspaceMembership;
+import com.dripl.workspace.membership.enums.MembershipStatus;
+import com.dripl.workspace.membership.enums.Role;
+import com.dripl.workspace.membership.repository.WorkspaceMembershipRepository;
+import com.dripl.workspace.membership.service.MembershipService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
