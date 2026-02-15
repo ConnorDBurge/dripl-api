@@ -23,7 +23,9 @@ public class WorkspaceDto extends BaseDto {
         return WorkspaceDto.builder()
                 .id(workspace.getId())
                 .createdAt(workspace.getCreatedAt())
+                .createdBy(workspace.getCreatedBy())
                 .updatedAt(workspace.getUpdatedAt())
+                .updatedBy(workspace.getUpdatedBy())
                 .name(workspace.getName())
                 .status(workspace.getStatus().name())
                 .build();

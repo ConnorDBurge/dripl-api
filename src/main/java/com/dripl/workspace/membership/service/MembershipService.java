@@ -47,6 +47,7 @@ public class MembershipService {
                 .roles(roles)
                 .status(MembershipStatus.ACTIVE)
                 .joinedAt(LocalDateTime.now())
+                .createdBy(user.getEmail())
                 .build();
 
         return membershipRepository.save(membership);

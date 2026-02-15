@@ -15,5 +15,7 @@ import java.util.UUID;
 public abstract class BaseDto {
     private UUID id;
     private LocalDateTime createdAt;
+    private String createdBy;
     private LocalDateTime updatedAt;
+    private String updatedBy;
 }

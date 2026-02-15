@@ -76,6 +76,7 @@ public class WorkspaceService {
         Workspace workspace = workspaceRepository.save(Workspace.builder()
                 .name(dto.getName())
                 .status(WorkspaceStatus.ACTIVE)
+                .createdBy(user.getEmail())
                 .build());
 
         membershipService.createMembership(userId, workspace.getId(),

@@ -92,6 +92,7 @@ public class UserService {
                         .givenName(givenName != null ? givenName : email)
                         .familyName(familyName != null ? familyName : "")
                         .isActive(true)
+                        .createdBy(email)
                         .build());
                 log.debug("Created user {} for email {}", user.getId(), email);
             } catch (DataIntegrityViolationException e) {
