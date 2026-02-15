@@ -21,6 +21,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -179,5 +182,125 @@ class UserServiceTest {
 
         assertThat(response.getEmail()).isEqualTo("connor@test.com");
         verify(workspaceService, never()).provisionWorkspace(any(), any());
+    }
+
+    @Test
+    void bootstrapUser_existingUserNoWorkspace_createsWorkspace() {
+        testUser.setLastWorkspaceId(null);
+
+        Workspace workspace = Workspace.builder()
+                .id(workspaceId)
+                .name("Connor's Workspace")
+                .status(WorkspaceStatus.ACTIVE)
+                .build();
+
+        when(userRepository.findByEmail("connor@test.com")).thenReturn(Optional.of(testUser));
+        when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class)))
+                .thenReturn(workspace);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(tokenService.mintToken(userId, workspaceId))
+                .thenReturn("test-jwt-token");
+
+        UserResponse response = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
+
+        assertThat(response.getToken()).isEqualTo("test-jwt-token");
+        verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class));
+    }
+
+    @Test
+    void bootstrapUser_raceCondition_recoversExistingUser() {
+        when(userRepository.findByEmail("connor@test.com"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate"));
+        when(tokenService.mintToken(userId, workspaceId))
+                .thenReturn("test-jwt-token");
+
+        UserResponse response = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
+
+        assertThat(response.getEmail()).isEqualTo("connor@test.com");
+    }
+
+    @Test
+    void bootstrapUser_nullNames_defaultsToEmail() {
+        when(userRepository.findByEmail("connor@test.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(inv -> {
+                    User u = inv.getArgument(0);
+                    u.setId(userId);
+                    u.setLastWorkspaceId(workspaceId);
+                    return u;
+                });
+        when(tokenService.mintToken(userId, workspaceId))
+                .thenReturn("test-jwt-token");
+
+        UserResponse response = userService.bootstrapUser("connor@test.com", null, null);
+
+        assertThat(response.getToken()).isEqualTo("test-jwt-token");
+        verify(userRepository).save(argThat(user ->
+                user.getGivenName().equals("connor@test.com") && user.getFamilyName().equals("")
+        ));
+    }
+
+    @Test
+    void updateUser_onlyGivenName_updatesOnlyGivenName() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateUserDto dto = UpdateUserDto.builder().givenName("NewFirst").build();
+
+        User result = userService.updateUser(userId, dto);
+
+        assertThat(result.getGivenName()).isEqualTo("NewFirst");
+        assertThat(result.getFamilyName()).isEqualTo("Burge");
+        assertThat(result.getEmail()).isEqualTo("connor@test.com");
+    }
+
+    @Test
+    void updateUser_onlyEmail_updatesOnlyEmail() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("new@test.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateUserDto dto = UpdateUserDto.builder().email("new@test.com").build();
+
+        User result = userService.updateUser(userId, dto);
+
+        assertThat(result.getEmail()).isEqualTo("new@test.com");
+        assertThat(result.getGivenName()).isEqualTo("Connor");
+    }
+
+    @Test
+    void deleteUser_noMemberships_deletesUserOnly() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(membershipService.listAllUserMemberships(userId)).thenReturn(List.of());
+
+        userService.deleteUser(userId);
+
+        verify(membershipService, never()).deleteMembership(any(), any());
+        verify(userRepository).delete(testUser);
+    }
+
+    @Test
+    void deleteUser_multipleMemberships_deletesAll() {
+        UUID workspace2Id = UUID.randomUUID();
+        WorkspaceMembership m1 = WorkspaceMembership.builder()
+                .user(testUser)
+                .workspace(Workspace.builder().id(workspaceId).build())
+                .build();
+        WorkspaceMembership m2 = WorkspaceMembership.builder()
+                .user(testUser)
+                .workspace(Workspace.builder().id(workspace2Id).build())
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(membershipService.listAllUserMemberships(userId)).thenReturn(List.of(m1, m2));
+
+        userService.deleteUser(userId);
+
+        verify(membershipService).deleteMembership(userId, workspaceId);
+        verify(membershipService).deleteMembership(userId, workspace2Id);
+        verify(userRepository).delete(testUser);
     }
 }

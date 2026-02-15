@@ -134,4 +134,83 @@ class MembershipServiceTest {
 
         assertThat(membershipService.existsByUserAndWorkspaceName(userId, "Test Workspace")).isTrue();
     }
+
+    @Test
+    void existsByUserAndWorkspaceName_returnsFalse() {
+        when(membershipRepository.existsByUserIdAndWorkspaceNameIgnoreCase(userId, "Nonexistent"))
+                .thenReturn(false);
+
+        assertThat(membershipService.existsByUserAndWorkspaceName(userId, "Nonexistent")).isFalse();
+    }
+
+    @Test
+    void createMembership_validUserAndWorkspace_createsMembership() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(membershipRepository.save(any(WorkspaceMembership.class))).thenReturn(testMembership);
+
+        Set<Role> roles = Set.of(Role.OWNER, Role.WRITE, Role.READ);
+        WorkspaceMembership result = membershipService.createMembership(userId, workspaceId, roles);
+
+        assertThat(result).isNotNull();
+        verify(membershipRepository).save(any(WorkspaceMembership.class));
+    }
+
+    @Test
+    void createMembership_userNotFound_throwsException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> membershipService.createMembership(userId, workspaceId, Set.of(Role.READ)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User not found");
+    }
+
+    @Test
+    void createMembership_workspaceNotFound_throwsException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> membershipService.createMembership(userId, workspaceId, Set.of(Role.READ)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Workspace not found");
+    }
+
+    @Test
+    void findMembership_exists_returnsOptional() {
+        when(membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId))
+                .thenReturn(Optional.of(testMembership));
+
+        Optional<WorkspaceMembership> result = membershipService.findMembership(userId, workspaceId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getUser().getId()).isEqualTo(userId);
+    }
+
+    @Test
+    void findMembership_notExists_returnsEmpty() {
+        when(membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId))
+                .thenReturn(Optional.empty());
+
+        Optional<WorkspaceMembership> result = membershipService.findMembership(userId, workspaceId);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void listAllUserMemberships_returnsMemberships() {
+        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of(testMembership));
+
+        List<WorkspaceMembership> result = membershipService.listAllUserMemberships(userId);
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void listAllUserMemberships_noMemberships_returnsEmpty() {
+        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
+
+        List<WorkspaceMembership> result = membershipService.listAllUserMemberships(userId);
+
+        assertThat(result).isEmpty();
+    }
 }

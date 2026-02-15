@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -231,5 +232,74 @@ class WorkspaceServiceTest {
                 .isInstanceOf(ConflictException.class);
 
         verify(workspaceRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWorkspace_nullName_savesWithoutNameChange() {
+        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().build();
+
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
+
+        Workspace result = workspaceService.updateWorkspace(workspaceId, userId, dto);
+
+        assertThat(result.getName()).isEqualTo("Test Workspace");
+        verify(membershipService, never()).existsByUserAndWorkspaceName(any(), any());
+    }
+
+    @Test
+    void listAllByUserId_noMemberships_returnsEmptyList() {
+        when(membershipService.listAllUserMemberships(userId)).thenReturn(List.of());
+
+        List<Workspace> result = workspaceService.listAllByUserId(userId);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void listAllByUserId_multipleMemberships_returnsAllWorkspaces() {
+        UUID workspace2Id = UUID.randomUUID();
+        Workspace workspace2 = Workspace.builder()
+                .id(workspace2Id)
+                .name("Second Workspace")
+                .status(WorkspaceStatus.ACTIVE)
+                .build();
+
+        WorkspaceMembership m1 = WorkspaceMembership.builder()
+                .user(testUser).workspace(testWorkspace).build();
+        WorkspaceMembership m2 = WorkspaceMembership.builder()
+                .user(testUser).workspace(workspace2).build();
+
+        when(membershipService.listAllUserMemberships(userId)).thenReturn(List.of(m1, m2));
+
+        List<Workspace> result = workspaceService.listAllByUserId(userId);
+
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void listAllMembers_nonExistentWorkspace_throwsException() {
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workspaceService.listAllMembers(workspaceId))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Workspace not found");
+    }
+
+    @Test
+    void switchWorkspace_updatesLastWorkspaceId() {
+        WorkspaceMembership membership = WorkspaceMembership.builder()
+                .user(testUser).workspace(testWorkspace).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(membershipService.findMembership(userId, workspaceId)).thenReturn(Optional.of(membership));
+        when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        workspaceService.switchWorkspace(userId, workspaceId);
+
+        verify(userRepository).save(argThat(user ->
+                user.getLastWorkspaceId().equals(workspaceId)
+        ));
     }
 }
