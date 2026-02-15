@@ -24,11 +24,11 @@ public class WorkspaceCleanupListener {
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleMembershipDeleted(MembershipDeletedEvent event) {
-        if (event.getCorrelationId() != null) {
-            MDC.put("correlationId", event.getCorrelationId());
+        if (event.correlationId() != null) {
+            MDC.put("correlationId", event.correlationId());
         }
         try {
-            var workspaceId = event.getWorkspaceId();
+            var workspaceId = event.workspaceId();
             long remaining = membershipRepository.countByWorkspaceId(workspaceId);
 
             if (remaining == 0) {
