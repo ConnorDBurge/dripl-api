@@ -8,7 +8,6 @@ import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.GlobalExceptionHandler;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.controller.UserController;
-import com.dripl.user.dto.UserResponse;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -50,7 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         )
 )
 @AutoConfigureMockMvc(addFilters = false)
-@Import({WebMvcConfig.class, GlobalExceptionHandler.class})
+@Import({WebMvcConfig.class, GlobalExceptionHandler.class, com.dripl.user.mapper.UserMapperImpl.class})
 class UserControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -96,9 +95,9 @@ class UserControllerTest {
 
     @Test
     void bootstrap_validRequest_returns200() throws Exception {
-        UserResponse response = UserResponse.fromEntity(testUser, "jwt-token");
         when(userService.bootstrapUser("connor@test.com", "Connor", "Burge"))
-                .thenReturn(response);
+                .thenReturn(testUser);
+        when(tokenService.mintToken(userId, workspaceId)).thenReturn("jwt-token");
 
         mockMvc.perform(post("/api/v1/users/bootstrap")
                         .contentType(MediaType.APPLICATION_JSON)

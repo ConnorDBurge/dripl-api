@@ -1,5 +1,7 @@
 package com.dripl.common.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -13,7 +15,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Arrays;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -50,9 +54,15 @@ public class GlobalExceptionHandler {
         return buildAndLog(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
-    @ExceptionHandler({ConstraintViolationException.class, HttpMessageNotReadableException.class})
-    public ResponseEntity<ErrorResponse> handleConstraintViolation(Exception ex, HttpServletRequest request) {
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
         return buildAndLog(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage(), request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        String message = buildEnumErrorMessage(ex);
+        return buildAndLog(HttpStatus.BAD_REQUEST, message, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -84,6 +94,25 @@ public class GlobalExceptionHandler {
                 .build();
         log.error("{} at {}: {}", HttpStatus.INTERNAL_SERVER_ERROR, path, ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private String buildEnumErrorMessage(HttpMessageNotReadableException ex) {
+        if (ex.getCause() instanceof InvalidFormatException ife && ife.getTargetType().isEnum()) {
+            String fieldName = ife.getPath().stream()
+                    .map(JsonMappingException.Reference::getFieldName)
+                    .reduce((a, b) -> b)
+                    .orElse("unknown");
+
+            Class<? extends Enum> enumType = (Class<? extends Enum>) ife.getTargetType();
+            String allowedValues = Arrays.stream(enumType.getEnumConstants())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+
+            return String.format("Invalid value '%s' for field '%s'. Allowed values: [%s]",
+                    ife.getValue(), fieldName, allowedValues);
+        }
+        return "Malformed JSON request";
     }
 
     private ResponseEntity<ErrorResponse> buildAndLog(HttpStatus status, String message, HttpServletRequest request) {

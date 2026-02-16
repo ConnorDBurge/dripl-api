@@ -18,11 +18,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@Table(name = "users")
 @EqualsAndHashCode(callSuper = true)
 public class User extends BaseEntity {
 

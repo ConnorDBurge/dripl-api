@@ -22,9 +22,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "workspaces")
+@EqualsAndHashCode(callSuper = true)
 public class Workspace extends BaseEntity {
 
     @Column(name = "name", nullable = false)

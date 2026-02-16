@@ -1,12 +1,10 @@
 package com.dripl.user.service;
 
-import com.dripl.auth.service.TokenService;
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.dto.UpdateUserDto;
-import com.dripl.user.dto.UserDto;
-import com.dripl.user.dto.UserResponse;
 import com.dripl.user.entity.User;
+import com.dripl.user.mapper.UserMapper;
 import com.dripl.user.repository.UserRepository;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
 import com.dripl.workspace.entity.Workspace;
@@ -30,7 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final WorkspaceService workspaceService;
     private final MembershipService membershipService;
-    private final TokenService tokenService;
+    private final UserMapper userMapper;
 
     @Transactional(readOnly = true)
     public User getUser(UUID userId) {
@@ -49,15 +47,9 @@ public class UserService {
                     throw new ConflictException("Email already in use");
                 }
             });
-            user.setEmail(dto.getEmail());
-        }
-        if (dto.getGivenName() != null) {
-            user.setGivenName(dto.getGivenName());
-        }
-        if (dto.getFamilyName() != null) {
-            user.setFamilyName(dto.getFamilyName());
         }
 
+        userMapper.updateEntity(dto, user);
         return userRepository.save(user);
     }
 
@@ -77,10 +69,9 @@ public class UserService {
 
     /**
      * Creates the user and a default workspace if they don't already exist.
-     * Returns a new JWT with the user's workspace context.
      */
     @Transactional
-    public UserResponse bootstrapUser(String email, String givenName, String familyName) {
+    public User bootstrapUser(String email, String givenName, String familyName) {
         log.debug("Bootstrapping user: email={}", email);
 
         User user = userRepository.findByEmail(email).orElse(null);
@@ -109,8 +100,6 @@ public class UserService {
             user = userRepository.save(user);
         }
 
-        String token = tokenService.mintToken(user.getId(), user.getLastWorkspaceId());
-
-        return UserResponse.fromEntity(user, token);
+        return user;
     }
 }

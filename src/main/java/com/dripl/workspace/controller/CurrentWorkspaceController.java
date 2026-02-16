@@ -6,7 +6,9 @@ import com.dripl.workspace.service.WorkspaceService;
 import com.dripl.workspace.dto.UpdateWorkspaceDto;
 import com.dripl.workspace.dto.WorkspaceDto;
 import com.dripl.workspace.entity.Workspace;
+import com.dripl.workspace.mapper.WorkspaceMapper;
 import com.dripl.workspace.membership.dto.CreateMembershipDto;
+import com.dripl.workspace.membership.mapper.MembershipMapper;
 import com.dripl.workspace.membership.service.MembershipService;
 import com.dripl.workspace.membership.dto.UpdateMembershipDto;
 import com.dripl.workspace.membership.entity.WorkspaceMembership;
@@ -37,12 +39,14 @@ public class CurrentWorkspaceController {
 
     private final WorkspaceService workspaceService;
     private final MembershipService membershipService;
+    private final WorkspaceMapper workspaceMapper;
+    private final MembershipMapper membershipMapper;
 
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WorkspaceDto> getCurrentWorkspace(@WorkspaceId UUID workspaceId) {
         Workspace workspace = workspaceService.getWorkspace(workspaceId);
-        return ResponseEntity.ok(WorkspaceDto.fromEntity(workspace));
+        return ResponseEntity.ok(workspaceMapper.toDto(workspace));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -51,14 +55,14 @@ public class CurrentWorkspaceController {
             @WorkspaceId UUID workspaceId, @UserId UUID userId,
             @Valid @RequestBody UpdateWorkspaceDto dto) {
         Workspace workspace = workspaceService.updateWorkspace(workspaceId, userId, dto);
-        return ResponseEntity.ok(WorkspaceDto.fromEntity(workspace));
+        return ResponseEntity.ok(workspaceMapper.toDto(workspace));
     }
 
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(value = "/members", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<WorkspaceMembershipDto>> getMembers(@WorkspaceId UUID workspaceId) {
         List<WorkspaceMembership> memberships = workspaceService.listAllMembers(workspaceId);
-        return ResponseEntity.ok(WorkspaceMembershipDto.fromEntities(memberships));
+        return ResponseEntity.ok(membershipMapper.toDtos(memberships));
     }
 
     @PreAuthorize("hasAuthority('OWNER')")
@@ -68,7 +72,7 @@ public class CurrentWorkspaceController {
             @Valid @RequestBody CreateMembershipDto dto) {
         WorkspaceMembership membership = membershipService
                 .createMembership(dto.getUserId(), workspaceId, dto.getRoles());
-        return ResponseEntity.status(201).body(WorkspaceMembershipDto.fromEntity(membership));
+        return ResponseEntity.status(201).body(membershipMapper.toDto(membership));
     }
 
     @PreAuthorize("hasAuthority('READ')")
@@ -77,7 +81,7 @@ public class CurrentWorkspaceController {
             @WorkspaceId UUID workspaceId, @PathVariable UUID userId) {
         WorkspaceMembership membership = membershipService.findMembership(userId, workspaceId)
                 .orElseThrow(() -> new com.dripl.common.exception.ResourceNotFoundException("Member not found"));
-        return ResponseEntity.ok(WorkspaceMembershipDto.fromEntity(membership));
+        return ResponseEntity.ok(membershipMapper.toDto(membership));
     }
 
     @PreAuthorize("hasAuthority('OWNER')")
@@ -86,7 +90,7 @@ public class CurrentWorkspaceController {
             @WorkspaceId UUID workspaceId, @PathVariable UUID userId,
             @Valid @RequestBody UpdateMembershipDto dto) {
         WorkspaceMembership membership = membershipService.updateMembership(userId, workspaceId, dto);
-        return ResponseEntity.ok(WorkspaceMembershipDto.fromEntity(membership));
+        return ResponseEntity.ok(membershipMapper.toDto(membership));
     }
 
     @PreAuthorize("hasAuthority('OWNER')")

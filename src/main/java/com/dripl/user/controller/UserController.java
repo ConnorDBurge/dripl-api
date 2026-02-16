@@ -3,11 +3,12 @@ package com.dripl.user.controller;
 import com.dripl.auth.service.TokenService;
 import com.dripl.common.annotation.UserId;
 import com.dripl.common.annotation.WorkspaceId;
+import com.dripl.user.mapper.UserMapper;
 import com.dripl.user.service.UserService;
 import com.dripl.user.dto.BootstrapUserDto;
 import com.dripl.user.dto.UpdateUserDto;
 import com.dripl.user.dto.UserDto;
-import com.dripl.user.dto.UserResponse;
+import com.dripl.user.dto.UserAuthResponse;
 import com.dripl.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,27 +33,28 @@ public class UserController {
 
     private final UserService userService;
     private final TokenService tokenService;
+    private final UserMapper userMapper;
 
     @PostMapping(value = "/bootstrap")
-    public ResponseEntity<UserResponse> bootstrap(@Valid @RequestBody BootstrapUserDto dto) {
-        UserResponse response = userService.bootstrapUser(
-                dto.getEmail(), dto.getGivenName(), dto.getFamilyName());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UserAuthResponse> bootstrap(@Valid @RequestBody BootstrapUserDto dto) {
+        User user = userService.bootstrapUser(dto.getEmail(), dto.getGivenName(), dto.getFamilyName());
+        String token = tokenService.mintToken(user.getId(), user.getLastWorkspaceId());
+        return ResponseEntity.ok(userMapper.toResponse(user, token));
     }
 
     @GetMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserDto> getSelf(@UserId UUID userId) {
         User user = userService.getUser(userId);
-        return ResponseEntity.ok(UserDto.fromEntity(user));
+        return ResponseEntity.ok(userMapper.toDto(user));
     }
 
     @PatchMapping(value = "/self", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserResponse> updateSelf(
+    public ResponseEntity<UserAuthResponse> updateSelf(
             @UserId UUID userId, @WorkspaceId UUID workspaceId,
             @Valid @RequestBody UpdateUserDto dto) {
         User updatedUser = userService.updateUser(userId, dto);
         String token = tokenService.mintToken(userId, workspaceId);
-        return ResponseEntity.ok(UserResponse.fromEntity(updatedUser, token));
+        return ResponseEntity.ok(userMapper.toResponse(updatedUser, token));
     }
 
     @DeleteMapping(value = "/self")

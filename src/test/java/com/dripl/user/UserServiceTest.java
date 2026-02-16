@@ -1,13 +1,12 @@
 package com.dripl.user;
 
-import com.dripl.auth.service.TokenService;
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.dto.UpdateUserDto;
 import com.dripl.user.entity.User;
+import com.dripl.user.mapper.UserMapper;
 import com.dripl.user.repository.UserRepository;
 import com.dripl.user.service.UserService;
-import com.dripl.user.dto.UserResponse;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.service.WorkspaceService;
@@ -17,8 +16,10 @@ import com.dripl.workspace.membership.entity.WorkspaceMembership;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,7 +42,7 @@ class UserServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private WorkspaceService workspaceService;
     @Mock private MembershipService membershipService;
-    @Mock private TokenService tokenService;
+    @Spy private UserMapper userMapper = Mappers.getMapper(UserMapper.class);
 
     @InjectMocks private UserService userService;
 
@@ -160,27 +161,21 @@ class UserServiceTest {
                 });
         when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class)))
                 .thenReturn(workspace);
-        when(tokenService.mintToken(userId, workspaceId))
-                .thenReturn("test-jwt-token");
 
-        UserResponse response = userService.bootstrapUser(
-                "connor@test.com", "Connor", "Burge");
+        User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
-        assertThat(response.getEmail()).isEqualTo("connor@test.com");
-        assertThat(response.getToken()).isEqualTo("test-jwt-token");
+        assertThat(result.getEmail()).isEqualTo("connor@test.com");
+        assertThat(result.getLastWorkspaceId()).isEqualTo(workspaceId);
         verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class));
     }
 
     @Test
     void bootstrapUser_existingUserWithWorkspace_returnsExistingUser() {
         when(userRepository.findByEmail("connor@test.com")).thenReturn(Optional.of(testUser));
-        when(tokenService.mintToken(userId, workspaceId))
-                .thenReturn("test-jwt-token");
 
-        UserResponse response = userService.bootstrapUser(
-                "connor@test.com", "Connor", "Burge");
+        User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
-        assertThat(response.getEmail()).isEqualTo("connor@test.com");
+        assertThat(result.getEmail()).isEqualTo("connor@test.com");
         verify(workspaceService, never()).provisionWorkspace(any(), any());
     }
 
@@ -198,12 +193,10 @@ class UserServiceTest {
         when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class)))
                 .thenReturn(workspace);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(tokenService.mintToken(userId, workspaceId))
-                .thenReturn("test-jwt-token");
 
-        UserResponse response = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
+        User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
-        assertThat(response.getToken()).isEqualTo("test-jwt-token");
+        assertThat(result.getLastWorkspaceId()).isEqualTo(workspaceId);
         verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class));
     }
 
@@ -214,12 +207,10 @@ class UserServiceTest {
                 .thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
-        when(tokenService.mintToken(userId, workspaceId))
-                .thenReturn("test-jwt-token");
 
-        UserResponse response = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
+        User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
-        assertThat(response.getEmail()).isEqualTo("connor@test.com");
+        assertThat(result.getEmail()).isEqualTo("connor@test.com");
     }
 
     @Test
@@ -232,12 +223,10 @@ class UserServiceTest {
                     u.setLastWorkspaceId(workspaceId);
                     return u;
                 });
-        when(tokenService.mintToken(userId, workspaceId))
-                .thenReturn("test-jwt-token");
 
-        UserResponse response = userService.bootstrapUser("connor@test.com", null, null);
+        User result = userService.bootstrapUser("connor@test.com", null, null);
 
-        assertThat(response.getToken()).isEqualTo("test-jwt-token");
+        assertThat(result).isNotNull();
         verify(userRepository).save(argThat(user ->
                 user.getGivenName().equals("connor@test.com") && user.getFamilyName().equals("")
         ));

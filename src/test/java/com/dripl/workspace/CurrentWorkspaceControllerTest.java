@@ -52,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         )
 )
 @AutoConfigureMockMvc(addFilters = false)
-@Import({WebMvcConfig.class, GlobalExceptionHandler.class})
+@Import({WebMvcConfig.class, GlobalExceptionHandler.class, com.dripl.workspace.mapper.WorkspaceMapperImpl.class, com.dripl.workspace.membership.mapper.MembershipMapperImpl.class})
 class CurrentWorkspaceControllerTest {
 
     @Autowired private MockMvc mockMvc;

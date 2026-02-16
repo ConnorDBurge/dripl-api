@@ -85,12 +85,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleConstraintViolation_returns400() {
+    void handleHttpMessageNotReadable_returns400() {
         HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Bad JSON");
 
-        ResponseEntity<ErrorResponse> response = handler.handleConstraintViolation(ex, request);
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().detail()).isEqualTo("Malformed JSON request");
     }
 
     @Test

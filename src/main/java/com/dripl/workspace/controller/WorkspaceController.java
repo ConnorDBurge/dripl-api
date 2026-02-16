@@ -6,8 +6,9 @@ import com.dripl.workspace.service.WorkspaceService;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
 import com.dripl.workspace.dto.SwitchWorkspaceDto;
 import com.dripl.workspace.dto.WorkspaceDto;
-import com.dripl.workspace.dto.WorkspaceResponse;
+import com.dripl.workspace.dto.WorkspaceAuthResponse;
 import com.dripl.workspace.entity.Workspace;
+import com.dripl.workspace.mapper.WorkspaceMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,27 +31,28 @@ public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
     private final TokenService tokenService;
+    private final WorkspaceMapper workspaceMapper;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<WorkspaceDto>> getAllWorkspaces(@UserId UUID userId) {
         List<Workspace> workspaces = workspaceService.listAllByUserId(userId);
-        return ResponseEntity.ok(WorkspaceDto.fromEntities(workspaces));
+        return ResponseEntity.ok(workspaceMapper.toDtos(workspaces));
     }
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WorkspaceResponse> provisionWorkspace(
+    public ResponseEntity<WorkspaceAuthResponse> provisionWorkspace(
             @UserId UUID userId, @Valid @RequestBody CreateWorkspaceDto dto) {
         Workspace workspace = workspaceService.provisionWorkspace(userId, dto);
         Workspace switched = workspaceService.switchWorkspace(userId, workspace.getId());
         String token = tokenService.mintToken(userId, switched.getId());
-        return ResponseEntity.status(201).body(WorkspaceResponse.fromEntity(switched, token));
+        return ResponseEntity.status(201).body(workspaceMapper.toResponse(switched, token));
     }
 
     @PostMapping(value = "/switch", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WorkspaceResponse> switchWorkspace(
+    public ResponseEntity<WorkspaceAuthResponse> switchWorkspace(
             @UserId UUID userId, @Valid @RequestBody SwitchWorkspaceDto dto) {
         Workspace workspace = workspaceService.switchWorkspace(userId, dto.getWorkspaceId());
         String token = tokenService.mintToken(userId, workspace.getId());
-        return ResponseEntity.ok(WorkspaceResponse.fromEntity(workspace, token));
+        return ResponseEntity.ok(workspaceMapper.toResponse(workspace, token));
     }
 }
