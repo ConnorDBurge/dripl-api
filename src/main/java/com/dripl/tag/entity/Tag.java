@@ -1,4 +1,4 @@
-package com.dripl.merchant.entity;
+package com.dripl.tag.entity;
 
 import com.dripl.common.audit.BaseEntity;
 import com.dripl.common.enums.Status;
@@ -19,14 +19,17 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
-@Table(name = "merchants")
-public class Merchant extends BaseEntity {
+@Table(name = "tags")
+public class Tag extends BaseEntity {
 
     @Column(name = "workspace_id", nullable = false)
     private UUID workspaceId;
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Column(name = "description")
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

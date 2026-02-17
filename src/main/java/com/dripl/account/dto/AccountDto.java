@@ -1,7 +1,7 @@
 package com.dripl.account.dto;
 
 import com.dripl.account.enums.AccountSource;
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
 import com.dripl.account.enums.CurrencyCode;
@@ -31,7 +31,7 @@ public class AccountDto extends BaseDto {
     private CurrencyCode currency;
     private String institutionName;
     private AccountSource source;
-    private AccountStatus status;
+    private Status status;
     private LocalDateTime balanceLastUpdated;
     private LocalDateTime closedAt;
     private String externalId;

@@ -5,7 +5,7 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.dto.UpdateMerchantDto;
 import com.dripl.merchant.entity.Merchant;
-import com.dripl.merchant.enums.MerchantStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.merchant.mapper.MerchantMapper;
 import com.dripl.merchant.repository.MerchantRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class MerchantService {
         Merchant merchant = Merchant.builder()
                 .workspaceId(workspaceId)
                 .name(dto.getName())
-                .status(MerchantStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .build();
 
         log.info("Created merchant '{}' in workspace {}", dto.getName(), workspaceId);

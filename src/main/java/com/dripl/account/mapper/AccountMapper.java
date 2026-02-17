@@ -3,7 +3,7 @@ package com.dripl.account.mapper;
 import com.dripl.account.dto.AccountDto;
 import com.dripl.account.dto.UpdateAccountDto;
 import com.dripl.account.entity.Account;
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -38,9 +38,9 @@ public interface AccountMapper {
             account.setBalanceLastUpdated(LocalDateTime.now());
         }
         if (dto.getStatus() != null) {
-            if (dto.getStatus() == AccountStatus.CLOSED && account.getClosedAt() == null) {
+            if (dto.getStatus() == Status.CLOSED && account.getClosedAt() == null) {
                 account.setClosedAt(LocalDateTime.now());
-            } else if (dto.getStatus() == AccountStatus.ACTIVE) {
+            } else if (dto.getStatus() == Status.ACTIVE) {
                 account.setClosedAt(null);
             }
         }

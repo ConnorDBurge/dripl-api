@@ -1,7 +1,7 @@
 package com.dripl.account.entity;
 
 import com.dripl.account.enums.AccountSource;
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
 import com.dripl.account.enums.CurrencyCode;
@@ -67,7 +67,7 @@ public class Account extends BaseEntity {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private AccountStatus status = AccountStatus.ACTIVE;
+    private Status status = Status.ACTIVE;
 
     @Column(name = "balance_last_updated")
     private LocalDateTime balanceLastUpdated;

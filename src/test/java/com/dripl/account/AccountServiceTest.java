@@ -4,7 +4,7 @@ import com.dripl.account.dto.CreateAccountDto;
 import com.dripl.account.dto.UpdateAccountDto;
 import com.dripl.account.entity.Account;
 import com.dripl.account.enums.AccountSource;
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
 import com.dripl.account.enums.CurrencyCode;
@@ -59,7 +59,7 @@ class AccountServiceTest {
                 .balance(BigDecimal.ZERO)
                 .currency(CurrencyCode.USD)
                 .source(AccountSource.MANUAL)
-                .status(AccountStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .excludeFromTransactions(false)
                 .build();
     }
@@ -245,25 +245,25 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().status(AccountStatus.CLOSED).build();
+        UpdateAccountDto dto = UpdateAccountDto.builder().status(Status.CLOSED).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
-        assertThat(result.getStatus()).isEqualTo(AccountStatus.CLOSED);
+        assertThat(result.getStatus()).isEqualTo(Status.CLOSED);
         assertThat(result.getClosedAt()).isNotNull();
     }
 
     @Test
     void updateAccount_statusReactivated_clearsClosedAt() {
         Account account = buildAccount("Checking", AccountType.CASH, AccountSubType.CHECKING);
-        account.setStatus(AccountStatus.CLOSED);
+        account.setStatus(Status.CLOSED);
         account.setClosedAt(java.time.LocalDateTime.now());
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().status(AccountStatus.ACTIVE).build();
+        UpdateAccountDto dto = UpdateAccountDto.builder().status(Status.ACTIVE).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
-        assertThat(result.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+        assertThat(result.getStatus()).isEqualTo(Status.ACTIVE);
         assertThat(result.getClosedAt()).isNull();
     }
 

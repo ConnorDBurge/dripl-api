@@ -6,7 +6,7 @@ import com.dripl.account.dto.CreateAccountDto;
 import com.dripl.account.dto.UpdateAccountDto;
 import com.dripl.account.entity.Account;
 import com.dripl.account.enums.AccountSource;
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
 import com.dripl.account.enums.CurrencyCode;
@@ -56,7 +56,7 @@ class AccountControllerTest {
                 .balance(BigDecimal.ZERO)
                 .currency(CurrencyCode.USD)
                 .source(AccountSource.MANUAL)
-                .status(AccountStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .excludeFromTransactions(false)
                 .build();
     }

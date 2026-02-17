@@ -5,7 +5,7 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.dto.UpdateMerchantDto;
 import com.dripl.merchant.entity.Merchant;
-import com.dripl.merchant.enums.MerchantStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.merchant.mapper.MerchantMapper;
 import com.dripl.merchant.repository.MerchantRepository;
 import com.dripl.merchant.service.MerchantService;
@@ -48,7 +48,7 @@ class MerchantServiceTest {
                 .id(merchantId)
                 .workspaceId(workspaceId)
                 .name(name)
-                .status(MerchantStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .build();
     }
 
@@ -109,7 +109,7 @@ class MerchantServiceTest {
         Merchant result = merchantService.createMerchant(workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Walmart");
-        assertThat(result.getStatus()).isEqualTo(MerchantStatus.ACTIVE);
+        assertThat(result.getStatus()).isEqualTo(Status.ACTIVE);
         assertThat(result.getWorkspaceId()).isEqualTo(workspaceId);
     }
 
@@ -172,10 +172,10 @@ class MerchantServiceTest {
         when(merchantRepository.findByIdAndWorkspaceId(merchantId, workspaceId)).thenReturn(Optional.of(merchant));
         when(merchantRepository.save(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().status(MerchantStatus.ARCHIVED).build();
+        UpdateMerchantDto dto = UpdateMerchantDto.builder().status(Status.ARCHIVED).build();
         Merchant result = merchantService.updateMerchant(merchantId, workspaceId, dto);
 
-        assertThat(result.getStatus()).isEqualTo(MerchantStatus.ARCHIVED);
+        assertThat(result.getStatus()).isEqualTo(Status.ARCHIVED);
         assertThat(result.getName()).isEqualTo("Amazon");
     }
 

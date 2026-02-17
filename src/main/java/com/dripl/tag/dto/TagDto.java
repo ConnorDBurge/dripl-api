@@ -1,4 +1,4 @@
-package com.dripl.merchant.dto;
+package com.dripl.tag.dto;
 
 import com.dripl.common.dto.BaseDto;
 import com.dripl.common.enums.Status;
@@ -15,9 +15,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
-public class MerchantDto extends BaseDto {
+public class TagDto extends BaseDto {
 
     private UUID workspaceId;
     private String name;
+    private String description;
     private Status status;
 }

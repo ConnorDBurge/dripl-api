@@ -61,6 +61,15 @@
       { "name": "Shell Gas" },
       { "name": "Target" },
       { "name": "Starbucks" }
+    ],
+    "tags": [
+      { "name": "groceries", "description": "Grocery store runs" },
+      { "name": "subscriptions", "description": "Monthly recurring charges" },
+      { "name": "dining-out" },
+      { "name": "fuel" },
+      { "name": "kids" },
+      { "name": "entertainment" },
+      { "name": "income", "description": "Paychecks and deposits" }
     ]
   },
   {
@@ -89,6 +98,11 @@
       { "name": "Target" },
       { "name": "Trader Joe's" },
       { "name": "Etsy" }
+    ],
+    "tags": [
+      { "name": "self-care" },
+      { "name": "groceries" },
+      { "name": "shopping" }
     ]
   },
   {
@@ -126,6 +140,12 @@
       { "name": "Steam" },
       { "name": "Uber" },
       { "name": "Planet Fitness" }
+    ],
+    "tags": [
+      { "name": "gaming", "description": "Games and gaming gear" },
+      { "name": "food" },
+      { "name": "fitness" },
+      { "name": "transport" }
     ]
   }
 ]

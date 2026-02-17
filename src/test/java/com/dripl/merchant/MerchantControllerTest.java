@@ -4,7 +4,7 @@ import com.dripl.merchant.controller.MerchantController;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.dto.UpdateMerchantDto;
 import com.dripl.merchant.entity.Merchant;
-import com.dripl.merchant.enums.MerchantStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.merchant.mapper.MerchantMapper;
 import com.dripl.merchant.service.MerchantService;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class MerchantControllerTest {
                 .id(merchantId)
                 .workspaceId(workspaceId)
                 .name(name)
-                .status(MerchantStatus.ACTIVE)
+                .status(Status.ACTIVE)
                 .build();
     }
 

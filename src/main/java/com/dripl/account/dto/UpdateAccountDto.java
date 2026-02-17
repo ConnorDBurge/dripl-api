@@ -1,6 +1,6 @@
 package com.dripl.account.dto;
 
-import com.dripl.account.enums.AccountStatus;
+import com.dripl.common.enums.Status;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
 import com.dripl.account.enums.CurrencyCode;
@@ -32,7 +32,7 @@ public class UpdateAccountDto {
     @Size(max = 120, message = "Institution name must be at most 120 characters")
     private String institutionName;
 
-    private AccountStatus status;
+    private Status status;
 
     private Boolean excludeFromTransactions;
 }

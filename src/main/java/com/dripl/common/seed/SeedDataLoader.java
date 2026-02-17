@@ -4,6 +4,8 @@ import com.dripl.account.dto.CreateAccountDto;
 import com.dripl.account.service.AccountService;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.service.MerchantService;
+import com.dripl.tag.dto.CreateTagDto;
+import com.dripl.tag.service.TagService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
@@ -13,10 +15,13 @@ import com.dripl.workspace.membership.service.MembershipService;
 import com.dripl.workspace.service.WorkspaceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
@@ -40,12 +45,15 @@ public class SeedDataLoader implements CommandLineRunner {
     private final MembershipService membershipService;
     private final AccountService accountService;
     private final MerchantService merchantService;
+    private final TagService tagService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("=== Seed Data Loader ===");
+        Logger driplLogger = (Logger) LoggerFactory.getLogger("com.dripl");
+        Level previousLevel = driplLogger.getLevel();
+        driplLogger.setLevel(Level.WARN);
 
         setSeedAuthentication();
 
@@ -56,7 +64,10 @@ public class SeedDataLoader implements CommandLineRunner {
             seedWorkspaces(usersByEmail);
         } finally {
             SecurityContextHolder.clearContext();
+            driplLogger.setLevel(previousLevel);
         }
+
+        log.info("Local seed data loaded");
     }
 
     private void setSeedAuthentication() {
@@ -76,7 +87,6 @@ public class SeedDataLoader implements CommandLineRunner {
 
             User user = userService.bootstrapUser(email, givenName, familyName);
             usersByEmail.put(email, user);
-            log.info("Seeded user: {} {} <{}>", givenName, familyName, email);
         }
 
         return usersByEmail;
@@ -86,8 +96,6 @@ public class SeedDataLoader implements CommandLineRunner {
         List<Map<String, Object>> seedWorkspaces = readJson("seed-data/workspaces.json");
 
         Set<String> defaultRenamed = new HashSet<>();
-        int totalAccounts = 0;
-        int totalMerchants = 0;
 
         for (Map<String, Object> seedWorkspace : seedWorkspaces) {
             String ownerEmail = (String) seedWorkspace.get("ownerEmail");
@@ -135,7 +143,6 @@ public class SeedDataLoader implements CommandLineRunner {
                 for (Map<String, Object> seedAccount : accounts) {
                     CreateAccountDto dto = objectMapper.convertValue(seedAccount, CreateAccountDto.class);
                     accountService.createAccount(workspaceId, dto);
-                    totalAccounts++;
                 }
             }
 
@@ -146,14 +153,20 @@ public class SeedDataLoader implements CommandLineRunner {
                 for (Map<String, Object> seedMerchant : merchants) {
                     CreateMerchantDto dto = objectMapper.convertValue(seedMerchant, CreateMerchantDto.class);
                     merchantService.createMerchant(workspaceId, dto);
-                    totalMerchants++;
                 }
             }
 
-            log.info("Seeded workspace: '{}'", workspaceName);
-        }
+            // Create tags
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tags = (List<Map<String, Object>>) seedWorkspace.get("tags");
+            if (tags != null) {
+                for (Map<String, Object> seedTag : tags) {
+                    CreateTagDto dto = objectMapper.convertValue(seedTag, CreateTagDto.class);
+                    tagService.createTag(workspaceId, dto);
+                }
+            }
 
-        logSummary(usersByEmail.size(), seedWorkspaces.size(), totalAccounts, totalMerchants);
+        }
     }
 
     private List<Map<String, Object>> readJson(String path) throws Exception {
@@ -164,16 +177,5 @@ public class SeedDataLoader implements CommandLineRunner {
     private void wipeDatabase() {
         jdbcTemplate.execute("DELETE FROM workspaces");
         jdbcTemplate.execute("DELETE FROM users");
-    }
-
-    private void logSummary(int users, int workspaces, int accounts, int merchants) {
-        log.info("");
-        log.info("╔══════════════════════════════════════════════════════════════╗");
-        log.info("║                    SEED DATA SUMMARY                        ║");
-        log.info("╠══════════════════════════════════════════════════════════════╣");
-        log.info("║  Users: {}   Workspaces: {}   Accounts: {}   Merchants: {}",
-                users, workspaces, accounts, merchants);
-        log.info("╚══════════════════════════════════════════════════════════════╝");
-        log.info("");
     }
 }
