@@ -1,0 +1,131 @@
+[
+  {
+    "ownerEmail": "connor@dripl.dev",
+    "name": "Burge Family",
+    "members": [
+      {
+        "email": "kyndall@dripl.dev",
+        "roles": ["READ", "WRITE"]
+      }
+    ],
+    "accounts": [
+      {
+        "name": "Chase Checking",
+        "type": "CASH",
+        "subType": "CHECKING",
+        "balance": 4250.00,
+        "currency": "USD",
+        "institutionName": "Chase"
+      },
+      {
+        "name": "Ally Savings",
+        "type": "CASH",
+        "subType": "SAVINGS",
+        "balance": 18500.00,
+        "currency": "USD",
+        "institutionName": "Ally Bank"
+      },
+      {
+        "name": "Amex Gold",
+        "type": "CREDIT",
+        "subType": "CREDIT_CARD",
+        "balance": -1340.50,
+        "currency": "USD",
+        "institutionName": "American Express"
+      },
+      {
+        "name": "Fidelity 401k",
+        "type": "INVESTMENT",
+        "subType": "RETIREMENT",
+        "balance": 72000.00,
+        "currency": "USD",
+        "institutionName": "Fidelity"
+      },
+      {
+        "name": "Home Mortgage",
+        "type": "LOAN",
+        "subType": "MORTGAGE",
+        "balance": -285000.00,
+        "currency": "USD",
+        "institutionName": "Wells Fargo"
+      }
+    ],
+    "merchants": [
+      { "name": "Walmart" },
+      { "name": "Amazon" },
+      { "name": "Costco" },
+      { "name": "H-E-B" },
+      { "name": "Chick-fil-A" },
+      { "name": "Netflix" },
+      { "name": "Spotify" },
+      { "name": "Shell Gas" },
+      { "name": "Target" },
+      { "name": "Starbucks" }
+    ]
+  },
+  {
+    "ownerEmail": "kyndall@dripl.dev",
+    "name": "Kyndall's Budget",
+    "accounts": [
+      {
+        "name": "Personal Checking",
+        "type": "CASH",
+        "subType": "CHECKING",
+        "balance": 3100.00,
+        "currency": "USD",
+        "institutionName": "USAA"
+      },
+      {
+        "name": "Discover Card",
+        "type": "CREDIT",
+        "subType": "CREDIT_CARD",
+        "balance": -420.75,
+        "currency": "USD",
+        "institutionName": "Discover"
+      }
+    ],
+    "merchants": [
+      { "name": "Sephora" },
+      { "name": "Target" },
+      { "name": "Trader Joe's" },
+      { "name": "Etsy" }
+    ]
+  },
+  {
+    "ownerEmail": "mike@dripl.dev",
+    "name": "Mike's Finances",
+    "accounts": [
+      {
+        "name": "BoA Checking",
+        "type": "CASH",
+        "subType": "CHECKING",
+        "balance": 2800.00,
+        "currency": "USD",
+        "institutionName": "Bank of America"
+      },
+      {
+        "name": "Vanguard Brokerage",
+        "type": "INVESTMENT",
+        "subType": "BROKERAGE",
+        "balance": 45000.00,
+        "currency": "USD",
+        "institutionName": "Vanguard"
+      },
+      {
+        "name": "Student Loan",
+        "type": "LOAN",
+        "subType": "STUDENT_LOAN",
+        "balance": -32000.00,
+        "currency": "USD",
+        "institutionName": "Navient"
+      }
+    ],
+    "merchants": [
+      { "name": "Chipotle" },
+      { "name": "Amazon" },
+      { "name": "Steam" },
+      { "name": "Uber" },
+      { "name": "Planet Fitness" }
+    ]
+  }
+]
