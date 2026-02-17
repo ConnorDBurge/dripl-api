@@ -77,7 +77,7 @@ class WorkspaceControllerTest {
                 "sub", "connor@test.com",
                 "user_id", userId.toString(),
                 "workspace_id", workspaceId.toString(),
-                "roles", List.of("OWNER", "WRITE", "READ")
+                "roles", List.of("OWNER", "WRITE", "DELETE", "READ")
         ));
         var auth = new UsernamePasswordAuthenticationToken(
                 claims, null,

@@ -67,7 +67,7 @@ public class MerchantController {
         return ResponseEntity.ok(merchantMapper.toDto(merchant));
     }
 
-    @PreAuthorize("hasAuthority('WRITE')")
+    @PreAuthorize("hasAuthority('DELETE')")
     @DeleteMapping("/{merchantId}")
     public ResponseEntity<Void> deleteMerchant(
             @WorkspaceId UUID workspaceId, @PathVariable UUID merchantId) {

@@ -67,7 +67,7 @@ public class TagController {
         return ResponseEntity.ok(tagMapper.toDto(tag));
     }
 
-    @PreAuthorize("hasAuthority('WRITE')")
+    @PreAuthorize("hasAuthority('DELETE')")
     @DeleteMapping("/{tagId}")
     public ResponseEntity<Void> deleteTag(
             @WorkspaceId UUID workspaceId, @PathVariable UUID tagId) {

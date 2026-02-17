@@ -64,7 +64,7 @@ public class AccountController {
         return ResponseEntity.ok(accountMapper.toDto(account));
     }
 
-    @PreAuthorize("hasAuthority('WRITE')")
+    @PreAuthorize("hasAuthority('DELETE')")
     @DeleteMapping("/{accountId}")
     public ResponseEntity<Void> deleteAccount(
             @WorkspaceId UUID workspaceId, @PathVariable UUID accountId) {

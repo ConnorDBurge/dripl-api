@@ -5,7 +5,7 @@
     "members": [
       {
         "email": "kyndall@dripl.dev",
-        "roles": ["READ", "WRITE"]
+        "roles": ["READ", "WRITE", "DELETE"]
       }
     ],
     "accounts": [
@@ -70,6 +70,70 @@
       { "name": "kids" },
       { "name": "entertainment" },
       { "name": "income", "description": "Paychecks and deposits" }
+    ],
+    "categories": [
+      {
+        "name": "Food & Drink", "description": "Restaurants, groceries, and beverages",
+        "children": [
+          { "name": "Groceries", "description": "Grocery store runs and meal prep" },
+          { "name": "Dining Out", "description": "Restaurants, takeout, and delivery" },
+          { "name": "Coffee Shops", "description": "Coffee, tea, and café visits" }
+        ]
+      },
+      {
+        "name": "Housing", "description": "Mortgage, rent, and home expenses",
+        "children": [
+          { "name": "Mortgage", "description": "Monthly mortgage payment" },
+          { "name": "Utilities", "description": "Electric, water, gas, internet" },
+          { "name": "Home Maintenance", "description": "Repairs, lawn care, and upkeep" }
+        ]
+      },
+      {
+        "name": "Transportation", "description": "Getting around",
+        "children": [
+          { "name": "Gas", "description": "Fuel for vehicles" },
+          { "name": "Car Insurance", "description": "Auto insurance premiums" },
+          { "name": "Car Maintenance", "description": "Oil changes, tires, repairs" }
+        ]
+      },
+      {
+        "name": "Entertainment", "description": "Fun and leisure",
+        "children": [
+          { "name": "Streaming", "description": "Netflix, Hulu, Disney+, etc." },
+          { "name": "Movies & Events", "description": "Theaters, concerts, and outings" }
+        ]
+      },
+      {
+        "name": "Shopping", "description": "Retail purchases",
+        "children": [
+          { "name": "Clothing", "description": "Clothes and accessories" },
+          { "name": "Electronics", "description": "Gadgets, devices, and tech" },
+          { "name": "Household", "description": "Home goods and supplies" }
+        ]
+      },
+      {
+        "name": "Kids", "description": "All things kid-related",
+        "children": [
+          { "name": "Childcare", "description": "Daycare and babysitting" },
+          { "name": "School", "description": "Tuition, supplies, and fees" },
+          { "name": "Activities", "description": "Sports, lessons, and camps" }
+        ]
+      },
+      {
+        "name": "Health", "description": "Medical and wellness expenses",
+        "children": [
+          { "name": "Medical", "description": "Doctor visits and copays" },
+          { "name": "Pharmacy", "description": "Prescriptions and OTC meds" }
+        ]
+      },
+      {
+        "name": "Income", "description": "Money coming in", "income": true,
+        "children": [
+          { "name": "Salary", "description": "Regular paychecks", "income": true },
+          { "name": "Side Income", "description": "Freelance and side hustles", "income": true }
+        ]
+      },
+      { "name": "Transfers", "description": "Moves between accounts", "excludeFromBudget": true, "excludeFromTotals": true }
     ]
   },
   {
@@ -103,6 +167,35 @@
       { "name": "self-care" },
       { "name": "groceries" },
       { "name": "shopping" }
+    ],
+    "categories": [
+      {
+        "name": "Food & Drink", "description": "Meals and groceries",
+        "children": [
+          { "name": "Groceries", "description": "Weekly grocery hauls" },
+          { "name": "Dining Out", "description": "Restaurants and takeout" }
+        ]
+      },
+      {
+        "name": "Self Care", "description": "Personal wellness and beauty",
+        "children": [
+          { "name": "Beauty", "description": "Skincare, makeup, and hair" },
+          { "name": "Wellness", "description": "Spa, yoga, and mental health" }
+        ]
+      },
+      {
+        "name": "Shopping", "description": "Retail and online purchases",
+        "children": [
+          { "name": "Clothing", "description": "Clothes and accessories" },
+          { "name": "Home Décor", "description": "Decorations and furnishings" }
+        ]
+      },
+      {
+        "name": "Income", "description": "Earnings", "income": true,
+        "children": [
+          { "name": "Salary", "description": "Regular paycheck", "income": true }
+        ]
+      }
     ]
   },
   {
@@ -146,6 +239,50 @@
       { "name": "food" },
       { "name": "fitness" },
       { "name": "transport" }
+    ],
+    "categories": [
+      {
+        "name": "Food & Drink", "description": "Eating out and cooking",
+        "children": [
+          { "name": "Restaurants", "description": "Sit-down and dine-in" },
+          { "name": "Fast Food", "description": "Quick bites and drive-thrus" }
+        ]
+      },
+      {
+        "name": "Entertainment", "description": "Games, media, and fun",
+        "children": [
+          { "name": "Gaming", "description": "Games, consoles, and PC gear" },
+          { "name": "Streaming", "description": "Subscriptions and rentals" }
+        ]
+      },
+      {
+        "name": "Health & Fitness", "description": "Staying healthy",
+        "children": [
+          { "name": "Gym", "description": "Membership and classes" },
+          { "name": "Supplements", "description": "Protein, vitamins, etc." }
+        ]
+      },
+      {
+        "name": "Transportation", "description": "Getting around town",
+        "children": [
+          { "name": "Rideshare", "description": "Uber, Lyft, etc." },
+          { "name": "Gas", "description": "Fuel" }
+        ]
+      },
+      {
+        "name": "Education", "description": "Learning and student debt",
+        "children": [
+          { "name": "Student Loan", "description": "Monthly loan payment", "excludeFromBudget": true },
+          { "name": "Books & Courses", "description": "Textbooks and online courses" }
+        ]
+      },
+      {
+        "name": "Income", "description": "All earnings", "income": true,
+        "children": [
+          { "name": "Salary", "description": "Full-time job", "income": true },
+          { "name": "Freelance", "description": "Contract and gig work", "income": true }
+        ]
+      }
     ]
   }
 ]

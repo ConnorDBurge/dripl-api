@@ -54,7 +54,7 @@ class TokenServiceTest {
     @Test
     void mintToken_withMembership_includesRoles() {
         WorkspaceMembership membership = WorkspaceMembership.builder()
-                .roles(Set.of(Role.OWNER, Role.WRITE, Role.READ))
+                .roles(Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ))
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));

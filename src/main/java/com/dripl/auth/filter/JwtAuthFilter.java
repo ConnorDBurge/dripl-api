@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,9 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+
+    public static final String USER_ID_KEY = "userId";
+    public static final String WORKSPACE_ID_KEY = "workspaceId";
 
     private final JwtUtil jwtUtil;
 
@@ -36,6 +40,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (jwtUtil.isValid(token)) {
                 Claims claims = jwtUtil.parseToken(token);
 
+                String userId = claims.get("user_id", String.class);
+                String workspaceId = claims.get("workspace_id", String.class);
+
+                if (userId != null) MDC.put(USER_ID_KEY, userId);
+                if (workspaceId != null) MDC.put(WORKSPACE_ID_KEY, workspaceId);
+
                 @SuppressWarnings("unchecked")
                 List<String> roles = claims.get("roles", List.class);
 
@@ -50,6 +60,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove(USER_ID_KEY);
+            MDC.remove(WORKSPACE_ID_KEY);
+        }
     }
 }

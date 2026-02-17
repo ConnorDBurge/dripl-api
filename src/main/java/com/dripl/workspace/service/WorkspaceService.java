@@ -80,7 +80,7 @@ public class WorkspaceService {
                 .build());
 
         membershipService.createMembership(userId, workspace.getId(),
-                Set.of(Role.OWNER, Role.WRITE, Role.READ));
+                Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ));
 
         log.info("Provisioned workspace '{}' ({}) for user {} ({})", workspace.getName(), workspace.getId(), user.getEmail(), userId);
         return workspace;

@@ -34,7 +34,7 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         String readerId = (String) reader.get("id");
         String ownerWorkspaceId = (String) owner.get("lastWorkspaceId");
 
-        // Add reader to owner's workspace
+        // Add a reader to the owner's workspace
         restTemplate.exchange(
                 "/api/v1/workspaces/current/members", HttpMethod.POST,
                 new HttpEntity<>("""
@@ -115,6 +115,67 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/workspaces/current/members/" + ownerId, HttpMethod.DELETE,
                 new HttpEntity<>(authHeaders(readOnlyToken)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void readOnly_cannotDeleteResource() {
+        // Owner creates a merchant
+        var createResponse = restTemplate.exchange(
+                "/api/v1/merchants", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Test Merchant"}
+                        """, authHeaders(ownerToken)),
+                Map.class);
+        String merchantId = (String) createResponse.getBody().get("id");
+
+        // READ-only user cannot delete it
+        var response = restTemplate.exchange(
+                "/api/v1/merchants/" + merchantId, HttpMethod.DELETE,
+                new HttpEntity<>(authHeaders(readOnlyToken)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void writeOnly_cannotDeleteResource() {
+        String ownerWorkspaceId = (String) owner.get("lastWorkspaceId");
+
+        // Create a WRITE-only user (no DELETE)
+        Map<String, Object> writer = bootstrapUser(
+                "rbac-writer-%s@test.com".formatted(System.nanoTime()), "RBAC", "Writer");
+        String writerId = (String) writer.get("id");
+
+        restTemplate.exchange(
+                "/api/v1/workspaces/current/members", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"userId":"%s","roles":["READ","WRITE"]}
+                        """.formatted(writerId), authHeaders(ownerToken)),
+                Map.class);
+
+        String writeOnlyToken = jwtUtil.generateToken(
+                UUID.fromString(writerId),
+                UUID.fromString(ownerWorkspaceId),
+                "rbac-writer@test.com",
+                List.of("READ", "WRITE"));
+
+        // Writer creates a merchant (WRITE works)
+        var createResponse = restTemplate.exchange(
+                "/api/v1/merchants", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Writer Merchant"}
+                        """, authHeaders(writeOnlyToken)),
+                Map.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        String merchantId = (String) createResponse.getBody().get("id");
+
+        // Writer cannot delete it (no DELETE role)
+        var response = restTemplate.exchange(
+                "/api/v1/merchants/" + merchantId, HttpMethod.DELETE,
+                new HttpEntity<>(authHeaders(writeOnlyToken)),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);

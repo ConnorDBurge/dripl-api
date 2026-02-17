@@ -67,7 +67,7 @@ class MembershipServiceTest {
         testMembership = WorkspaceMembership.builder()
                 .user(testUser)
                 .workspace(testWorkspace)
-                .roles(Set.of(Role.OWNER, Role.WRITE, Role.READ))
+                .roles(Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ))
                 .status(MembershipStatus.ACTIVE)
                 .joinedAt(LocalDateTime.now())
                 .build();
@@ -153,7 +153,7 @@ class MembershipServiceTest {
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
         when(membershipRepository.save(any(WorkspaceMembership.class))).thenReturn(testMembership);
 
-        Set<Role> roles = Set.of(Role.OWNER, Role.WRITE, Role.READ);
+        Set<Role> roles = Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ);
         WorkspaceMembership result = membershipService.createMembership(userId, workspaceId, roles);
 
         assertThat(result).isNotNull();

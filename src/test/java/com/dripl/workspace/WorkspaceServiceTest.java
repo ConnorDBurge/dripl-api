@@ -120,7 +120,7 @@ class WorkspaceServiceTest {
         assertThat(result).isNotNull();
         verify(workspaceRepository).save(any(Workspace.class));
         verify(membershipService).createMembership(eq(userId), eq(workspaceId),
-                eq(Set.of(Role.OWNER, Role.WRITE, Role.READ)));
+                eq(Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ)));
     }
 
     @Test

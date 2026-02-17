@@ -2,6 +2,9 @@ package com.dripl.common.seed;
 
 import com.dripl.account.dto.CreateAccountDto;
 import com.dripl.account.service.AccountService;
+import com.dripl.category.dto.CreateCategoryDto;
+import com.dripl.category.entity.Category;
+import com.dripl.category.service.CategoryService;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.tag.dto.CreateTagDto;
@@ -46,6 +49,7 @@ public class SeedDataLoader implements CommandLineRunner {
     private final AccountService accountService;
     private final MerchantService merchantService;
     private final TagService tagService;
+    private final CategoryService categoryService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -166,6 +170,27 @@ public class SeedDataLoader implements CommandLineRunner {
                 }
             }
 
+            // Create categories (with parent-child nesting)
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> categories = (List<Map<String, Object>>) seedWorkspace.get("categories");
+            if (categories != null) {
+                for (Map<String, Object> seedCategory : categories) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> children = (List<Map<String, Object>>) seedCategory.get("children");
+                    seedCategory.remove("children");
+
+                    CreateCategoryDto parentDto = objectMapper.convertValue(seedCategory, CreateCategoryDto.class);
+                    Category parent = categoryService.createCategory(workspaceId, parentDto);
+
+                    if (children != null) {
+                        for (Map<String, Object> child : children) {
+                            child.put("parentId", parent.getId().toString());
+                            CreateCategoryDto childDto = objectMapper.convertValue(child, CreateCategoryDto.class);
+                            categoryService.createCategory(workspaceId, childDto);
+                        }
+                    }
+                }
+            }
         }
     }
 

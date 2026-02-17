@@ -80,13 +80,13 @@ class CurrentWorkspaceControllerTest {
                 .build();
         testMembership = WorkspaceMembership.builder()
                 .user(testUser).workspace(testWorkspace)
-                .roles(Set.of(Role.OWNER, Role.WRITE, Role.READ))
+                .roles(Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ))
                 .status(MembershipStatus.ACTIVE)
                 .joinedAt(LocalDateTime.now()).build();
     }
 
     private void authenticate(String... roles) {
-        List<String> roleList = roles.length > 0 ? List.of(roles) : List.of("OWNER", "WRITE", "READ");
+        List<String> roleList = roles.length > 0 ? List.of(roles) : List.of("OWNER", "WRITE", "DELETE", "READ");
         Claims claims = new DefaultClaims(Map.of(
                 "sub", "connor@test.com",
                 "user_id", userId.toString(),
