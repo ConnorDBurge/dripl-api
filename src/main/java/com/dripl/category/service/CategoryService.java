@@ -44,8 +44,11 @@ public class CategoryService {
 
     @Transactional
     public Category createCategory(UUID workspaceId, CreateCategoryDto dto) {
+        boolean income = dto.getIncome() != null && dto.getIncome();
+
         if (dto.getParentId() != null) {
-            validateParent(workspaceId, dto.getParentId());
+            Category parent = validateParent(workspaceId, dto.getParentId());
+            income = parent.isIncome();
         }
 
         Category category = Category.builder()
@@ -54,7 +57,7 @@ public class CategoryService {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .status(Status.ACTIVE)
-                .income(dto.getIncome() != null && dto.getIncome())
+                .income(income)
                 .excludeFromBudget(dto.getExcludeFromBudget() != null && dto.getExcludeFromBudget())
                 .excludeFromTotals(dto.getExcludeFromTotals() != null && dto.getExcludeFromTotals())
                 .build();
@@ -79,11 +82,12 @@ public class CategoryService {
                 if (parentId.equals(categoryId)) {
                     throw new BadRequestException("Category cannot be its own parent");
                 }
-                validateParent(workspaceId, parentId);
+                Category parent = validateParent(workspaceId, parentId);
                 ensureNoCircularReference(categoryId, parentId);
                 if (!dto.isChildrenSpecified()) {
                     ensureNoCategoryChildren(categoryId);
                 }
+                category.setIncome(parent.isIncome());
             }
             category.setParentId(parentId);
         }
@@ -99,13 +103,15 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
-    private void validateParent(UUID workspaceId, UUID parentId) {
+    private Category validateParent(UUID workspaceId, UUID parentId) {
         Category parent = categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Parent category not found"));
 
         if (parent.getParentId() != null) {
             throw new BadRequestException("Parent category cannot have its own parent (maximum depth is 2)");
         }
+
+        return parent;
     }
 
     private void ensureNoCircularReference(UUID categoryId, UUID parentId) {

@@ -159,6 +159,59 @@ class CategoryServiceTest {
 
         assertThat(result.getName()).isEqualTo("Groceries");
         assertThat(result.getParentId()).isEqualTo(parentId);
+        assertThat(result.isIncome()).isFalse();
+    }
+
+    @Test
+    void createCategory_withParent_inheritsIncomeFromParent_trueToTrue() {
+        UUID parentId = UUID.randomUUID();
+        Category parent = Category.builder()
+                .id(parentId)
+                .workspaceId(workspaceId)
+                .name("Salary")
+                .status(Status.ACTIVE)
+                .income(true)
+                .parentId(null)
+                .build();
+
+        CreateCategoryDto dto = CreateCategoryDto.builder()
+                .name("Bonus")
+                .parentId(parentId)
+                .income(false)
+                .build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Category result = categoryService.createCategory(workspaceId, dto);
+
+        assertThat(result.isIncome()).isTrue();
+    }
+
+    @Test
+    void createCategory_withParent_inheritsIncomeFromParent_falseToFalse() {
+        UUID parentId = UUID.randomUUID();
+        Category parent = Category.builder()
+                .id(parentId)
+                .workspaceId(workspaceId)
+                .name("Food")
+                .status(Status.ACTIVE)
+                .income(false)
+                .parentId(null)
+                .build();
+
+        CreateCategoryDto dto = CreateCategoryDto.builder()
+                .name("Groceries")
+                .parentId(parentId)
+                .income(true)
+                .build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Category result = categoryService.createCategory(workspaceId, dto);
+
+        assertThat(result.isIncome()).isFalse();
     }
 
     @Test
@@ -239,6 +292,65 @@ class CategoryServiceTest {
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
         assertThat(result.getParentId()).isEqualTo(parentId);
+        assertThat(result.isIncome()).isFalse();
+    }
+
+    @Test
+    void updateCategory_setParent_inheritsIncome_falseToTrue() {
+        UUID parentId = UUID.randomUUID();
+        Category category = buildCategory("Bonus");
+        category.setIncome(false);
+
+        Category parent = Category.builder()
+                .id(parentId)
+                .workspaceId(workspaceId)
+                .name("Income")
+                .status(Status.ACTIVE)
+                .income(true)
+                .parentId(null)
+                .build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        dto.assignParentId(parentId);
+        Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
+
+        assertThat(result.getParentId()).isEqualTo(parentId);
+        assertThat(result.isIncome()).isTrue();
+    }
+
+    @Test
+    void updateCategory_setParent_inheritsIncome_trueToFalse() {
+        UUID parentId = UUID.randomUUID();
+        Category category = buildCategory("Side Gig");
+        category.setIncome(true);
+
+        Category parent = Category.builder()
+                .id(parentId)
+                .workspaceId(workspaceId)
+                .name("Expenses")
+                .status(Status.ACTIVE)
+                .income(false)
+                .parentId(null)
+                .build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        dto.assignParentId(parentId);
+        Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
+
+        assertThat(result.getParentId()).isEqualTo(parentId);
+        assertThat(result.isIncome()).isFalse();
     }
 
     @Test
