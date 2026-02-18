@@ -1,14 +1,21 @@
 package com.dripl.common.seed;
 
 import com.dripl.account.dto.CreateAccountDto;
+import com.dripl.account.entity.Account;
 import com.dripl.account.service.AccountService;
 import com.dripl.category.dto.CreateCategoryDto;
 import com.dripl.category.entity.Category;
 import com.dripl.category.service.CategoryService;
 import com.dripl.merchant.dto.CreateMerchantDto;
+import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.tag.dto.CreateTagDto;
+import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
+import com.dripl.transaction.dto.CreateTransactionDto;
+import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.enums.TransactionStatus;
+import com.dripl.transaction.service.TransactionService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
@@ -50,6 +57,7 @@ public class SeedDataLoader implements CommandLineRunner {
     private final MerchantService merchantService;
     private final TagService tagService;
     private final CategoryService categoryService;
+    private final TransactionService transactionService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -141,36 +149,43 @@ public class SeedDataLoader implements CommandLineRunner {
             }
 
             // Create accounts
+            Map<String, UUID> accountsByName = new LinkedHashMap<>();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> accounts = (List<Map<String, Object>>) seedWorkspace.get("accounts");
             if (accounts != null) {
                 for (Map<String, Object> seedAccount : accounts) {
                     CreateAccountDto dto = objectMapper.convertValue(seedAccount, CreateAccountDto.class);
-                    accountService.createAccount(workspaceId, dto);
+                    Account account = accountService.createAccount(workspaceId, dto);
+                    accountsByName.put(account.getName(), account.getId());
                 }
             }
 
             // Create merchants
+            Map<String, UUID> merchantsByName = new LinkedHashMap<>();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> merchants = (List<Map<String, Object>>) seedWorkspace.get("merchants");
             if (merchants != null) {
                 for (Map<String, Object> seedMerchant : merchants) {
                     CreateMerchantDto dto = objectMapper.convertValue(seedMerchant, CreateMerchantDto.class);
-                    merchantService.createMerchant(workspaceId, dto);
+                    Merchant merchant = merchantService.createMerchant(workspaceId, dto);
+                    merchantsByName.put(merchant.getName(), merchant.getId());
                 }
             }
 
             // Create tags
+            Map<String, UUID> tagsByName = new LinkedHashMap<>();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> tags = (List<Map<String, Object>>) seedWorkspace.get("tags");
             if (tags != null) {
                 for (Map<String, Object> seedTag : tags) {
                     CreateTagDto dto = objectMapper.convertValue(seedTag, CreateTagDto.class);
-                    tagService.createTag(workspaceId, dto);
+                    Tag tag = tagService.createTag(workspaceId, dto);
+                    tagsByName.put(tag.getName(), tag.getId());
                 }
             }
 
             // Create categories (with parent-child nesting)
+            Map<String, UUID> categoriesByName = new LinkedHashMap<>();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> categories = (List<Map<String, Object>>) seedWorkspace.get("categories");
             if (categories != null) {
@@ -181,13 +196,50 @@ public class SeedDataLoader implements CommandLineRunner {
 
                     CreateCategoryDto parentDto = objectMapper.convertValue(seedCategory, CreateCategoryDto.class);
                     Category parent = categoryService.createCategory(workspaceId, parentDto);
+                    categoriesByName.put(parent.getName(), parent.getId());
 
                     if (children != null) {
                         for (Map<String, Object> child : children) {
                             child.put("parentId", parent.getId().toString());
                             CreateCategoryDto childDto = objectMapper.convertValue(child, CreateCategoryDto.class);
-                            categoryService.createCategory(workspaceId, childDto);
+                            Category childCategory = categoryService.createCategory(workspaceId, childDto);
+                            categoriesByName.put(childCategory.getName(), childCategory.getId());
                         }
+                    }
+                }
+            }
+
+            // Create transactions
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> transactions = (List<Map<String, Object>>) seedWorkspace.get("transactions");
+            if (transactions != null) {
+                for (Map<String, Object> seedTxn : transactions) {
+                    String accountName = (String) seedTxn.get("accountName");
+                    String categoryName = (String) seedTxn.get("categoryName");
+                    String merchantName = (String) seedTxn.get("merchantName");
+
+                    @SuppressWarnings("unchecked")
+                    List<String> tagNames = (List<String>) seedTxn.get("tagNames");
+                    Set<UUID> tagIds = tagNames != null
+                            ? tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
+                            : Set.of();
+
+                    CreateTransactionDto dto = CreateTransactionDto.builder()
+                            .accountId(accountsByName.get(accountName))
+                            .merchantName(merchantName)
+                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
+                            .date(java.time.LocalDate.parse((String) seedTxn.get("date")).atStartOfDay())
+                            .amount(new java.math.BigDecimal(seedTxn.get("amount").toString()))
+                            .notes((String) seedTxn.get("notes"))
+                            .tagIds(tagIds)
+                            .build();
+
+                    Transaction txn = transactionService.createTransaction(workspaceId, dto);
+
+                    String statusStr = (String) seedTxn.get("status");
+                    if ("POSTED".equals(statusStr)) {
+                        txn.setStatus(TransactionStatus.POSTED);
+                        txn.setPostedAt(java.time.LocalDateTime.now());
                     }
                 }
             }

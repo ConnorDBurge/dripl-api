@@ -1,0 +1,73 @@
+package com.dripl.transaction.entity;
+
+import com.dripl.account.enums.CurrencyCode;
+import com.dripl.common.audit.BaseEntity;
+import com.dripl.transaction.enums.TransactionSource;
+import com.dripl.transaction.enums.TransactionStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@Entity
+@Table(name = "transactions")
+public class Transaction extends BaseEntity {
+
+    @Column(name = "workspace_id", nullable = false)
+    private UUID workspaceId;
+
+    @Column(name = "account_id", nullable = false)
+    private UUID accountId;
+
+    @Column(name = "merchant_id", nullable = false)
+    private UUID merchantId;
+
+    @Column(name = "category_id")
+    private UUID categoryId;
+
+    @Column(name = "date", nullable = false)
+    private LocalDateTime date;
+
+    @Column(name = "amount", nullable = false, precision = 19, scale = 4)
+    private BigDecimal amount;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency_code", nullable = false)
+    private CurrencyCode currencyCode = CurrencyCode.USD;
+
+    @Column(name = "notes", length = 500)
+    private String notes;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private TransactionStatus status = TransactionStatus.PENDING;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private TransactionSource source = TransactionSource.MANUAL;
+
+    @Column(name = "pending_at")
+    private LocalDateTime pendingAt;
+
+    @Column(name = "posted_at")
+    private LocalDateTime postedAt;
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "transaction_tags", joinColumns = @JoinColumn(name = "transaction_id"))
+    @Column(name = "tag_id")
+    private Set<UUID> tagIds = new HashSet<>();
+}
