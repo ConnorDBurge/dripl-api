@@ -673,39 +673,36 @@ class TransactionServiceTest {
     }
 
     @Test
-    void createTransaction_withRecurringItem_dtoOverridesWin() {
+    void createTransaction_withRecurringItem_lockedFieldsFromRI() {
         UUID overrideAccountId = UUID.randomUUID();
-        UUID overrideCategoryId = UUID.randomUUID();
 
         CreateTransactionDto dto = CreateTransactionDto.builder()
                 .recurringItemId(recurringItemId)
                 .accountId(overrideAccountId)
                 .merchantName("Override Store")
-                .categoryId(overrideCategoryId)
+                .categoryId(UUID.randomUUID())
                 .amount(new BigDecimal("-99.99"))
                 .currencyCode(CurrencyCode.USD)
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
                 .tagIds(Set.of())
                 .build();
 
-        UUID overrideMerchantId = UUID.randomUUID();
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
-        when(accountService.getAccount(overrideAccountId, workspaceId))
-                .thenReturn(Account.builder().id(overrideAccountId).workspaceId(workspaceId).build());
-        when(merchantService.resolveMerchant("Override Store", workspaceId))
-                .thenReturn(Merchant.builder().id(overrideMerchantId).workspaceId(workspaceId).name("Override Store").build());
-        when(categoryService.getCategory(overrideCategoryId, workspaceId))
-                .thenReturn(Category.builder().id(overrideCategoryId).workspaceId(workspaceId).build());
+        when(accountService.getAccount(accountId, workspaceId)).thenReturn(buildAccount());
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory());
+        when(tagService.getTag(tagId, workspaceId)).thenReturn(buildTag());
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Transaction result = transactionService.createTransaction(workspaceId, dto);
 
-        assertThat(result.getAccountId()).isEqualTo(overrideAccountId);
-        assertThat(result.getMerchantId()).isEqualTo(overrideMerchantId);
-        assertThat(result.getCategoryId()).isEqualTo(overrideCategoryId);
+        // Locked fields come from RI, not DTO
+        assertThat(result.getAccountId()).isEqualTo(accountId);
+        assertThat(result.getMerchantId()).isEqualTo(merchantId);
+        assertThat(result.getCategoryId()).isEqualTo(categoryId);
+        assertThat(result.getCurrencyCode()).isEqualTo(CurrencyCode.EUR);
+        assertThat(result.getTagIds()).containsExactly(tagId);
+        // Amount is not locked — DTO wins
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-99.99"));
-        assertThat(result.getCurrencyCode()).isEqualTo(CurrencyCode.USD);
-        assertThat(result.getTagIds()).isEmpty();
     }
 
     @Test
@@ -778,29 +775,29 @@ class TransactionServiceTest {
     }
 
     @Test
-    void updateTransaction_setRecurringItemId_dtoOverridesWin() {
+    void updateTransaction_setRecurringItemId_lockedFieldsFromRI() {
         Transaction txn = buildTransaction();
-        UUID newAccountId = UUID.randomUUID();
-        UUID newMerchantId = UUID.randomUUID();
+        // Transaction has its own values that should be overwritten
+        UUID originalCategoryId = UUID.randomUUID();
+        txn.setCategoryId(originalCategoryId);
+        txn.setTagIds(new HashSet<>(Set.of(UUID.randomUUID())));
+        txn.setCurrencyCode(CurrencyCode.GBP);
 
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
-        when(accountService.getAccount(newAccountId, workspaceId))
-                .thenReturn(Account.builder().id(newAccountId).workspaceId(workspaceId).build());
-        when(merchantService.resolveMerchant("Override", workspaceId))
-                .thenReturn(Merchant.builder().id(newMerchantId).workspaceId(workspaceId).name("Override").build());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder()
-                .accountId(newAccountId)
-                .merchantName("Override")
-                .build();
+        UpdateTransactionDto dto = new UpdateTransactionDto();
         dto.assignRecurringItemId(recurringItemId);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
+        // Locked fields come from RI, overwriting existing values
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
-        assertThat(result.getAccountId()).isEqualTo(newAccountId);
-        assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
+        assertThat(result.getAccountId()).isEqualTo(accountId);
+        assertThat(result.getMerchantId()).isEqualTo(merchantId);
+        assertThat(result.getCategoryId()).isEqualTo(categoryId);
+        assertThat(result.getCurrencyCode()).isEqualTo(CurrencyCode.EUR);
+        assertThat(result.getTagIds()).containsExactly(tagId);
     }
 
     @Test
@@ -829,6 +826,296 @@ class TransactionServiceTest {
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
+        assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
+    }
+
+    // --- Field locking: recurring item ---
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsCategoryId() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignCategoryId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("categoryId")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsTagIds() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignTagIds(Set.of(UUID.randomUUID()));
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("tagIds")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsNotes() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignNotes("new notes");
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("notes")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsMerchantName() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("New Merchant").build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("merchantName")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsAccountId() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("accountId")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsMultipleLockedFields() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).merchantName("X").build();
+        dto.assignCategoryId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("accountId")
+                .hasMessageContaining("merchantName")
+                .hasMessageContaining("categoryId");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_allowsUnlinkWithLockedFields() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(categoryService.getCategory(any(), eq(workspaceId))).thenReturn(buildCategory());
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignRecurringItemId(null); // unlink
+        dto.assignCategoryId(UUID.randomUUID()); // allowed because unlinking
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getRecurringItemId()).isNull();
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_allowsNonLockedFields() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder()
+                .amount(new BigDecimal("-99.00"))
+                .status(TransactionStatus.POSTED)
+                .build();
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-99.00"));
+    }
+
+    // --- Field locking: group ---
+
+    @Test
+    void updateTransaction_grouped_rejectsCategoryId() {
+        Transaction txn = buildTransaction();
+        txn.setGroupId(UUID.randomUUID());
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignCategoryId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("categoryId")
+                .hasMessageContaining("group");
+    }
+
+    @Test
+    void updateTransaction_grouped_rejectsTagIds() {
+        Transaction txn = buildTransaction();
+        txn.setGroupId(UUID.randomUUID());
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignTagIds(Set.of(UUID.randomUUID()));
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("tagIds")
+                .hasMessageContaining("group");
+    }
+
+    @Test
+    void updateTransaction_grouped_rejectsNotes() {
+        Transaction txn = buildTransaction();
+        txn.setGroupId(UUID.randomUUID());
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignNotes("new notes");
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("notes")
+                .hasMessageContaining("group");
+    }
+
+    @Test
+    void updateTransaction_grouped_allowsNonLockedFields() {
+        Transaction txn = buildTransaction();
+        txn.setGroupId(UUID.randomUUID());
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(accountService.getAccount(any(), eq(workspaceId))).thenReturn(buildAccount());
+        when(merchantService.resolveMerchant("New Place", workspaceId)).thenReturn(buildMerchant("New Place"));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder()
+                .accountId(accountId)
+                .merchantName("New Place")
+                .amount(new BigDecimal("-99.00"))
+                .build();
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-99.00"));
+    }
+
+    // --- Mutual exclusivity ---
+
+    @Test
+    void updateTransaction_grouped_rejectsLinkingRecurringItem() {
+        Transaction txn = buildTransaction();
+        txn.setGroupId(UUID.randomUUID());
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignRecurringItemId(recurringItemId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("group")
+                .hasMessageContaining("Remove it from the group");
+    }
+
+    // --- Unlink from group via groupId: null ---
+
+    @Test
+    void updateTransaction_unlinkFromGroup_succeeds() {
+        UUID groupId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setGroupId(groupId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.countByGroupId(groupId)).thenReturn(3L);
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(null);
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getGroupId()).isNull();
+    }
+
+    @Test
+    void updateTransaction_unlinkFromGroup_rejectsWhenWouldLeaveFewerThan2() {
+        UUID groupId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setGroupId(groupId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.countByGroupId(groupId)).thenReturn(2L);
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(null);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("fewer than 2");
+    }
+
+    @Test
+    void updateTransaction_unlinkFromGroup_allowsLockedFieldsInSameRequest() {
+        UUID groupId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setGroupId(groupId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.countByGroupId(groupId)).thenReturn(3L);
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(categoryService.getCategory(any(), eq(workspaceId))).thenReturn(buildCategory());
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(null);
+        dto.assignCategoryId(UUID.randomUUID());
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getGroupId()).isNull();
+    }
+
+    @Test
+    void updateTransaction_assignGroupIdViaUpdate_throws() {
+        Transaction txn = buildTransaction();
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("transaction-groups API");
+    }
+
+    @Test
+    void updateTransaction_unlinkGroupAndLinkRecurring_succeeds() {
+        UUID groupId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setGroupId(groupId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.countByGroupId(groupId)).thenReturn(3L);
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(null);
+        dto.assignRecurringItemId(recurringItemId);
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getGroupId()).isNull();
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
     }
 

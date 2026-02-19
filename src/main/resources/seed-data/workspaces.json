@@ -267,7 +267,7 @@
         "tagNames": [
           "groceries"
         ],
-        "recurringDescription": "Bi-Weekly Groceries"
+        "groupName": "July Grocery Runs"
       },
       {
         "accountName": "Amex Gold",
@@ -278,7 +278,8 @@
         "status": "POSTED",
         "tagNames": [
           "dining-out"
-        ]
+        ],
+        "groupName": "Weekend Dining Out"
       },
       {
         "accountName": "Amex Gold",
@@ -333,7 +334,8 @@
         "status": "POSTED",
         "tagNames": [
           "dining-out"
-        ]
+        ],
+        "groupName": "Weekend Dining Out"
       },
       {
         "accountName": "Amex Gold",
@@ -405,7 +407,7 @@
         "tagNames": [
           "groceries"
         ],
-        "recurringDescription": "Bi-Weekly Groceries"
+        "groupName": "July Grocery Runs"
       },
       {
         "accountName": "Amex Gold",
@@ -416,7 +418,8 @@
         "status": "PENDING",
         "tagNames": [
           "dining-out"
-        ]
+        ],
+        "groupName": "Weekend Dining Out"
       },
       {
         "accountName": "Amex Gold",
@@ -593,6 +596,21 @@
           "2025-03-15"
         ],
         "startDate": "2025-03-15"
+      }
+    ],
+    "transactionGroups": [
+      {
+        "name": "Weekend Dining Out",
+        "categoryName": "Dining Out",
+        "notes": "All dining out from the first week of July",
+        "tagNames": [
+          "dining-out"
+        ]
+      },
+      {
+        "name": "July Grocery Runs",
+        "categoryName": "Groceries",
+        "notes": "H-E-B trips in July"
       }
     ]
   },

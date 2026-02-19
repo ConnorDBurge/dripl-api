@@ -66,7 +66,7 @@ class TransactionControllerTest {
     void listTransactions_returns200() {
         when(transactionService.listAll(any())).thenReturn(List.of(buildTransaction()));
 
-        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null);
+        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(1);
@@ -76,7 +76,7 @@ class TransactionControllerTest {
     void listTransactions_empty_returns200() {
         when(transactionService.listAll(any())).thenReturn(List.of());
 
-        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null);
+        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();

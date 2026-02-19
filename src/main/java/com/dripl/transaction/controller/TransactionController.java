@@ -48,6 +48,7 @@ public class TransactionController {
             @RequestParam(required = false) UUID accountId,
             @RequestParam(required = false) UUID merchantId,
             @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID groupId,
             @RequestParam(required = false) UUID recurringItemId,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) TransactionSource source,
@@ -58,6 +59,7 @@ public class TransactionController {
                 .where(TransactionSpecifications.inWorkspace(workspaceId))
                 .and(optionally(accountId, TransactionSpecifications::hasAccount))
                 .and(optionally(merchantId, TransactionSpecifications::hasMerchant))
+                .and(optionally(groupId, TransactionSpecifications::hasGroup))
                 .and(optionally(categoryId, TransactionSpecifications::hasCategory))
                 .and(optionally(recurringItemId, TransactionSpecifications::hasRecurringItem))
                 .and(optionally(status, TransactionSpecifications::hasStatus))

@@ -35,5 +35,6 @@ public class TransactionDto extends BaseDto {
     private LocalDateTime pendingAt;
     private LocalDateTime postedAt;
     private UUID recurringItemId;
+    private UUID groupId;
     private Set<UUID> tagIds;
 }

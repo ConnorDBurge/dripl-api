@@ -18,6 +18,8 @@ import com.dripl.tag.service.TagService;
 import com.dripl.transaction.dto.CreateTransactionDto;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionStatus;
+import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
+import com.dripl.transaction.group.service.TransactionGroupService;
 import com.dripl.transaction.service.TransactionService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
@@ -61,6 +63,7 @@ public class SeedDataLoader implements CommandLineRunner {
     private final TagService tagService;
     private final CategoryService categoryService;
     private final TransactionService transactionService;
+    private final TransactionGroupService transactionGroupService;
     private final RecurringItemService recurringItemService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -254,7 +257,8 @@ public class SeedDataLoader implements CommandLineRunner {
                 }
             }
 
-            // Create transactions
+            // Create transactions (track by groupName for later grouping)
+            Map<String, List<UUID>> transactionsByGroupName = new LinkedHashMap<>();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> transactions = (List<Map<String, Object>>) seedWorkspace.get("transactions");
             if (transactions != null) {
@@ -288,6 +292,39 @@ public class SeedDataLoader implements CommandLineRunner {
                         txn.setStatus(TransactionStatus.POSTED);
                         txn.setPostedAt(java.time.LocalDateTime.now());
                     }
+
+                    String groupName = (String) seedTxn.get("groupName");
+                    if (groupName != null) {
+                        transactionsByGroupName.computeIfAbsent(groupName, k -> new ArrayList<>()).add(txn.getId());
+                    }
+                }
+            }
+
+            // Create transaction groups
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> groups = (List<Map<String, Object>>) seedWorkspace.get("transactionGroups");
+            if (groups != null) {
+                for (Map<String, Object> seedGroup : groups) {
+                    String groupName = (String) seedGroup.get("name");
+                    String categoryName = (String) seedGroup.get("categoryName");
+                    @SuppressWarnings("unchecked")
+                    List<String> groupTagNames = (List<String>) seedGroup.get("tagNames");
+                    Set<UUID> groupTagIds = groupTagNames != null
+                            ? groupTagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
+                            : Set.of();
+
+                    List<UUID> txnIds = transactionsByGroupName.getOrDefault(groupName, List.of());
+                    if (txnIds.size() < 2) continue;
+
+                    CreateTransactionGroupDto groupDto = CreateTransactionGroupDto.builder()
+                            .name(groupName)
+                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
+                            .notes((String) seedGroup.get("notes"))
+                            .tagIds(groupTagIds)
+                            .transactionIds(new LinkedHashSet<>(txnIds))
+                            .build();
+
+                    transactionGroupService.createTransactionGroup(workspaceId, groupDto);
                 }
             }
         }

@@ -434,30 +434,25 @@ class TransactionCrudIT extends BaseIntegrationTest {
     }
 
     @Test
-    void createTransaction_withRecurringItemId_dtoOverridesWin() {
-        // Create a second account to use as override
-        var account2Resp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Savings","type":"CASH","subType":"SAVINGS","balance":5000}
-                        """, authHeaders(token)),
-                Map.class);
-        String account2Id = (String) account2Resp.getBody().get("id");
-
+    void createTransaction_withRecurringItemId_lockedFieldsFromRI() {
+        // Even when DTO provides overrides for locked fields, RI values win
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","accountId":"%s","merchantName":"OverrideStore","amount":-99.99,"currencyCode":"USD","categoryId":null,"tagIds":[],"date":"2025-07-01T00:00:00"}
-                        """.formatted(recurringItemId, account2Id), authHeaders(token)),
+                        {"recurringItemId":"%s","accountId":"%s","merchantName":"OverrideStore","categoryId":null,"tagIds":[],"currencyCode":"USD","date":"2025-07-01T00:00:00","amount":-99.99}
+                        """.formatted(recurringItemId, accountId), authHeaders(token)),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var body = response.getBody();
-        assertThat(body.get("accountId")).isEqualTo(account2Id);
-        assertThat(body.get("merchantId")).isNotEqualTo(recurringMerchantId);
+        // Locked fields come from RI, not DTO
+        assertThat(body.get("accountId")).isEqualTo(accountId); // RI's account
+        assertThat(body.get("merchantId")).isEqualTo(recurringMerchantId);
+        assertThat(body.get("categoryId")).isEqualTo(categoryId);
+        assertThat(body.get("currencyCode")).isEqualTo("EUR");
+        assertThat((List<String>) body.get("tagIds")).hasSize(1).contains(tagId);
+        // Amount is not locked — DTO wins
         assertThat(body.get("amount")).isEqualTo(-99.99);
-        assertThat(body.get("currencyCode")).isEqualTo("USD");
-        assertThat((List<?>) body.get("tagIds")).isEmpty();
     }
 
     @Test
@@ -525,5 +520,373 @@ class TransactionCrudIT extends BaseIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().get("recurringItemId")).isNull();
+    }
+
+    // --- Field locking ---
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsLockedFields() {
+        // Create a transaction linked to recurring item
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+
+        // Try to update categoryId — should fail
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"categoryId":"%s"}
+                        """.formatted(categoryId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_allowsAmountAndStatus() {
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+
+        // Update amount and status — should succeed
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"amount":-99.00,"status":"POSTED"}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("amount")).isEqualTo(-99.0);
+        assertThat(response.getBody().get("status")).isEqualTo("POSTED");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_allowsUnlinkThenModify() {
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+
+        // Unlink recurring item
+        restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"recurringItemId":null}
+                        """, authHeaders(token)),
+                Map.class);
+
+        // Now update categoryId — should succeed
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"categoryId":"%s"}
+                        """.formatted(categoryId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("categoryId")).isEqualTo(categoryId);
+    }
+
+    @Test
+    void updateTransaction_grouped_rejectsLockedFields() {
+        // Create 2 transactions
+        var resp1 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId1 = (String) resp1.getBody().get("id");
+        var resp2 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceB","date":"2025-07-01T00:00:00","amount":-20}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId2 = (String) resp2.getBody().get("id");
+
+        // Group them
+        restTemplate.exchange(
+                "/api/v1/transaction-groups", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Trip","transactionIds":["%s","%s"]}
+                        """.formatted(txnId1, txnId2), authHeaders(token)),
+                Map.class);
+
+        // Try to update notes on grouped transaction — should fail
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId1, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"notes":"new notes"}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void updateTransaction_grouped_rejectsLinkingRecurringItem() {
+        var resp1 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId1 = (String) resp1.getBody().get("id");
+        var resp2 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceB","date":"2025-07-01T00:00:00","amount":-20}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId2 = (String) resp2.getBody().get("id");
+
+        // Group them
+        restTemplate.exchange(
+                "/api/v1/transaction-groups", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Trip","transactionIds":["%s","%s"]}
+                        """.formatted(txnId1, txnId2), authHeaders(token)),
+                Map.class);
+
+        // Try to link to recurring item — should fail
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId1, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    // --- Unlink from group via groupId: null ---
+
+    @Test
+    void updateTransaction_unlinkFromGroup_succeeds() {
+        // Create 3 transactions and group them
+        var resp1 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId1 = (String) resp1.getBody().get("id");
+        var resp2 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceB","date":"2025-07-01T00:00:00","amount":-20}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId2 = (String) resp2.getBody().get("id");
+        var resp3 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceC","date":"2025-07-01T00:00:00","amount":-30}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId3 = (String) resp3.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transaction-groups", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Trip","transactionIds":["%s","%s","%s"]}
+                        """.formatted(txnId1, txnId2, txnId3), authHeaders(token)),
+                Map.class);
+
+        // Unlink txn1 via groupId: null
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId1, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"groupId":null}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("groupId")).isNull();
+    }
+
+    @Test
+    void updateTransaction_unlinkFromGroup_rejectsWhenWouldLeaveFewerThan2() {
+        // Create 2 transactions and group them (minimum group size)
+        var resp1 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId1 = (String) resp1.getBody().get("id");
+        var resp2 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceB","date":"2025-07-01T00:00:00","amount":-20}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId2 = (String) resp2.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transaction-groups", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Trip","transactionIds":["%s","%s"]}
+                        """.formatted(txnId1, txnId2), authHeaders(token)),
+                Map.class);
+
+        // Try to unlink — would leave only 1
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId1, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"groupId":null}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void updateTransaction_unlinkFromGroup_thenModifyLockedFields() {
+        var resp1 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId1 = (String) resp1.getBody().get("id");
+        var resp2 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceB","date":"2025-07-01T00:00:00","amount":-20}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId2 = (String) resp2.getBody().get("id");
+        var resp3 = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceC","date":"2025-07-01T00:00:00","amount":-30}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId3 = (String) resp3.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transaction-groups", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Trip","transactionIds":["%s","%s","%s"]}
+                        """.formatted(txnId1, txnId2, txnId3), authHeaders(token)),
+                Map.class);
+
+        // Unlink and update notes in same request
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId1, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"groupId":null,"notes":"now free"}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("groupId")).isNull();
+        assertThat(response.getBody().get("notes")).isEqualTo("now free");
+    }
+
+    @Test
+    void updateTransaction_assignGroupId_rejects() {
+        var resp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PlaceA","date":"2025-07-01T00:00:00","amount":-10}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) resp.getBody().get("id");
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"groupId":"%s"}
+                        """.formatted(UUID.randomUUID()), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    // --- RI linking overwrites existing values ---
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updateTransaction_linkRI_overwritesExistingLockedFields() {
+        // Create a second category and tag to set on the transaction
+        var cat2Resp = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Dining"}
+                        """, authHeaders(token)),
+                Map.class);
+        String cat2Id = (String) cat2Resp.getBody().get("id");
+
+        var tag2Resp = restTemplate.exchange(
+                "/api/v1/tags", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"personal"}
+                        """, authHeaders(token)),
+                Map.class);
+        String tag2Id = (String) tag2Resp.getBody().get("id");
+
+        // Create transaction with its own category, tags, notes, and currencyCode
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"SomeStore","categoryId":"%s","tagIds":["%s"],"notes":"my notes","currencyCode":"GBP","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId, cat2Id, tag2Id), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+        assertThat(createResp.getBody().get("categoryId")).isEqualTo(cat2Id);
+        assertThat(createResp.getBody().get("currencyCode")).isEqualTo("GBP");
+
+        // Link to recurring item — locked fields should be overwritten by RI values
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        var body = response.getBody();
+        assertThat(body.get("recurringItemId")).isEqualTo(recurringItemId);
+        assertThat(body.get("accountId")).isEqualTo(accountId);
+        assertThat(body.get("merchantId")).isEqualTo(recurringMerchantId);
+        assertThat(body.get("categoryId")).isEqualTo(categoryId); // RI's category, not cat2
+        assertThat(body.get("currencyCode")).isEqualTo("EUR"); // RI's currency, not GBP
+        assertThat((List<String>) body.get("tagIds")).hasSize(1).contains(tagId); // RI's tag, not tag2
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsCurrencyCodeChange() {
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+
+        // Try to change currencyCode — should fail
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"currencyCode":"GBP"}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 }

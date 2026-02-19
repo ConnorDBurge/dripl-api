@@ -32,6 +32,9 @@ public class Transaction extends BaseEntity {
     @Column(name = "merchant_id", nullable = false)
     private UUID merchantId;
 
+    @Column(name = "group_id")
+    private UUID groupId;
+
     @Column(name = "category_id")
     private UUID categoryId;
 

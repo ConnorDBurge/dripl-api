@@ -32,6 +32,7 @@ public interface TransactionMapper {
     @Mapping(target = "pendingAt", ignore = true)
     @Mapping(target = "postedAt", ignore = true)
     @Mapping(target = "recurringItemId", ignore = true)
+    @Mapping(target = "groupId", ignore = true)
     @Mapping(target = "tagIds", ignore = true)
     void updateEntity(UpdateTransactionDto dto, @MappingTarget Transaction transaction);
 }
