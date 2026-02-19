@@ -62,7 +62,7 @@ public class AccountService {
                 .source(dto.getSource() != null ? dto.getSource() : com.dripl.account.enums.AccountSource.MANUAL)
                 .build());
 
-        log.info("Created account '{}' ({}) in workspace {}", account.getName(), account.getId(), workspaceId);
+        log.info("Created account '{}' ({})", account.getName(), account.getId());
         return account;
     }
 

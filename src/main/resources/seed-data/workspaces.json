@@ -5,7 +5,11 @@
     "members": [
       {
         "email": "kyndall@dripl.dev",
-        "roles": ["READ", "WRITE", "DELETE"]
+        "roles": [
+          "READ",
+          "WRITE",
+          "DELETE"
+        ]
       }
     ],
     "accounts": [
@@ -13,7 +17,7 @@
         "name": "Chase Checking",
         "type": "CASH",
         "subType": "CHECKING",
-        "balance": 4250.00,
+        "balance": 4250.0,
         "currency": "USD",
         "institutionName": "Chase"
       },
@@ -21,7 +25,7 @@
         "name": "Ally Savings",
         "type": "CASH",
         "subType": "SAVINGS",
-        "balance": 18500.00,
+        "balance": 18500.0,
         "currency": "USD",
         "institutionName": "Ally Bank"
       },
@@ -29,7 +33,7 @@
         "name": "Amex Gold",
         "type": "CREDIT",
         "subType": "CREDIT_CARD",
-        "balance": -1340.50,
+        "balance": -1340.5,
         "currency": "USD",
         "institutionName": "American Express"
       },
@@ -37,7 +41,7 @@
         "name": "Fidelity 401k",
         "type": "INVESTMENT",
         "subType": "RETIREMENT",
-        "balance": 72000.00,
+        "balance": 72000.0,
         "currency": "USD",
         "institutionName": "Fidelity"
       },
@@ -45,112 +49,551 @@
         "name": "Home Mortgage",
         "type": "LOAN",
         "subType": "MORTGAGE",
-        "balance": -285000.00,
+        "balance": -285000.0,
         "currency": "USD",
         "institutionName": "Wells Fargo"
       }
     ],
     "merchants": [
-      { "name": "Walmart" },
-      { "name": "Amazon" },
-      { "name": "Costco" },
-      { "name": "H-E-B" },
-      { "name": "Chick-fil-A" },
-      { "name": "Netflix" },
-      { "name": "Spotify" },
-      { "name": "Shell Gas" },
-      { "name": "Target" },
-      { "name": "Starbucks" }
+      {
+        "name": "Walmart"
+      },
+      {
+        "name": "Amazon"
+      },
+      {
+        "name": "Costco"
+      },
+      {
+        "name": "H-E-B"
+      },
+      {
+        "name": "Chick-fil-A"
+      },
+      {
+        "name": "Netflix"
+      },
+      {
+        "name": "Spotify"
+      },
+      {
+        "name": "Shell Gas"
+      },
+      {
+        "name": "Target"
+      },
+      {
+        "name": "Starbucks"
+      }
     ],
     "tags": [
-      { "name": "groceries", "description": "Grocery store runs" },
-      { "name": "subscriptions", "description": "Monthly recurring charges" },
-      { "name": "dining-out" },
-      { "name": "fuel" },
-      { "name": "kids" },
-      { "name": "entertainment" },
-      { "name": "income", "description": "Paychecks and deposits" }
+      {
+        "name": "groceries",
+        "description": "Grocery store runs"
+      },
+      {
+        "name": "subscriptions",
+        "description": "Monthly recurring charges"
+      },
+      {
+        "name": "dining-out"
+      },
+      {
+        "name": "fuel"
+      },
+      {
+        "name": "kids"
+      },
+      {
+        "name": "entertainment"
+      },
+      {
+        "name": "income",
+        "description": "Paychecks and deposits"
+      }
     ],
     "categories": [
       {
-        "name": "Food & Drink", "description": "Restaurants, groceries, and beverages",
+        "name": "Food & Drink",
+        "description": "Restaurants, groceries, and beverages",
         "children": [
-          { "name": "Groceries", "description": "Grocery store runs and meal prep" },
-          { "name": "Dining Out", "description": "Restaurants, takeout, and delivery" },
-          { "name": "Coffee Shops", "description": "Coffee, tea, and café visits" }
+          {
+            "name": "Groceries",
+            "description": "Grocery store runs and meal prep"
+          },
+          {
+            "name": "Dining Out",
+            "description": "Restaurants, takeout, and delivery"
+          },
+          {
+            "name": "Coffee Shops",
+            "description": "Coffee, tea, and caf\u00e9 visits"
+          }
         ]
       },
       {
-        "name": "Housing", "description": "Mortgage, rent, and home expenses",
+        "name": "Housing",
+        "description": "Mortgage, rent, and home expenses",
         "children": [
-          { "name": "Mortgage", "description": "Monthly mortgage payment" },
-          { "name": "Utilities", "description": "Electric, water, gas, internet" },
-          { "name": "Home Maintenance", "description": "Repairs, lawn care, and upkeep" }
+          {
+            "name": "Mortgage",
+            "description": "Monthly mortgage payment"
+          },
+          {
+            "name": "Utilities",
+            "description": "Electric, water, gas, internet"
+          },
+          {
+            "name": "Home Maintenance",
+            "description": "Repairs, lawn care, and upkeep"
+          }
         ]
       },
       {
-        "name": "Transportation", "description": "Getting around",
+        "name": "Transportation",
+        "description": "Getting around",
         "children": [
-          { "name": "Gas", "description": "Fuel for vehicles" },
-          { "name": "Car Insurance", "description": "Auto insurance premiums" },
-          { "name": "Car Maintenance", "description": "Oil changes, tires, repairs" }
+          {
+            "name": "Gas",
+            "description": "Fuel for vehicles"
+          },
+          {
+            "name": "Car Insurance",
+            "description": "Auto insurance premiums"
+          },
+          {
+            "name": "Car Maintenance",
+            "description": "Oil changes, tires, repairs"
+          }
         ]
       },
       {
-        "name": "Entertainment", "description": "Fun and leisure",
+        "name": "Entertainment",
+        "description": "Fun and leisure",
         "children": [
-          { "name": "Streaming", "description": "Netflix, Hulu, Disney+, etc." },
-          { "name": "Movies & Events", "description": "Theaters, concerts, and outings" }
+          {
+            "name": "Streaming",
+            "description": "Netflix, Hulu, Disney+, etc."
+          },
+          {
+            "name": "Movies & Events",
+            "description": "Theaters, concerts, and outings"
+          }
         ]
       },
       {
-        "name": "Shopping", "description": "Retail purchases",
+        "name": "Shopping",
+        "description": "Retail purchases",
         "children": [
-          { "name": "Clothing", "description": "Clothes and accessories" },
-          { "name": "Electronics", "description": "Gadgets, devices, and tech" },
-          { "name": "Household", "description": "Home goods and supplies" }
+          {
+            "name": "Clothing",
+            "description": "Clothes and accessories"
+          },
+          {
+            "name": "Electronics",
+            "description": "Gadgets, devices, and tech"
+          },
+          {
+            "name": "Household",
+            "description": "Home goods and supplies"
+          }
         ]
       },
       {
-        "name": "Kids", "description": "All things kid-related",
+        "name": "Kids",
+        "description": "All things kid-related",
         "children": [
-          { "name": "Childcare", "description": "Daycare and babysitting" },
-          { "name": "School", "description": "Tuition, supplies, and fees" },
-          { "name": "Activities", "description": "Sports, lessons, and camps" }
+          {
+            "name": "Childcare",
+            "description": "Daycare and babysitting"
+          },
+          {
+            "name": "School",
+            "description": "Tuition, supplies, and fees"
+          },
+          {
+            "name": "Activities",
+            "description": "Sports, lessons, and camps"
+          }
         ]
       },
       {
-        "name": "Health", "description": "Medical and wellness expenses",
+        "name": "Health",
+        "description": "Medical and wellness expenses",
         "children": [
-          { "name": "Medical", "description": "Doctor visits and copays" },
-          { "name": "Pharmacy", "description": "Prescriptions and OTC meds" }
+          {
+            "name": "Medical",
+            "description": "Doctor visits and copays"
+          },
+          {
+            "name": "Pharmacy",
+            "description": "Prescriptions and OTC meds"
+          }
         ]
       },
       {
-        "name": "Income", "description": "Money coming in", "income": true,
+        "name": "Income",
+        "description": "Money coming in",
+        "income": true,
         "children": [
-          { "name": "Salary", "description": "Regular paychecks", "income": true },
-          { "name": "Side Income", "description": "Freelance and side hustles", "income": true }
+          {
+            "name": "Salary",
+            "description": "Regular paychecks",
+            "income": true
+          },
+          {
+            "name": "Side Income",
+            "description": "Freelance and side hustles",
+            "income": true
+          }
         ]
       },
-      { "name": "Transfers", "description": "Moves between accounts", "excludeFromBudget": true, "excludeFromTotals": true }
+      {
+        "name": "Transfers",
+        "description": "Moves between accounts",
+        "excludeFromBudget": true,
+        "excludeFromTotals": true
+      }
     ],
     "transactions": [
-      { "accountName": "Amex Gold", "merchantName": "H-E-B", "categoryName": "Groceries", "date": "2025-07-01", "amount": -124.53, "notes": "Weekly grocery run", "status": "POSTED", "tagNames": ["groceries"] },
-      { "accountName": "Amex Gold", "merchantName": "Chick-fil-A", "categoryName": "Dining Out", "date": "2025-07-02", "amount": -18.45, "status": "POSTED", "tagNames": ["dining-out"] },
-      { "accountName": "Amex Gold", "merchantName": "Netflix", "categoryName": "Streaming", "date": "2025-07-03", "amount": -15.99, "notes": "Monthly subscription", "status": "POSTED", "tagNames": ["subscriptions", "entertainment"] },
-      { "accountName": "Amex Gold", "merchantName": "Shell Gas", "categoryName": "Gas", "date": "2025-07-05", "amount": -52.40, "status": "POSTED", "tagNames": ["fuel"] },
-      { "accountName": "Chase Checking", "merchantName": "Wells Fargo", "categoryName": "Mortgage", "date": "2025-07-01", "amount": -2150.00, "notes": "Monthly mortgage", "status": "POSTED" },
-      { "accountName": "Amex Gold", "merchantName": "Amazon", "categoryName": "Household", "date": "2025-07-06", "amount": -34.99, "notes": "Paper towels and cleaning supplies", "status": "POSTED" },
-      { "accountName": "Amex Gold", "merchantName": "Starbucks", "categoryName": "Coffee Shops", "date": "2025-07-07", "amount": -6.25, "status": "POSTED", "tagNames": ["dining-out"] },
-      { "accountName": "Amex Gold", "merchantName": "Target", "categoryName": "Clothing", "date": "2025-07-08", "amount": -45.00, "notes": "Kids school clothes", "status": "POSTED", "tagNames": ["kids"] },
-      { "accountName": "Amex Gold", "merchantName": "Walmart", "categoryName": "Groceries", "date": "2025-07-09", "amount": -89.32, "status": "POSTED", "tagNames": ["groceries"] },
-      { "accountName": "Amex Gold", "merchantName": "Spotify", "categoryName": "Streaming", "date": "2025-07-10", "amount": -10.99, "status": "POSTED", "tagNames": ["subscriptions", "entertainment"] },
-      { "accountName": "Amex Gold", "merchantName": "Costco", "categoryName": "Groceries", "date": "2025-07-12", "amount": -215.67, "notes": "Bulk grocery trip", "status": "POSTED", "tagNames": ["groceries"] },
-      { "accountName": "Chase Checking", "merchantName": "Employer", "categoryName": "Salary", "date": "2025-07-15", "amount": 4250.00, "notes": "Bi-weekly paycheck", "status": "POSTED", "tagNames": ["income"] },
-      { "accountName": "Amex Gold", "merchantName": "H-E-B", "categoryName": "Groceries", "date": "2025-07-15", "amount": -98.20, "status": "PENDING", "tagNames": ["groceries"] },
-      { "accountName": "Amex Gold", "merchantName": "Chick-fil-A", "categoryName": "Dining Out", "date": "2025-07-16", "amount": -22.10, "status": "PENDING", "tagNames": ["dining-out"] },
-      { "accountName": "Amex Gold", "merchantName": "Shell Gas", "categoryName": "Gas", "date": "2025-07-17", "amount": -48.75, "status": "PENDING", "tagNames": ["fuel"] }
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "date": "2025-07-01",
+        "amount": -124.53,
+        "notes": "Weekly grocery run",
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ],
+        "recurringDescription": "Bi-Weekly Groceries"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Chick-fil-A",
+        "categoryName": "Dining Out",
+        "date": "2025-07-02",
+        "amount": -18.45,
+        "status": "POSTED",
+        "tagNames": [
+          "dining-out"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Netflix",
+        "categoryName": "Streaming",
+        "date": "2025-07-03",
+        "amount": -15.99,
+        "notes": "Monthly subscription",
+        "status": "POSTED",
+        "tagNames": [
+          "subscriptions",
+          "entertainment"
+        ],
+        "recurringDescription": "Netflix Subscription"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Shell Gas",
+        "categoryName": "Gas",
+        "date": "2025-07-05",
+        "amount": -52.4,
+        "status": "POSTED",
+        "tagNames": [
+          "fuel"
+        ]
+      },
+      {
+        "accountName": "Chase Checking",
+        "merchantName": "Wells Fargo",
+        "categoryName": "Mortgage",
+        "date": "2025-07-01",
+        "amount": -2150.0,
+        "notes": "Monthly mortgage",
+        "status": "POSTED",
+        "recurringDescription": "Mortgage Payment"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Amazon",
+        "categoryName": "Household",
+        "date": "2025-07-06",
+        "amount": -34.99,
+        "notes": "Paper towels and cleaning supplies",
+        "status": "POSTED"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Starbucks",
+        "categoryName": "Coffee Shops",
+        "date": "2025-07-07",
+        "amount": -6.25,
+        "status": "POSTED",
+        "tagNames": [
+          "dining-out"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Target",
+        "categoryName": "Clothing",
+        "date": "2025-07-08",
+        "amount": -45.0,
+        "notes": "Kids school clothes",
+        "status": "POSTED",
+        "tagNames": [
+          "kids"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Walmart",
+        "categoryName": "Groceries",
+        "date": "2025-07-09",
+        "amount": -89.32,
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Spotify",
+        "categoryName": "Streaming",
+        "date": "2025-07-10",
+        "amount": -10.99,
+        "status": "POSTED",
+        "tagNames": [
+          "subscriptions",
+          "entertainment"
+        ],
+        "recurringDescription": "Spotify Premium"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Costco",
+        "categoryName": "Groceries",
+        "date": "2025-07-12",
+        "amount": -215.67,
+        "notes": "Bulk grocery trip",
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ]
+      },
+      {
+        "accountName": "Chase Checking",
+        "merchantName": "Employer",
+        "categoryName": "Salary",
+        "date": "2025-07-15",
+        "amount": 4250.0,
+        "notes": "Bi-weekly paycheck",
+        "status": "POSTED",
+        "tagNames": [
+          "income"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "date": "2025-07-15",
+        "amount": -98.2,
+        "status": "PENDING",
+        "tagNames": [
+          "groceries"
+        ],
+        "recurringDescription": "Bi-Weekly Groceries"
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Chick-fil-A",
+        "categoryName": "Dining Out",
+        "date": "2025-07-16",
+        "amount": -22.1,
+        "status": "PENDING",
+        "tagNames": [
+          "dining-out"
+        ]
+      },
+      {
+        "accountName": "Amex Gold",
+        "merchantName": "Shell Gas",
+        "categoryName": "Gas",
+        "date": "2025-07-17",
+        "amount": -48.75,
+        "status": "PENDING",
+        "tagNames": [
+          "fuel"
+        ]
+      },
+      {
+        "merchantName": "Netflix",
+        "accountName": "Chase Checking",
+        "categoryName": "Streaming",
+        "date": "2025-06-03",
+        "amount": -15.99,
+        "status": "POSTED",
+        "recurringDescription": "Netflix Subscription"
+      },
+      {
+        "merchantName": "Netflix",
+        "accountName": "Chase Checking",
+        "categoryName": "Streaming",
+        "date": "2025-05-03",
+        "amount": -15.99,
+        "status": "POSTED",
+        "recurringDescription": "Netflix Subscription"
+      },
+      {
+        "merchantName": "Spotify",
+        "accountName": "Chase Checking",
+        "categoryName": "Streaming",
+        "date": "2025-06-10",
+        "amount": -10.99,
+        "status": "POSTED",
+        "recurringDescription": "Spotify Premium"
+      },
+      {
+        "merchantName": "Spotify",
+        "accountName": "Chase Checking",
+        "categoryName": "Streaming",
+        "date": "2025-05-10",
+        "amount": -10.99,
+        "status": "POSTED",
+        "recurringDescription": "Spotify Premium"
+      },
+      {
+        "merchantName": "Wells Fargo",
+        "accountName": "Chase Checking",
+        "categoryName": "Mortgage",
+        "date": "2025-06-01",
+        "amount": -2150.0,
+        "status": "POSTED",
+        "recurringDescription": "Mortgage Payment"
+      },
+      {
+        "merchantName": "Wells Fargo",
+        "accountName": "Chase Checking",
+        "categoryName": "Mortgage",
+        "date": "2025-05-01",
+        "amount": -2150.0,
+        "status": "POSTED",
+        "recurringDescription": "Mortgage Payment"
+      },
+      {
+        "merchantName": "H-E-B",
+        "accountName": "Chase Checking",
+        "categoryName": "Groceries",
+        "date": "2025-06-16",
+        "amount": -142.3,
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ],
+        "recurringDescription": "Bi-Weekly Groceries"
+      },
+      {
+        "merchantName": "H-E-B",
+        "accountName": "Chase Checking",
+        "categoryName": "Groceries",
+        "date": "2025-06-02",
+        "amount": -168.45,
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ],
+        "recurringDescription": "Bi-Weekly Groceries"
+      },
+      {
+        "merchantName": "Costco",
+        "accountName": "Amex Gold",
+        "categoryName": "Shopping",
+        "date": "2025-03-15",
+        "amount": -65.0,
+        "status": "POSTED",
+        "recurringDescription": "Costco Membership"
+      }
+    ],
+    "recurringItems": [
+      {
+        "description": "Netflix Subscription",
+        "merchantName": "Netflix",
+        "accountName": "Chase Checking",
+        "categoryName": "Entertainment",
+        "amount": -15.99,
+        "frequencyGranularity": "MONTH",
+        "frequencyQuantity": 1,
+        "anchorDates": [
+          "2025-01-15"
+        ],
+        "startDate": "2025-01-01",
+        "tagNames": [
+          "subscriptions"
+        ],
+        "notes": "Family plan"
+      },
+      {
+        "description": "Spotify Premium",
+        "merchantName": "Spotify",
+        "accountName": "Chase Checking",
+        "categoryName": "Entertainment",
+        "amount": -10.99,
+        "frequencyGranularity": "MONTH",
+        "frequencyQuantity": 1,
+        "anchorDates": [
+          "2025-01-20"
+        ],
+        "startDate": "2025-01-01",
+        "tagNames": [
+          "subscriptions"
+        ]
+      },
+      {
+        "description": "Mortgage Payment",
+        "merchantName": "Home Mortgage",
+        "accountName": "Chase Checking",
+        "categoryName": "Housing",
+        "amount": -2150.0,
+        "frequencyGranularity": "MONTH",
+        "frequencyQuantity": 1,
+        "anchorDates": [
+          "2025-01-01"
+        ],
+        "startDate": "2025-01-01",
+        "notes": "30yr fixed"
+      },
+      {
+        "description": "Bi-Weekly Groceries",
+        "merchantName": "H-E-B",
+        "accountName": "Chase Checking",
+        "categoryName": "Food & Drink",
+        "amount": -175.0,
+        "frequencyGranularity": "WEEK",
+        "frequencyQuantity": 2,
+        "anchorDates": [
+          "2025-01-06"
+        ],
+        "startDate": "2025-01-01",
+        "tagNames": [
+          "groceries"
+        ]
+      },
+      {
+        "description": "Costco Membership",
+        "merchantName": "Costco",
+        "accountName": "Amex Gold",
+        "categoryName": "Shopping",
+        "amount": -65.0,
+        "frequencyGranularity": "YEAR",
+        "frequencyQuantity": 1,
+        "anchorDates": [
+          "2025-03-15"
+        ],
+        "startDate": "2025-03-15"
+      }
     ]
   },
   {
@@ -161,7 +604,7 @@
         "name": "Personal Checking",
         "type": "CASH",
         "subType": "CHECKING",
-        "balance": 3100.00,
+        "balance": 3100.0,
         "currency": "USD",
         "institutionName": "USAA"
       },
@@ -175,51 +618,156 @@
       }
     ],
     "merchants": [
-      { "name": "Sephora" },
-      { "name": "Target" },
-      { "name": "Trader Joe's" },
-      { "name": "Etsy" }
+      {
+        "name": "Sephora"
+      },
+      {
+        "name": "Target"
+      },
+      {
+        "name": "Trader Joe's"
+      },
+      {
+        "name": "Etsy"
+      }
     ],
     "tags": [
-      { "name": "self-care" },
-      { "name": "groceries" },
-      { "name": "shopping" }
+      {
+        "name": "self-care"
+      },
+      {
+        "name": "groceries"
+      },
+      {
+        "name": "shopping"
+      }
     ],
     "categories": [
       {
-        "name": "Food & Drink", "description": "Meals and groceries",
+        "name": "Food & Drink",
+        "description": "Meals and groceries",
         "children": [
-          { "name": "Groceries", "description": "Weekly grocery hauls" },
-          { "name": "Dining Out", "description": "Restaurants and takeout" }
+          {
+            "name": "Groceries",
+            "description": "Weekly grocery hauls"
+          },
+          {
+            "name": "Dining Out",
+            "description": "Restaurants and takeout"
+          }
         ]
       },
       {
-        "name": "Self Care", "description": "Personal wellness and beauty",
+        "name": "Self Care",
+        "description": "Personal wellness and beauty",
         "children": [
-          { "name": "Beauty", "description": "Skincare, makeup, and hair" },
-          { "name": "Wellness", "description": "Spa, yoga, and mental health" }
+          {
+            "name": "Beauty",
+            "description": "Skincare, makeup, and hair"
+          },
+          {
+            "name": "Wellness",
+            "description": "Spa, yoga, and mental health"
+          }
         ]
       },
       {
-        "name": "Shopping", "description": "Retail and online purchases",
+        "name": "Shopping",
+        "description": "Retail and online purchases",
         "children": [
-          { "name": "Clothing", "description": "Clothes and accessories" },
-          { "name": "Home Décor", "description": "Decorations and furnishings" }
+          {
+            "name": "Clothing",
+            "description": "Clothes and accessories"
+          },
+          {
+            "name": "Home D\u00e9cor",
+            "description": "Decorations and furnishings"
+          }
         ]
       },
       {
-        "name": "Income", "description": "Earnings", "income": true,
+        "name": "Income",
+        "description": "Earnings",
+        "income": true,
         "children": [
-          { "name": "Salary", "description": "Regular paycheck", "income": true }
+          {
+            "name": "Salary",
+            "description": "Regular paycheck",
+            "income": true
+          }
         ]
       }
     ],
     "transactions": [
-      { "accountName": "Discover Card", "merchantName": "Trader Joe's", "categoryName": "Groceries", "date": "2025-07-01", "amount": -67.80, "status": "POSTED", "tagNames": ["groceries"] },
-      { "accountName": "Discover Card", "merchantName": "Sephora", "categoryName": "Beauty", "date": "2025-07-03", "amount": -42.50, "notes": "Skincare restock", "status": "POSTED", "tagNames": ["self-care"] },
-      { "accountName": "Discover Card", "merchantName": "Target", "categoryName": "Clothing", "date": "2025-07-05", "amount": -55.00, "status": "POSTED", "tagNames": ["shopping"] },
-      { "accountName": "Personal Checking", "merchantName": "Employer", "categoryName": "Salary", "date": "2025-07-15", "amount": 3200.00, "notes": "Bi-weekly paycheck", "status": "POSTED" },
-      { "accountName": "Discover Card", "merchantName": "Etsy", "categoryName": "Home Décor", "date": "2025-07-08", "amount": -28.99, "notes": "Wall art", "status": "PENDING", "tagNames": ["shopping"] }
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Trader Joe's",
+        "categoryName": "Groceries",
+        "date": "2025-07-01",
+        "amount": -67.8,
+        "status": "POSTED",
+        "tagNames": [
+          "groceries"
+        ]
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Sephora",
+        "categoryName": "Beauty",
+        "date": "2025-07-03",
+        "amount": -42.5,
+        "notes": "Skincare restock",
+        "status": "POSTED",
+        "tagNames": [
+          "self-care"
+        ]
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Target",
+        "categoryName": "Clothing",
+        "date": "2025-07-05",
+        "amount": -55.0,
+        "status": "POSTED",
+        "tagNames": [
+          "shopping"
+        ]
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer",
+        "categoryName": "Salary",
+        "date": "2025-07-15",
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck",
+        "status": "POSTED"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Etsy",
+        "categoryName": "Home D\u00e9cor",
+        "date": "2025-07-08",
+        "amount": -28.99,
+        "notes": "Wall art",
+        "status": "PENDING",
+        "tagNames": [
+          "shopping"
+        ]
+      }
+    ],
+    "recurringItems": [
+      {
+        "description": "Rent Payment",
+        "merchantName": "Sephora",
+        "accountName": "Personal Checking",
+        "amount": -1200.0,
+        "frequencyGranularity": "MONTH",
+        "frequencyQuantity": 1,
+        "anchorDates": [
+          "2025-01-01"
+        ],
+        "startDate": "2025-01-01"
+      }
     ]
   },
   {
@@ -230,7 +778,7 @@
         "name": "BoA Checking",
         "type": "CASH",
         "subType": "CHECKING",
-        "balance": 2800.00,
+        "balance": 2800.0,
         "currency": "USD",
         "institutionName": "Bank of America"
       },
@@ -238,7 +786,7 @@
         "name": "Vanguard Brokerage",
         "type": "INVESTMENT",
         "subType": "BROKERAGE",
-        "balance": 45000.00,
+        "balance": 45000.0,
         "currency": "USD",
         "institutionName": "Vanguard"
       },
@@ -246,76 +794,212 @@
         "name": "Student Loan",
         "type": "LOAN",
         "subType": "STUDENT_LOAN",
-        "balance": -32000.00,
+        "balance": -32000.0,
         "currency": "USD",
         "institutionName": "Navient"
       }
     ],
     "merchants": [
-      { "name": "Chipotle" },
-      { "name": "Amazon" },
-      { "name": "Steam" },
-      { "name": "Uber" },
-      { "name": "Planet Fitness" }
+      {
+        "name": "Chipotle"
+      },
+      {
+        "name": "Amazon"
+      },
+      {
+        "name": "Steam"
+      },
+      {
+        "name": "Uber"
+      },
+      {
+        "name": "Planet Fitness"
+      }
     ],
     "tags": [
-      { "name": "gaming", "description": "Games and gaming gear" },
-      { "name": "food" },
-      { "name": "fitness" },
-      { "name": "transport" }
+      {
+        "name": "gaming",
+        "description": "Games and gaming gear"
+      },
+      {
+        "name": "food"
+      },
+      {
+        "name": "fitness"
+      },
+      {
+        "name": "transport"
+      }
     ],
     "categories": [
       {
-        "name": "Food & Drink", "description": "Eating out and cooking",
+        "name": "Food & Drink",
+        "description": "Eating out and cooking",
         "children": [
-          { "name": "Restaurants", "description": "Sit-down and dine-in" },
-          { "name": "Fast Food", "description": "Quick bites and drive-thrus" }
+          {
+            "name": "Restaurants",
+            "description": "Sit-down and dine-in"
+          },
+          {
+            "name": "Fast Food",
+            "description": "Quick bites and drive-thrus"
+          }
         ]
       },
       {
-        "name": "Entertainment", "description": "Games, media, and fun",
+        "name": "Entertainment",
+        "description": "Games, media, and fun",
         "children": [
-          { "name": "Gaming", "description": "Games, consoles, and PC gear" },
-          { "name": "Streaming", "description": "Subscriptions and rentals" }
+          {
+            "name": "Gaming",
+            "description": "Games, consoles, and PC gear"
+          },
+          {
+            "name": "Streaming",
+            "description": "Subscriptions and rentals"
+          }
         ]
       },
       {
-        "name": "Health & Fitness", "description": "Staying healthy",
+        "name": "Health & Fitness",
+        "description": "Staying healthy",
         "children": [
-          { "name": "Gym", "description": "Membership and classes" },
-          { "name": "Supplements", "description": "Protein, vitamins, etc." }
+          {
+            "name": "Gym",
+            "description": "Membership and classes"
+          },
+          {
+            "name": "Supplements",
+            "description": "Protein, vitamins, etc."
+          }
         ]
       },
       {
-        "name": "Transportation", "description": "Getting around town",
+        "name": "Transportation",
+        "description": "Getting around town",
         "children": [
-          { "name": "Rideshare", "description": "Uber, Lyft, etc." },
-          { "name": "Gas", "description": "Fuel" }
+          {
+            "name": "Rideshare",
+            "description": "Uber, Lyft, etc."
+          },
+          {
+            "name": "Gas",
+            "description": "Fuel"
+          }
         ]
       },
       {
-        "name": "Education", "description": "Learning and student debt",
+        "name": "Education",
+        "description": "Learning and student debt",
         "children": [
-          { "name": "Student Loan", "description": "Monthly loan payment", "excludeFromBudget": true },
-          { "name": "Books & Courses", "description": "Textbooks and online courses" }
+          {
+            "name": "Student Loan",
+            "description": "Monthly loan payment",
+            "excludeFromBudget": true
+          },
+          {
+            "name": "Books & Courses",
+            "description": "Textbooks and online courses"
+          }
         ]
       },
       {
-        "name": "Income", "description": "All earnings", "income": true,
+        "name": "Income",
+        "description": "All earnings",
+        "income": true,
         "children": [
-          { "name": "Salary", "description": "Full-time job", "income": true },
-          { "name": "Freelance", "description": "Contract and gig work", "income": true }
+          {
+            "name": "Salary",
+            "description": "Full-time job",
+            "income": true
+          },
+          {
+            "name": "Freelance",
+            "description": "Contract and gig work",
+            "income": true
+          }
         ]
       }
     ],
     "transactions": [
-      { "accountName": "BoA Checking", "merchantName": "Chipotle", "categoryName": "Fast Food", "date": "2025-07-01", "amount": -14.25, "status": "POSTED", "tagNames": ["food"] },
-      { "accountName": "BoA Checking", "merchantName": "Steam", "categoryName": "Gaming", "date": "2025-07-03", "amount": -29.99, "notes": "Summer sale", "status": "POSTED", "tagNames": ["gaming"] },
-      { "accountName": "BoA Checking", "merchantName": "Planet Fitness", "categoryName": "Gym", "date": "2025-07-01", "amount": -24.99, "notes": "Monthly membership", "status": "POSTED", "tagNames": ["fitness"] },
-      { "accountName": "BoA Checking", "merchantName": "Uber", "categoryName": "Rideshare", "date": "2025-07-05", "amount": -18.50, "status": "POSTED", "tagNames": ["transport"] },
-      { "accountName": "BoA Checking", "merchantName": "Amazon", "categoryName": "Gaming", "date": "2025-07-07", "amount": -59.99, "notes": "New controller", "status": "POSTED", "tagNames": ["gaming"] },
-      { "accountName": "BoA Checking", "merchantName": "Employer", "categoryName": "Salary", "date": "2025-07-15", "amount": 3800.00, "notes": "Bi-weekly paycheck", "status": "POSTED" },
-      { "accountName": "BoA Checking", "merchantName": "Chipotle", "categoryName": "Fast Food", "date": "2025-07-10", "amount": -12.75, "status": "PENDING", "tagNames": ["food"] }
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Chipotle",
+        "categoryName": "Fast Food",
+        "date": "2025-07-01",
+        "amount": -14.25,
+        "status": "POSTED",
+        "tagNames": [
+          "food"
+        ]
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Steam",
+        "categoryName": "Gaming",
+        "date": "2025-07-03",
+        "amount": -29.99,
+        "notes": "Summer sale",
+        "status": "POSTED",
+        "tagNames": [
+          "gaming"
+        ]
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Planet Fitness",
+        "categoryName": "Gym",
+        "date": "2025-07-01",
+        "amount": -24.99,
+        "notes": "Monthly membership",
+        "status": "POSTED",
+        "tagNames": [
+          "fitness"
+        ]
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Uber",
+        "categoryName": "Rideshare",
+        "date": "2025-07-05",
+        "amount": -18.5,
+        "status": "POSTED",
+        "tagNames": [
+          "transport"
+        ]
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Amazon",
+        "categoryName": "Gaming",
+        "date": "2025-07-07",
+        "amount": -59.99,
+        "notes": "New controller",
+        "status": "POSTED",
+        "tagNames": [
+          "gaming"
+        ]
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer",
+        "categoryName": "Salary",
+        "date": "2025-07-15",
+        "amount": 3800.0,
+        "notes": "Bi-weekly paycheck",
+        "status": "POSTED"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Chipotle",
+        "categoryName": "Fast Food",
+        "date": "2025-07-10",
+        "amount": -12.75,
+        "status": "PENDING",
+        "tagNames": [
+          "food"
+        ]
+      }
     ]
   }
 ]

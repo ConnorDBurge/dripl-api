@@ -65,6 +65,9 @@ public class Transaction extends BaseEntity {
     @Column(name = "posted_at")
     private LocalDateTime postedAt;
 
+    @Column(name = "recurring_item_id")
+    private UUID recurringItemId;
+
     @Builder.Default
     @ElementCollection
     @CollectionTable(name = "transaction_tags", joinColumns = @JoinColumn(name = "transaction_id"))

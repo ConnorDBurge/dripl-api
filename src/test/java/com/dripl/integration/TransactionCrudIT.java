@@ -24,6 +24,8 @@ class TransactionCrudIT extends BaseIntegrationTest {
     private String accountId;
     private String categoryId;
     private String tagId;
+    private String recurringItemId;
+    private String recurringMerchantId;
 
     @BeforeEach
     void setUp() {
@@ -59,6 +61,16 @@ class TransactionCrudIT extends BaseIntegrationTest {
                         """, authHeaders(token)),
                 Map.class);
         tagId = (String) tagResp.getBody().get("id");
+
+        // Create a recurring item
+        var riResp = restTemplate.exchange(
+                "/api/v1/recurring-items", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Netflix","categoryId":"%s","amount":-15.99,"currencyCode":"EUR","frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-01-15T00:00:00"],"startDate":"2025-01-01T00:00:00","tagIds":["%s"]}
+                        """.formatted(accountId, categoryId, tagId), authHeaders(token)),
+                Map.class);
+        recurringItemId = (String) riResp.getBody().get("id");
+        recurringMerchantId = (String) riResp.getBody().get("merchantId");
     }
 
     @Test
@@ -397,5 +409,121 @@ class TransactionCrudIT extends BaseIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody().get("detail")).toString().contains("Tag");
+    }
+
+    // --- recurringItemId inheritance ---
+
+    @Test
+    void createTransaction_withRecurringItemId_inheritsDefaults() {
+        var response = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        var body = response.getBody();
+        assertThat(body.get("recurringItemId")).isEqualTo(recurringItemId);
+        assertThat(body.get("accountId")).isEqualTo(accountId);
+        assertThat(body.get("merchantId")).isEqualTo(recurringMerchantId);
+        assertThat(body.get("categoryId")).isEqualTo(categoryId);
+        assertThat(body.get("amount")).isEqualTo(-15.99);
+        assertThat(body.get("currencyCode")).isEqualTo("EUR");
+        assertThat((List<String>) body.get("tagIds")).hasSize(1).contains(tagId);
+    }
+
+    @Test
+    void createTransaction_withRecurringItemId_dtoOverridesWin() {
+        // Create a second account to use as override
+        var account2Resp = restTemplate.exchange(
+                "/api/v1/accounts", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Savings","type":"CASH","subType":"SAVINGS","balance":5000}
+                        """, authHeaders(token)),
+                Map.class);
+        String account2Id = (String) account2Resp.getBody().get("id");
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","accountId":"%s","merchantName":"OverrideStore","amount":-99.99,"currencyCode":"USD","categoryId":null,"tagIds":[],"date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId, account2Id), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        var body = response.getBody();
+        assertThat(body.get("accountId")).isEqualTo(account2Id);
+        assertThat(body.get("merchantId")).isNotEqualTo(recurringMerchantId);
+        assertThat(body.get("amount")).isEqualTo(-99.99);
+        assertThat(body.get("currencyCode")).isEqualTo("USD");
+        assertThat((List<?>) body.get("tagIds")).isEmpty();
+    }
+
+    @Test
+    void createTransaction_noRecurringItem_noAccount_returns400() {
+        var response = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"merchantName":"Store","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void updateTransaction_setRecurringItemId_inheritsDefaults() {
+        // Create a plain transaction
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"SomeStore","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+        assertThat(createResp.getBody().get("recurringItemId")).isNull();
+
+        // Update with recurringItemId
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        var body = response.getBody();
+        assertThat(body.get("recurringItemId")).isEqualTo(recurringItemId);
+        assertThat(body.get("accountId")).isEqualTo(accountId);
+        assertThat(body.get("merchantId")).isEqualTo(recurringMerchantId);
+        assertThat(body.get("categoryId")).isEqualTo(categoryId);
+        assertThat(body.get("amount")).isEqualTo(-15.99);
+        assertThat(body.get("currencyCode")).isEqualTo("EUR");
+        assertThat((List<String>) body.get("tagIds")).hasSize(1).contains(tagId);
+    }
+
+    @Test
+    void updateTransaction_clearRecurringItemId() {
+        // Create transaction with recurring item
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        """.formatted(recurringItemId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+        assertThat(createResp.getBody().get("recurringItemId")).isEqualTo(recurringItemId);
+
+        // Clear recurringItemId
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"recurringItemId":null}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("recurringItemId")).isNull();
     }
 }

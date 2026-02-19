@@ -39,7 +39,7 @@ public class UserService {
     @Transactional
     public User updateUser(UUID userId, UpdateUserDto dto) {
         User user = getUser(userId);
-        log.info("Updating user {} ({})", user.getEmail(), userId);
+        log.info("Updating user {}", user.getEmail());
 
         if (dto.getEmail() != null) {
             userRepository.findByEmail(dto.getEmail()).ifPresent(existing -> {
@@ -56,7 +56,7 @@ public class UserService {
     @Transactional
     public void deleteUser(UUID userId) {
         User user = getUser(userId);
-        log.info("Deleting user {} ({})", user.getEmail(), userId);
+        log.info("Deleting user {}", user.getEmail());
 
         List<WorkspaceMembership> memberships = membershipService.listAllUserMemberships(userId);
         for (WorkspaceMembership membership : memberships) {
@@ -64,7 +64,7 @@ public class UserService {
         }
 
         userRepository.delete(user);
-        log.info("Successfully deleted user {} ({})", user.getEmail(), userId);
+        log.info("Successfully deleted user {}", user.getEmail());
     }
 
     /**

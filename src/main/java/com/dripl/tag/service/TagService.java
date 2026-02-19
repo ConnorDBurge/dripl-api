@@ -48,7 +48,7 @@ public class TagService {
                 .status(Status.ACTIVE)
                 .build();
 
-        log.info("Created tag '{}' in workspace {}", dto.getName(), workspaceId);
+        log.info("Created tag '{}'", dto.getName());
         return tagRepository.save(tag);
     }
 

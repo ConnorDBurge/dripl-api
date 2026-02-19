@@ -1,10 +1,12 @@
-package com.dripl.transaction.dto;
+package com.dripl.recurring.dto;
 
 import com.dripl.account.enums.CurrencyCode;
 import com.dripl.common.config.FlexibleLocalDateTimeDeserializer;
-import com.dripl.transaction.enums.TransactionStatus;
+import com.dripl.recurring.enums.FrequencyGranularity;
+import com.dripl.recurring.enums.RecurringItemStatus;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,19 +23,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateTransactionDto {
+public class UpdateRecurringItemDto {
 
-    private UUID accountId;
+    @Size(max = 255, message = "Description must be at most 255 characters")
+    private String description;
 
     @Size(min = 1, max = 100, message = "Merchant name must be between 1 and 100 characters")
     private String merchantName;
 
+    private UUID accountId;
+
     private UUID categoryId;
     @Getter
     private boolean categoryIdSpecified;
-
-    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
-    private LocalDateTime date;
 
     private BigDecimal amount;
 
@@ -43,15 +46,27 @@ public class UpdateTransactionDto {
     @Getter
     private boolean notesSpecified;
 
-    private TransactionStatus status;
+    private FrequencyGranularity frequencyGranularity;
+
+    @Min(value = 1, message = "Frequency quantity must be at least 1")
+    private Integer frequencyQuantity;
+
+    @JsonDeserialize(contentUsing = FlexibleLocalDateTimeDeserializer.class)
+    private List<LocalDateTime> anchorDates;
+
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
+    private LocalDateTime startDate;
+
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
+    private LocalDateTime endDate;
+    @Getter
+    private boolean endDateSpecified;
+
+    private RecurringItemStatus status;
 
     private Set<UUID> tagIds;
     @Getter
     private boolean tagIdsSpecified;
-
-    private UUID recurringItemId;
-    @Getter
-    private boolean recurringItemIdSpecified;
 
     @JsonSetter("categoryId")
     public void assignCategoryId(UUID categoryId) {
@@ -65,15 +80,15 @@ public class UpdateTransactionDto {
         this.notesSpecified = true;
     }
 
+    @JsonSetter("endDate")
+    public void assignEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+        this.endDateSpecified = true;
+    }
+
     @JsonSetter("tagIds")
     public void assignTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
         this.tagIdsSpecified = true;
-    }
-
-    @JsonSetter("recurringItemId")
-    public void assignRecurringItemId(UUID recurringItemId) {
-        this.recurringItemId = recurringItemId;
-        this.recurringItemIdSpecified = true;
     }
 }

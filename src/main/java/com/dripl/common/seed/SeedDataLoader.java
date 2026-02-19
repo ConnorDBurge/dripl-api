@@ -9,6 +9,9 @@ import com.dripl.category.service.CategoryService;
 import com.dripl.merchant.dto.CreateMerchantDto;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
+import com.dripl.recurring.dto.CreateRecurringItemDto;
+import com.dripl.recurring.enums.FrequencyGranularity;
+import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.dto.CreateTagDto;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
@@ -58,6 +61,7 @@ public class SeedDataLoader implements CommandLineRunner {
     private final TagService tagService;
     private final CategoryService categoryService;
     private final TransactionService transactionService;
+    private final RecurringItemService recurringItemService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -209,6 +213,47 @@ public class SeedDataLoader implements CommandLineRunner {
                 }
             }
 
+            // Create recurring items (before transactions so we can link them)
+            Map<String, UUID> recurringItemsByDescription = new LinkedHashMap<>();
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> recurringItems = (List<Map<String, Object>>) seedWorkspace.get("recurringItems");
+            if (recurringItems != null) {
+                for (Map<String, Object> seedItem : recurringItems) {
+                    String accountName = (String) seedItem.get("accountName");
+                    String categoryName = (String) seedItem.get("categoryName");
+                    String merchantName = (String) seedItem.get("merchantName");
+
+                    @SuppressWarnings("unchecked")
+                    List<String> tagNames = (List<String>) seedItem.get("tagNames");
+                    Set<UUID> tagIds = tagNames != null
+                            ? tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
+                            : Set.of();
+
+                    @SuppressWarnings("unchecked")
+                    List<String> anchorDateStrings = (List<String>) seedItem.get("anchorDates");
+                    List<java.time.LocalDateTime> anchorDates = anchorDateStrings.stream()
+                            .map(s -> java.time.LocalDate.parse(s).atStartOfDay())
+                            .collect(Collectors.toList());
+
+                    CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+                            .description((String) seedItem.get("description"))
+                            .merchantName(merchantName)
+                            .accountId(accountsByName.get(accountName))
+                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
+                            .amount(new java.math.BigDecimal(seedItem.get("amount").toString()))
+                            .notes((String) seedItem.get("notes"))
+                            .frequencyGranularity(FrequencyGranularity.valueOf((String) seedItem.get("frequencyGranularity")))
+                            .frequencyQuantity(((Number) seedItem.get("frequencyQuantity")).intValue())
+                            .anchorDates(anchorDates)
+                            .startDate(java.time.LocalDate.parse((String) seedItem.get("startDate")).atStartOfDay())
+                            .tagIds(tagIds)
+                            .build();
+
+                    var item = recurringItemService.createRecurringItem(workspaceId, dto);
+                    recurringItemsByDescription.put(item.getDescription(), item.getId());
+                }
+            }
+
             // Create transactions
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> transactions = (List<Map<String, Object>>) seedWorkspace.get("transactions");
@@ -217,6 +262,7 @@ public class SeedDataLoader implements CommandLineRunner {
                     String accountName = (String) seedTxn.get("accountName");
                     String categoryName = (String) seedTxn.get("categoryName");
                     String merchantName = (String) seedTxn.get("merchantName");
+                    String recurringDescription = (String) seedTxn.get("recurringDescription");
 
                     @SuppressWarnings("unchecked")
                     List<String> tagNames = (List<String>) seedTxn.get("tagNames");
@@ -231,6 +277,7 @@ public class SeedDataLoader implements CommandLineRunner {
                             .date(java.time.LocalDate.parse((String) seedTxn.get("date")).atStartOfDay())
                             .amount(new java.math.BigDecimal(seedTxn.get("amount").toString()))
                             .notes((String) seedTxn.get("notes"))
+                            .recurringItemId(recurringDescription != null ? recurringItemsByDescription.get(recurringDescription) : null)
                             .tagIds(tagIds)
                             .build();
 

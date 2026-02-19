@@ -1,21 +1,37 @@
 package com.dripl.transaction.controller;
 
+import com.dripl.account.enums.CurrencyCode;
 import com.dripl.common.annotation.WorkspaceId;
 import com.dripl.transaction.dto.CreateTransactionDto;
 import com.dripl.transaction.dto.TransactionDto;
 import com.dripl.transaction.dto.UpdateTransactionDto;
 import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.enums.TransactionSource;
+import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.mapper.TransactionMapper;
+import com.dripl.transaction.repository.TransactionSpecifications;
 import com.dripl.transaction.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
+import static com.dripl.transaction.repository.TransactionSpecifications.optionally;
 
 @RequiredArgsConstructor
 @RestController
@@ -27,8 +43,30 @@ public class TransactionController {
 
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<TransactionDto>> listTransactions(@WorkspaceId UUID workspaceId) {
-        List<Transaction> transactions = transactionService.listAllByWorkspaceId(workspaceId);
+    public ResponseEntity<List<TransactionDto>> listTransactions(
+            @WorkspaceId UUID workspaceId,
+            @RequestParam(required = false) UUID accountId,
+            @RequestParam(required = false) UUID merchantId,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID recurringItemId,
+            @RequestParam(required = false) TransactionStatus status,
+            @RequestParam(required = false) TransactionSource source,
+            @RequestParam(required = false) CurrencyCode currencyCode,
+            @RequestParam(required = false) Set<UUID> tagIds) {
+
+        Specification<Transaction> spec = Specification
+                .where(TransactionSpecifications.inWorkspace(workspaceId))
+                .and(optionally(accountId, TransactionSpecifications::hasAccount))
+                .and(optionally(merchantId, TransactionSpecifications::hasMerchant))
+                .and(optionally(categoryId, TransactionSpecifications::hasCategory))
+                .and(optionally(recurringItemId, TransactionSpecifications::hasRecurringItem))
+                .and(optionally(status, TransactionSpecifications::hasStatus))
+                .and(optionally(source, TransactionSpecifications::hasSource))
+                .and(optionally(currencyCode, TransactionSpecifications::hasCurrency))
+                .and(optionally(tagIds, TransactionSpecifications::hasAnyTag));
+
+        List<Transaction> transactions = transactionService.listAll(spec);
+
         return ResponseEntity.ok(transactionMapper.toDtos(transactions));
     }
 

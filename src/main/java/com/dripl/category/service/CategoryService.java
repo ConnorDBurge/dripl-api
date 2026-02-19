@@ -62,7 +62,7 @@ public class CategoryService {
                 .excludeFromTotals(dto.getExcludeFromTotals() != null && dto.getExcludeFromTotals())
                 .build();
 
-        log.info("Created category '{}' in workspace {}", dto.getName(), workspaceId);
+        log.info("Created category '{}'", dto.getName());
         return categoryRepository.save(category);
     }
 

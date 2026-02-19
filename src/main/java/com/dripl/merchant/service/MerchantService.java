@@ -47,7 +47,7 @@ public class MerchantService {
                 .status(Status.ACTIVE)
                 .build();
 
-        log.info("Created merchant '{}' in workspace {}", dto.getName(), workspaceId);
+        log.info("Created merchant '{}'", dto.getName());
         return merchantRepository.save(merchant);
     }
 
@@ -71,5 +71,20 @@ public class MerchantService {
         Merchant merchant = getMerchant(merchantId, workspaceId);
         log.info("Deleting merchant '{}' ({})", merchant.getName(), merchantId);
         merchantRepository.delete(merchant);
+    }
+
+    @Transactional
+    public Merchant resolveMerchant(String merchantName, UUID workspaceId) {
+        return merchantRepository.findByWorkspaceIdAndNameIgnoreCase(workspaceId, merchantName)
+                .orElseGet(() -> {
+                    Merchant merchant = Merchant.builder()
+                            .workspaceId(workspaceId)
+                            .name(merchantName)
+                            .status(Status.ACTIVE)
+                            .build();
+                    Merchant saved = merchantRepository.save(merchant);
+                    log.info("Auto-created merchant '{}'", merchantName);
+                    return saved;
+                });
     }
 }

@@ -82,7 +82,7 @@ public class WorkspaceService {
         membershipService.createMembership(userId, workspace.getId(),
                 Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ));
 
-        log.info("Provisioned workspace '{}' ({}) for user {} ({})", workspace.getName(), workspace.getId(), user.getEmail(), userId);
+        log.info("Provisioned workspace '{}' ({})", workspace.getName(), workspace.getId());
         return workspace;
     }
 
@@ -99,7 +99,7 @@ public class WorkspaceService {
         user.setLastWorkspaceId(workspace.getId());
         userRepository.save(user);
 
-        log.info("User {} ({}) switching to workspace '{}' ({})", user.getEmail(), userId, workspace.getName(), workspace.getId());
+        log.info("Switching to workspace '{}' ({})", workspace.getName(), workspace.getId());
         return workspace;
     }
 
