@@ -6,6 +6,7 @@ import com.dripl.category.dto.CreateCategoryDto;
 import com.dripl.category.dto.UpdateCategoryDto;
 import com.dripl.category.entity.Category;
 import com.dripl.category.mapper.CategoryMapper;
+import com.dripl.category.repository.CategorySpecifications;
 import com.dripl.category.service.CategoryService;
 import com.dripl.common.annotation.WorkspaceId;
 import jakarta.validation.Valid;
@@ -20,6 +21,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import static com.dripl.category.repository.CategorySpecifications.optionally;
+
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,14 +44,22 @@ public class CategoryController {
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(value = "/tree", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<CategoryTreeDto>> getCategoryTree(@WorkspaceId UUID workspaceId) {
-        List<Category> categories = categoryService.listAllByWorkspaceId(workspaceId);
+        Specification<Category> spec = Specification.where(CategorySpecifications.inWorkspace(workspaceId));
+        List<Category> categories = categoryService.listAll(spec);
         return ResponseEntity.ok(CategoryTreeDto.buildTree(categories));
     }
 
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<CategoryDto>> listCategories(@WorkspaceId UUID workspaceId) {
-        List<Category> categories = categoryService.listAllByWorkspaceId(workspaceId);
+    public ResponseEntity<List<CategoryDto>> listCategories(
+            @WorkspaceId UUID workspaceId,
+            @RequestParam(required = false) Boolean income) {
+
+        Specification<Category> spec = Specification
+                .where(CategorySpecifications.inWorkspace(workspaceId))
+                .and(optionally(income, CategorySpecifications::isIncome));
+
+        List<Category> categories = categoryService.listAll(spec);
         return ResponseEntity.ok(categoryMapper.toDtos(categories));
     }
 

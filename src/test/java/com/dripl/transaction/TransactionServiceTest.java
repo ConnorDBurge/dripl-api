@@ -24,6 +24,8 @@ import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.mapper.TransactionMapper;
 import com.dripl.transaction.repository.TransactionRepository;
 import com.dripl.transaction.service.TransactionService;
+import com.dripl.transaction.split.entity.TransactionSplit;
+import com.dripl.transaction.split.repository.TransactionSplitRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -60,6 +62,8 @@ class TransactionServiceTest {
     private TagService tagService;
     @Mock
     private RecurringItemService recurringItemService;
+    @Mock
+    private TransactionSplitRepository transactionSplitRepository;
 
     @Spy
     private TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
@@ -1117,6 +1121,345 @@ class TransactionServiceTest {
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getGroupId()).isNull();
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
+    }
+
+    // ===== Split field locking tests =====
+
+    @Test
+    void updateTransaction_splitLocked_rejectsAccountId() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("accountId")
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    @Test
+    void updateTransaction_splitLocked_rejectsCurrencyCode() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().currencyCode(CurrencyCode.EUR).build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("currencyCode")
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    @Test
+    void updateTransaction_splitLocked_rejectsAmount() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().amount(new BigDecimal("99.99")).build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("amount")
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    @Test
+    void updateTransaction_splitLocked_rejectsDate() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().date(LocalDateTime.now()).build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("date")
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    @Test
+    void updateTransaction_splitLocked_allowsMerchantName() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(merchantService.resolveMerchant("Walmart", workspaceId)).thenReturn(buildMerchant("Walmart"));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("Walmart").build();
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getMerchantId()).isEqualTo(merchantId);
+    }
+
+    @Test
+    void updateTransaction_splitLocked_allowsCategoryId() {
+        UUID splitId = UUID.randomUUID();
+        UUID newCatId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(Category.builder().id(newCatId).build());
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignCategoryId(newCatId);
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getCategoryId()).isEqualTo(newCatId);
+    }
+
+    @Test
+    void updateTransaction_splitLocked_allowsTagIds() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(tagService.getTag(tagId, workspaceId)).thenReturn(buildTag());
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignTagIds(Set.of(tagId));
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getTagIds()).containsExactly(tagId);
+    }
+
+    @Test
+    void updateTransaction_splitLocked_allowsNotes() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignNotes("Updated notes");
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getNotes()).isEqualTo("Updated notes");
+    }
+
+    // ===== Split locked tests =====
+
+    @Test
+    void updateTransaction_unlinkSplit_throws() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignSplitId(null);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    @Test
+    void updateTransaction_assignSplitId_throws() {
+        Transaction txn = buildTransaction();
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignSplitId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("transaction-splits API");
+    }
+
+    // ===== Mutual exclusivity: split + group =====
+
+    @Test
+    void updateTransaction_splitChild_assignGroup_throws() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignGroupId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("split")
+                .hasMessageContaining("group");
+    }
+
+    // ===== Split child + RI linking =====
+
+    @Test
+    void updateTransaction_splitChild_linkRI_success() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+
+        TransactionSplit split = TransactionSplit.builder()
+                .id(splitId)
+                .workspaceId(workspaceId)
+                .accountId(accountId)
+                .totalAmount(new BigDecimal("100.00"))
+                .currencyCode(CurrencyCode.EUR)
+                .build();
+
+        RecurringItem ri = buildRecurringItem();
+        // RI accountId and currencyCode must match the split
+        ri.setAccountId(accountId);
+        ri.setCurrencyCode(CurrencyCode.EUR);
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(ri);
+        when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignRecurringItemId(recurringItemId);
+
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+        assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
+    }
+
+    @Test
+    void updateTransaction_splitChild_linkRI_accountMismatch_throws() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+
+        TransactionSplit split = TransactionSplit.builder()
+                .id(splitId)
+                .workspaceId(workspaceId)
+                .accountId(UUID.randomUUID()) // different account
+                .totalAmount(new BigDecimal("100.00"))
+                .currencyCode(CurrencyCode.USD)
+                .build();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
+        when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignRecurringItemId(recurringItemId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("account");
+    }
+
+    @Test
+    void updateTransaction_splitChild_linkRI_currencyMismatch_throws() {
+        UUID splitId = UUID.randomUUID();
+        Transaction txn = buildTransaction();
+        txn.setSplitId(splitId);
+
+        TransactionSplit split = TransactionSplit.builder()
+                .id(splitId)
+                .workspaceId(workspaceId)
+                .accountId(accountId)
+                .totalAmount(new BigDecimal("100.00"))
+                .currencyCode(CurrencyCode.USD) // split is USD
+                .build();
+
+        RecurringItem ri = buildRecurringItem();
+        ri.setAccountId(accountId);
+        ri.setCurrencyCode(CurrencyCode.EUR); // RI is EUR — mismatch
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(ri);
+        when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignRecurringItemId(recurringItemId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("currency");
+    }
+
+    // --- Category Polarity Validation ---
+
+    @Test
+    void createTransaction_polarityMismatch_throws() {
+        CreateTransactionDto dto = CreateTransactionDto.builder()
+                .accountId(accountId)
+                .merchantName("Target")
+                .amount(new BigDecimal("100.00"))
+                .categoryId(categoryId)
+                .date(LocalDateTime.now())
+                .build();
+
+        when(accountService.getAccount(accountId, workspaceId)).thenReturn(buildAccount());
+        when(merchantService.resolveMerchant("Target", workspaceId)).thenReturn(buildMerchant("Target"));
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory());
+        doThrow(new BadRequestException("Positive amounts must use an income category"))
+                .when(categoryService).validateCategoryPolarity(categoryId, new BigDecimal("100.00"), workspaceId);
+
+        assertThatThrownBy(() -> transactionService.createTransaction(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
+    }
+
+    @Test
+    void updateTransaction_changeCategoryPolarityMismatch_throws() {
+        UUID newCatId = UUID.randomUUID();
+        Transaction txn = Transaction.builder()
+                .id(transactionId)
+                .workspaceId(workspaceId)
+                .accountId(accountId)
+                .merchantId(merchantId)
+                .amount(new BigDecimal("-50.00"))
+                .currencyCode(CurrencyCode.USD)
+                .status(TransactionStatus.PENDING)
+                .source(TransactionSource.MANUAL)
+                .build();
+
+        Category newCat = Category.builder().id(newCatId).workspaceId(workspaceId).name("Salary").income(true).build();
+
+        UpdateTransactionDto dto = new UpdateTransactionDto();
+        dto.assignCategoryId(newCatId);
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(newCat);
+        doThrow(new BadRequestException("Negative amounts must use an expense category"))
+                .when(categoryService).validateCategoryPolarity(newCatId, txn.getAmount(), workspaceId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("expense category");
+    }
+
+    @Test
+    void updateTransaction_changeAmountPolarityMismatch_throws() {
+        Transaction txn = Transaction.builder()
+                .id(transactionId)
+                .workspaceId(workspaceId)
+                .accountId(accountId)
+                .merchantId(merchantId)
+                .categoryId(categoryId)
+                .amount(new BigDecimal("-50.00"))
+                .currencyCode(CurrencyCode.USD)
+                .status(TransactionStatus.PENDING)
+                .source(TransactionSource.MANUAL)
+                .build();
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().amount(new BigDecimal("100.00")).build();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        doThrow(new BadRequestException("Positive amounts must use an income category"))
+                .when(categoryService).validateCategoryPolarity(categoryId, new BigDecimal("100.00"), workspaceId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
     }
 
 }

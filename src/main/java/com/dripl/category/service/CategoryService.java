@@ -10,9 +10,11 @@ import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,8 +29,8 @@ public class CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Transactional(readOnly = true)
-    public List<Category> listAllByWorkspaceId(UUID workspaceId) {
-        return categoryRepository.findAllByWorkspaceId(workspaceId);
+    public List<Category> listAll(Specification<Category> spec) {
+        return categoryRepository.findAll(spec);
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +133,23 @@ public class CategoryService {
     private void ensureNoCategoryChildren(UUID categoryId) {
         if (categoryRepository.existsByParentId(categoryId)) {
             throw new BadRequestException("Cannot nest a category that already has children (maximum depth is 2)");
+        }
+    }
+
+    /**
+     * Validates that a category's income flag matches the amount sign.
+     * Positive amounts require income categories; negative/zero amounts require expense categories.
+     */
+    @Transactional
+    public void validateCategoryPolarity(UUID categoryId, BigDecimal amount, UUID workspaceId) {
+        if (categoryId == null || amount == null) return;
+        Category category = getCategory(categoryId, workspaceId);
+        boolean isPositive = amount.compareTo(BigDecimal.ZERO) > 0;
+        if (isPositive && !category.isIncome()) {
+            throw new BadRequestException("Positive amounts must use an income category, but '" + category.getName() + "' is an expense category.");
+        }
+        if (!isPositive && category.isIncome()) {
+            throw new BadRequestException("Negative amounts must use an expense category, but '" + category.getName() + "' is an income category.");
         }
     }
 }

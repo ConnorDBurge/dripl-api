@@ -612,6 +612,54 @@
         "categoryName": "Groceries",
         "notes": "H-E-B trips in July"
       }
+    ],
+    "transactionSplits": [
+      {
+        "name": "Target Back-to-School Split",
+        "accountName": "Amex Gold",
+        "merchantName": "Target",
+        "categoryName": "Shopping",
+        "date": "2025-07-20",
+        "amount": -120.0,
+        "notes": "Back-to-school run",
+        "children": [
+          {
+            "amount": -70.0,
+            "categoryName": "Clothing",
+            "tagNames": [
+              "kids"
+            ],
+            "notes": "Kids clothes"
+          },
+          {
+            "amount": -50.0,
+            "categoryName": "Household",
+            "notes": "School supplies"
+          }
+        ]
+      },
+      {
+        "name": "Costco Household Split",
+        "accountName": "Amex Gold",
+        "merchantName": "Costco",
+        "categoryName": "Shopping",
+        "date": "2025-07-21",
+        "amount": -150.0,
+        "notes": "Bulk run",
+        "children": [
+          {
+            "amount": -110.0,
+            "categoryName": "Groceries",
+            "tagNames": [
+              "groceries"
+            ]
+          },
+          {
+            "amount": -40.0,
+            "categoryName": "Household"
+          }
+        ]
+      }
     ]
   },
   {

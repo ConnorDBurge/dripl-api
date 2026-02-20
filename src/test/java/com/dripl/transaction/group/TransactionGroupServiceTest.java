@@ -393,4 +393,54 @@ class TransactionGroupServiceTest {
                 .hasMessageContaining("recurring item")
                 .hasMessageContaining("Unlink it");
     }
+
+    // --- Category Polarity Validation ---
+
+    @Test
+    void createTransactionGroup_polarityMismatch_throws() {
+        Transaction txn1 = Transaction.builder().id(txn1Id).workspaceId(workspaceId).amount(new BigDecimal("50.00")).build();
+        Transaction txn2 = Transaction.builder().id(txn2Id).workspaceId(workspaceId).amount(new BigDecimal("30.00")).build();
+
+        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+                .name("Mixed Group")
+                .categoryId(categoryId)
+                .transactionIds(Set.of(txn1Id, txn2Id))
+                .build();
+
+        Category cat = Category.builder().id(categoryId).workspaceId(workspaceId).name("Groceries").income(false).build();
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(cat);
+        when(transactionRepository.findByIdAndWorkspaceId(eq(txn1Id), eq(workspaceId))).thenReturn(Optional.of(txn1));
+        when(transactionRepository.findByIdAndWorkspaceId(eq(txn2Id), eq(workspaceId))).thenReturn(Optional.of(txn2));
+        doThrow(new BadRequestException("Positive amounts must use an income category"))
+                .when(categoryService).validateCategoryPolarity(eq(categoryId), any(BigDecimal.class), eq(workspaceId));
+
+        assertThatThrownBy(() -> transactionGroupService.createTransactionGroup(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
+    }
+
+    @Test
+    void updateTransactionGroup_changeCategoryPolarityMismatch_throws() {
+        UUID newCatId = UUID.randomUUID();
+        TransactionGroup group = buildGroup();
+        group.setCategoryId(categoryId);
+
+        Transaction txn1 = Transaction.builder().id(txn1Id).workspaceId(workspaceId).amount(new BigDecimal("50.00")).build();
+        Transaction txn2 = Transaction.builder().id(txn2Id).workspaceId(workspaceId).amount(new BigDecimal("30.00")).build();
+
+        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
+        dto.assignCategoryId(newCatId);
+
+        when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId)).thenReturn(Optional.of(group));
+        when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(
+                Category.builder().id(newCatId).workspaceId(workspaceId).name("Groceries").income(false).build());
+        when(transactionGroupRepository.save(any())).thenReturn(group);
+        when(transactionRepository.findAllByGroupIdAndWorkspaceId(groupId, workspaceId)).thenReturn(List.of(txn1, txn2));
+        doThrow(new BadRequestException("Positive amounts must use an income category"))
+                .when(categoryService).validateCategoryPolarity(eq(newCatId), any(BigDecimal.class), eq(workspaceId));
+
+        assertThatThrownBy(() -> transactionGroupService.updateTransactionGroup(groupId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
+    }
 }

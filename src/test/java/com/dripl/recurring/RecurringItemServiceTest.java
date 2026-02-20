@@ -5,6 +5,7 @@ import com.dripl.account.enums.CurrencyCode;
 import com.dripl.account.service.AccountService;
 import com.dripl.category.entity.Category;
 import com.dripl.category.service.CategoryService;
+import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.common.enums.Status;
 import com.dripl.merchant.entity.Merchant;
@@ -583,6 +584,68 @@ class RecurringItemServiceTest {
         assertThatThrownBy(() -> recurringItemService.deleteRecurringItem(recurringItemId, workspaceId))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(recurringItemRepository, never()).delete(any());
+    }
+
+    // --- Category Polarity Validation ---
+
+    @Test
+    void createRecurringItem_polarityMismatch_throws() {
+        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+                .accountId(accountId)
+                .merchantName("Netflix")
+                .amount(new BigDecimal("-15.99"))
+                .categoryId(categoryId)
+                .description("Netflix")
+                .frequencyGranularity(FrequencyGranularity.MONTH)
+                .anchorDates(List.of(LocalDateTime.now()))
+                .startDate(LocalDateTime.now())
+                .build();
+
+        when(accountService.getAccount(accountId, workspaceId)).thenReturn(buildAccount());
+        when(merchantService.resolveMerchant("Netflix", workspaceId)).thenReturn(buildMerchant("Netflix"));
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory());
+        doThrow(new BadRequestException("Negative amounts must use an expense category"))
+                .when(categoryService).validateCategoryPolarity(categoryId, dto.getAmount(), workspaceId);
+
+        assertThatThrownBy(() -> recurringItemService.createRecurringItem(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("expense category");
+    }
+
+    @Test
+    void updateRecurringItem_changeCategoryPolarityMismatch_throws() {
+        UUID newCatId = UUID.randomUUID();
+        RecurringItem ri = buildRecurringItem();
+
+        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        dto.assignCategoryId(newCatId);
+
+        Category newCat = Category.builder().id(newCatId).workspaceId(workspaceId).name("Salary").income(true).build();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(newCat);
+        doThrow(new BadRequestException("Negative amounts must use an expense category"))
+                .when(categoryService).validateCategoryPolarity(eq(newCatId), any(BigDecimal.class), eq(workspaceId));
+
+        assertThatThrownBy(() -> recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("expense category");
+    }
+
+    @Test
+    void updateRecurringItem_changeAmountPolarityMismatch_throws() {
+        RecurringItem ri = buildRecurringItem();
+        ri.setCategoryId(categoryId);
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().amount(new BigDecimal("100.00")).build();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        doThrow(new BadRequestException("Positive amounts must use an income category"))
+                .when(categoryService).validateCategoryPolarity(eq(categoryId), any(BigDecimal.class), eq(workspaceId));
+
+        assertThatThrownBy(() -> recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
     }
 
 }

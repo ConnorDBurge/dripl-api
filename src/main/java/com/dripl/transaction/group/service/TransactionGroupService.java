@@ -62,6 +62,15 @@ public class TransactionGroupService {
         Set<UUID> transactionIds = dto.getTransactionIds();
         validateTransactionsForGrouping(transactionIds, workspaceId);
 
+        // Validate category polarity against all member transactions
+        if (categoryId != null) {
+            for (UUID txnId : transactionIds) {
+                Transaction txn = transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + txnId));
+                categoryService.validateCategoryPolarity(categoryId, txn.getAmount(), workspaceId);
+            }
+        }
+
         TransactionGroup group = TransactionGroup.builder()
                 .workspaceId(workspaceId)
                 .name(dto.getName())
@@ -142,8 +151,15 @@ public class TransactionGroupService {
             }
         }
 
-        // Push overrides to all current member transactions
+        // Validate category polarity against all member transactions after membership reconciliation
         List<Transaction> members = transactionRepository.findAllByGroupIdAndWorkspaceId(groupId, workspaceId);
+        if (group.getCategoryId() != null) {
+            for (Transaction txn : members) {
+                categoryService.validateCategoryPolarity(group.getCategoryId(), txn.getAmount(), workspaceId);
+            }
+        }
+
+        // Push overrides to all current member transactions
         for (Transaction txn : members) {
             if (group.getCategoryId() != null) {
                 txn.setCategoryId(group.getCategoryId());
@@ -178,6 +194,10 @@ public class TransactionGroupService {
             if (txn.getRecurringItemId() != null) {
                 throw new BadRequestException(
                         "Transaction " + txnId + " is linked to recurring item " + txn.getRecurringItemId() + ". Unlink it before adding to a group.");
+            }
+            if (txn.getSplitId() != null) {
+                throw new BadRequestException(
+                        "Transaction " + txnId + " is part of a split. Remove it from the split before adding to a group.");
             }
         }
     }

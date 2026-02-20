@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,24 +53,24 @@ class CategoryServiceTest {
                 .build();
     }
 
-    // --- listAllByWorkspaceId ---
+    // --- listAll ---
 
     @Test
-    void listAllByWorkspaceId_returnsCategories() {
+    void listAll_returnsCategories() {
         Category category = buildCategory("Food");
-        when(categoryRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(category));
+        when(categoryRepository.findAll(any(Specification.class))).thenReturn(List.of(category));
 
-        List<Category> result = categoryService.listAllByWorkspaceId(workspaceId);
+        List<Category> result = categoryService.listAll(Specification.where(null));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Food");
     }
 
     @Test
-    void listAllByWorkspaceId_emptyList() {
-        when(categoryRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of());
+    void listAll_emptyList() {
+        when(categoryRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
-        List<Category> result = categoryService.listAllByWorkspaceId(workspaceId);
+        List<Category> result = categoryService.listAll(Specification.where(null));
 
         assertThat(result).isEmpty();
     }
@@ -596,6 +597,57 @@ class CategoryServiceTest {
 
         assertThatThrownBy(() -> categoryService.deleteCategory(categoryId, workspaceId))
                 .isInstanceOf(ResourceNotFoundException.class);
-        verify(categoryRepository, never()).delete(any());
+        verify(categoryRepository, never()).delete(any(Category.class));
+    }
+
+    // --- validateCategoryPolarity ---
+
+    @Test
+    void validateCategoryPolarity_positiveAmountWithIncomeCategory_passes() {
+        Category income = Category.builder().id(categoryId).workspaceId(workspaceId).name("Salary").income(true).build();
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(income));
+        categoryService.validateCategoryPolarity(categoryId, new java.math.BigDecimal("100.00"), workspaceId);
+    }
+
+    @Test
+    void validateCategoryPolarity_negativeAmountWithExpenseCategory_passes() {
+        Category expense = Category.builder().id(categoryId).workspaceId(workspaceId).name("Groceries").income(false).build();
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(expense));
+        categoryService.validateCategoryPolarity(categoryId, new java.math.BigDecimal("-50.00"), workspaceId);
+    }
+
+    @Test
+    void validateCategoryPolarity_zeroAmountWithExpenseCategory_passes() {
+        Category expense = Category.builder().id(categoryId).workspaceId(workspaceId).name("Groceries").income(false).build();
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(expense));
+        categoryService.validateCategoryPolarity(categoryId, java.math.BigDecimal.ZERO, workspaceId);
+    }
+
+    @Test
+    void validateCategoryPolarity_positiveAmountWithExpenseCategory_throws() {
+        Category expense = Category.builder().id(categoryId).workspaceId(workspaceId).name("Groceries").income(false).build();
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(expense));
+        assertThatThrownBy(() -> categoryService.validateCategoryPolarity(categoryId, new java.math.BigDecimal("100.00"), workspaceId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("income category");
+    }
+
+    @Test
+    void validateCategoryPolarity_negativeAmountWithIncomeCategory_throws() {
+        Category income = Category.builder().id(categoryId).workspaceId(workspaceId).name("Salary").income(true).build();
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(income));
+        assertThatThrownBy(() -> categoryService.validateCategoryPolarity(categoryId, new java.math.BigDecimal("-50.00"), workspaceId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("expense category");
+    }
+
+    @Test
+    void validateCategoryPolarity_nullCategoryId_doesNothing() {
+        categoryService.validateCategoryPolarity(null, new java.math.BigDecimal("100.00"), workspaceId);
+    }
+
+    @Test
+    void validateCategoryPolarity_nullAmount_doesNothing() {
+        categoryService.validateCategoryPolarity(categoryId, null, workspaceId);
     }
 }

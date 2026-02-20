@@ -52,6 +52,7 @@ public class RecurringItemService {
         UUID categoryId = null;
         if (dto.getCategoryId() != null) {
             categoryId = categoryService.getCategory(dto.getCategoryId(), workspaceId).getId();
+            categoryService.validateCategoryPolarity(categoryId, dto.getAmount(), workspaceId);
         }
         Set<UUID> tagIds = dto.getTagIds() != null ? dto.getTagIds() : new HashSet<>();
         tagIds.forEach(tagId -> tagService.getTag(tagId, workspaceId));
@@ -98,10 +99,16 @@ public class RecurringItemService {
         if (dto.isCategoryIdSpecified()) {
             if (dto.getCategoryId() != null) {
                 var category = categoryService.getCategory(dto.getCategoryId(), workspaceId);
+                categoryService.validateCategoryPolarity(category.getId(), recurringItem.getAmount(), workspaceId);
                 recurringItem.setCategoryId(category.getId());
             } else {
                 recurringItem.setCategoryId(null);
             }
+        }
+
+        // Re-validate polarity if amount changed but category stayed the same
+        if (dto.getAmount() != null && !dto.isCategoryIdSpecified() && recurringItem.getCategoryId() != null) {
+            categoryService.validateCategoryPolarity(recurringItem.getCategoryId(), recurringItem.getAmount(), workspaceId);
         }
 
         if (dto.isNotesSpecified()) {

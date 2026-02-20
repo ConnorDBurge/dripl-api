@@ -29,6 +29,10 @@ public final class TransactionSpecifications {
         return (root, query, cb) -> cb.equal(root.get("groupId"), groupId);
     }
 
+    public static Specification<Transaction> hasSplit(UUID splitId) {
+        return (root, query, cb) -> cb.equal(root.get("splitId"), splitId);
+    }
+
     public static Specification<Transaction> hasCategory(UUID categoryId) {
         return (root, query, cb) -> cb.equal(root.get("categoryId"), categoryId);
     }

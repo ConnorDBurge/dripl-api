@@ -21,7 +21,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findAllByGroupIdAndWorkspaceId(UUID groupId, UUID workspaceId);
 
+    List<Transaction> findAllBySplitIdAndWorkspaceId(UUID splitId, UUID workspaceId);
+
     long countByGroupId(UUID groupId);
+
+    long countBySplitId(UUID splitId);
 
     // Set group ID for multiple transactions at once
     @Modifying(flushAutomatically = true, clearAutomatically = true)
@@ -32,4 +36,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE Transaction t SET t.groupId = NULL WHERE t.groupId = :groupId")
     int clearGroupId(UUID groupId);
+
+    // Clear split ID for all transactions in a split
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE Transaction t SET t.splitId = NULL WHERE t.splitId = :splitId")
+    int clearSplitId(UUID splitId);
 }

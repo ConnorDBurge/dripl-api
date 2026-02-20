@@ -21,6 +21,9 @@ import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
 import com.dripl.transaction.group.service.TransactionGroupService;
 import com.dripl.transaction.service.TransactionService;
+import com.dripl.transaction.split.dto.CreateTransactionSplitDto;
+import com.dripl.transaction.split.dto.SplitChildDto;
+import com.dripl.transaction.split.service.TransactionSplitService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
 import com.dripl.workspace.dto.CreateWorkspaceDto;
@@ -64,6 +67,7 @@ public class SeedDataLoader implements CommandLineRunner {
     private final CategoryService categoryService;
     private final TransactionService transactionService;
     private final TransactionGroupService transactionGroupService;
+    private final TransactionSplitService transactionSplitService;
     private final RecurringItemService recurringItemService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -325,6 +329,60 @@ public class SeedDataLoader implements CommandLineRunner {
                             .build();
 
                     transactionGroupService.createTransactionGroup(workspaceId, groupDto);
+                }
+            }
+
+            // Create transaction splits
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> splits = (List<Map<String, Object>>) seedWorkspace.get("transactionSplits");
+            if (splits != null) {
+                for (Map<String, Object> seedSplit : splits) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> seedChildren = (List<Map<String, Object>>) seedSplit.get("children");
+                    if (seedChildren == null || seedChildren.size() < 2) {
+                        log.warn("Split seed requires at least 2 children, skipping: {}", seedSplit.get("name"));
+                        continue;
+                    }
+
+                    String sourceAccountName = (String) seedSplit.get("accountName");
+                    String sourceCategoryName = (String) seedSplit.get("categoryName");
+
+                    CreateTransactionDto sourceDto = CreateTransactionDto.builder()
+                            .accountId(accountsByName.get(sourceAccountName))
+                            .merchantName((String) seedSplit.get("merchantName"))
+                            .categoryId(sourceCategoryName != null ? categoriesByName.get(sourceCategoryName) : null)
+                            .date(java.time.LocalDate.parse((String) seedSplit.get("date")).atStartOfDay())
+                            .amount(new java.math.BigDecimal(seedSplit.get("amount").toString()))
+                            .notes((String) seedSplit.get("notes"))
+                            .build();
+
+                    Transaction sourceTxn = transactionService.createTransaction(workspaceId, sourceDto);
+
+                    List<SplitChildDto> childDtos = new ArrayList<>();
+                    for (Map<String, Object> seedChild : seedChildren) {
+                        String childCategoryName = (String) seedChild.get("categoryName");
+                        @SuppressWarnings("unchecked")
+                        List<String> childTagNames = (List<String>) seedChild.get("tagNames");
+                        Set<UUID> childTagIds = childTagNames != null
+                                ? childTagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
+                                : Set.of();
+
+                        SplitChildDto childDto = SplitChildDto.builder()
+                                .amount(new java.math.BigDecimal(seedChild.get("amount").toString()))
+                                .merchantName((String) seedChild.get("merchantName"))
+                                .categoryId(childCategoryName != null ? categoriesByName.get(childCategoryName) : null)
+                                .tagIds(childTagIds)
+                                .notes((String) seedChild.get("notes"))
+                                .build();
+                        childDtos.add(childDto);
+                    }
+
+                    CreateTransactionSplitDto splitDto = CreateTransactionSplitDto.builder()
+                            .transactionId(sourceTxn.getId())
+                            .children(childDtos)
+                            .build();
+
+                    transactionSplitService.createTransactionSplit(workspaceId, splitDto);
                 }
             }
         }

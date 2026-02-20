@@ -16,6 +16,8 @@ import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.mapper.TransactionMapper;
 import com.dripl.transaction.repository.TransactionRepository;
+import com.dripl.transaction.split.entity.TransactionSplit;
+import com.dripl.transaction.split.repository.TransactionSplitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -42,6 +44,7 @@ public class TransactionService {
     private final CategoryService categoryService;
     private final TagService tagService;
     private final RecurringItemService recurringItemService;
+    private final TransactionSplitRepository transactionSplitRepository;
     private final TransactionMapper transactionMapper;
 
     @Transactional(readOnly = true)
@@ -95,6 +98,8 @@ public class TransactionService {
         // Amount: DTO wins, then RI default
         BigDecimal amount = resolveRequired(dto.getAmount(), ri, RecurringItem::getAmount, "Amount");
 
+        categoryService.validateCategoryPolarity(categoryId, amount, workspaceId);
+
         Transaction transaction = Transaction.builder()
                 .workspaceId(workspaceId)
                 .accountId(accountId)
@@ -125,8 +130,11 @@ public class TransactionService {
                     "Transaction is in group " + transaction.getGroupId() + ". Remove it from the group before linking to a recurring item.");
         }
 
-        // Enforce mutual exclusivity: can't set groupId-managed fields via a recurring item link if grouped
-        // (groupId is managed by TransactionGroupService, not here)
+        // Enforce mutual exclusivity: can't set groupId if in a split
+        if (dto.isGroupIdSpecified() && dto.getGroupId() != null && transaction.getSplitId() != null) {
+            throw new BadRequestException(
+                    "Transaction is part of a split. Remove it from the split before adding to a group.");
+        }
 
         // Enforce locked fields when linked to a recurring item
         if (transaction.getRecurringItemId() != null && !isUnlinkingRecurringItem(dto)) {
@@ -136,6 +144,11 @@ public class TransactionService {
         // Enforce locked fields when in a group (skip if unlinking from a group)
         if (transaction.getGroupId() != null && !isUnlinkingGroup(dto)) {
             rejectLockedFieldsForGroup(dto);
+        }
+
+        // Enforce locked fields when in a split
+        if (transaction.getSplitId() != null) {
+            rejectLockedFieldsForSplit(dto);
         }
 
         // Handle groupId unlink
@@ -154,9 +167,27 @@ public class TransactionService {
             transaction.setGroupId(null);
         }
 
+        // splitId is fully locked — managed exclusively through the transaction-splits API
+        if (dto.isSplitIdSpecified()) {
+            throw new BadRequestException("Cannot modify splitId via this endpoint. Use the transaction-splits API.");
+        }
+
         if (dto.isRecurringItemIdSpecified()) {
             if (dto.getRecurringItemId() != null) {
                 var ri = recurringItemService.getRecurringItem(dto.getRecurringItemId(), workspaceId);
+
+                // If in a split, validate RI's accountId and currencyCode match the split
+                if (transaction.getSplitId() != null) {
+                    TransactionSplit split = transactionSplitRepository.findByIdAndWorkspaceId(transaction.getSplitId(), workspaceId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Transaction split not found"));
+                    if (!ri.getAccountId().equals(split.getAccountId())) {
+                        throw new BadRequestException("Recurring item's account does not match the split's account.");
+                    }
+                    if (ri.getCurrencyCode() != split.getCurrencyCode()) {
+                        throw new BadRequestException("Recurring item's currency does not match the split's currency.");
+                    }
+                }
+
                 transaction.setRecurringItemId(ri.getId());
                 // Locked fields always come from the recurring item
                 transaction.setAccountId(ri.getAccountId());
@@ -188,10 +219,16 @@ public class TransactionService {
         if (dto.isCategoryIdSpecified()) {
             if (dto.getCategoryId() != null) {
                 var category = categoryService.getCategory(dto.getCategoryId(), workspaceId);
+                categoryService.validateCategoryPolarity(category.getId(), transaction.getAmount(), workspaceId);
                 transaction.setCategoryId(category.getId());
             } else {
                 transaction.setCategoryId(null);
             }
+        }
+
+        // Re-validate polarity if amount changed but category stayed the same
+        if (dto.getAmount() != null && !dto.isCategoryIdSpecified() && transaction.getCategoryId() != null) {
+            categoryService.validateCategoryPolarity(transaction.getCategoryId(), dto.getAmount(), workspaceId);
         }
 
         if (dto.isNotesSpecified()) {
@@ -272,7 +309,19 @@ public class TransactionService {
         if (dto.isNotesSpecified()) locked.add("notes");
         if (!locked.isEmpty()) {
             throw new BadRequestException(
-                    "Cannot modify " + String.join(", ", locked) + " while in a transaction group. Update the group metadata instead.");
+                    "Cannot modify " + String.join(", ", locked) + " while in a transaction group. Use the transaction-groups API.");
+        }
+    }
+
+    private void rejectLockedFieldsForSplit(UpdateTransactionDto dto) {
+        List<String> locked = new java.util.ArrayList<>();
+        if (dto.getAccountId() != null) locked.add("accountId");
+        if (dto.getCurrencyCode() != null) locked.add("currencyCode");
+        if (dto.getAmount() != null) locked.add("amount");
+        if (dto.getDate() != null) locked.add("date");
+        if (!locked.isEmpty()) {
+            throw new BadRequestException(
+                    "Cannot modify " + String.join(", ", locked) + " while in a transaction split. Use the transaction-splits API.");
         }
     }
 }

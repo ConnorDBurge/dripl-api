@@ -53,6 +53,10 @@ public class UpdateTransactionDto {
     @Getter
     private boolean groupIdSpecified;
 
+    private UUID splitId;
+    @Getter
+    private boolean splitIdSpecified;
+
     private UUID recurringItemId;
     @Getter
     private boolean recurringItemIdSpecified;
@@ -85,5 +89,11 @@ public class UpdateTransactionDto {
     public void assignGroupId(UUID groupId) {
         this.groupId = groupId;
         this.groupIdSpecified = true;
+    }
+
+    @JsonSetter("splitId")
+    public void assignSplitId(UUID splitId) {
+        this.splitId = splitId;
+        this.splitIdSpecified = true;
     }
 }

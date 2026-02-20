@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -51,9 +52,9 @@ class CategoryControllerTest {
 
     @Test
     void listCategories_returns200() {
-        when(categoryService.listAllByWorkspaceId(workspaceId)).thenReturn(List.of(buildCategory("Food")));
+        when(categoryService.listAll(any(Specification.class))).thenReturn(List.of(buildCategory("Food")));
 
-        var response = categoryController.listCategories(workspaceId);
+        var response = categoryController.listCategories(workspaceId, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(1);
@@ -61,9 +62,9 @@ class CategoryControllerTest {
 
     @Test
     void listCategories_empty_returns200() {
-        when(categoryService.listAllByWorkspaceId(workspaceId)).thenReturn(List.of());
+        when(categoryService.listAll(any(Specification.class))).thenReturn(List.of());
 
-        var response = categoryController.listCategories(workspaceId);
+        var response = categoryController.listCategories(workspaceId, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
@@ -79,7 +80,7 @@ class CategoryControllerTest {
                 .name("Groceries")
                 .status(Status.ACTIVE)
                 .build();
-        when(categoryService.listAllByWorkspaceId(workspaceId)).thenReturn(List.of(parent, child));
+        when(categoryService.listAll(any(Specification.class))).thenReturn(List.of(parent, child));
 
         var response = categoryController.getCategoryTree(workspaceId);
 
