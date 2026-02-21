@@ -12,6 +12,8 @@ import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.mapper.RecurringItemMapper;
 import com.dripl.recurring.repository.RecurringItemRepository;
 import com.dripl.tag.service.TagService;
+import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import java.util.UUID;
 public class RecurringItemService {
 
     private final RecurringItemRepository recurringItemRepository;
+    private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final MerchantService merchantService;
     private final CategoryService categoryService;
@@ -106,7 +109,7 @@ public class RecurringItemService {
             }
         }
 
-        // Re-validate polarity if amount changed but category stayed the same
+        // Re-validate polarity if the amount changed but the category stayed the same
         if (dto.getAmount() != null && !dto.isCategoryIdSpecified() && recurringItem.getCategoryId() != null) {
             categoryService.validateCategoryPolarity(recurringItem.getCategoryId(), recurringItem.getAmount(), workspaceId);
         }
@@ -126,7 +129,24 @@ public class RecurringItemService {
         }
 
         log.info("Updating recurring item {}", recurringItemId);
-        return recurringItemRepository.save(recurringItem);
+        RecurringItem saved = recurringItemRepository.save(recurringItem);
+
+        // Cascade locked fields to all linked transactions
+        List<Transaction> linked = transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId);
+        for (Transaction txn : linked) {
+            txn.setAccountId(saved.getAccountId());
+            txn.setMerchantId(saved.getMerchantId());
+            txn.setCategoryId(saved.getCategoryId());
+            txn.setCurrencyCode(saved.getCurrencyCode());
+            txn.setNotes(saved.getNotes());
+            txn.setTagIds(saved.getTagIds() != null ? new HashSet<>(saved.getTagIds()) : new HashSet<>());
+            transactionRepository.save(txn);
+        }
+        if (!linked.isEmpty()) {
+            log.info("Cascaded recurring item changes to {} linked transactions", linked.size());
+        }
+
+        return saved;
     }
 
     @Transactional

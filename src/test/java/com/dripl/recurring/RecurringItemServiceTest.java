@@ -20,6 +20,8 @@ import com.dripl.recurring.repository.RecurringItemRepository;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
+import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -42,6 +44,8 @@ class RecurringItemServiceTest {
 
     @Mock
     private RecurringItemRepository recurringItemRepository;
+    @Mock
+    private TransactionRepository transactionRepository;
     @Mock
     private AccountService accountService;
     @Mock
@@ -648,4 +652,88 @@ class RecurringItemServiceTest {
                 .hasMessageContaining("income category");
     }
 
+    // ── Cascade to Linked Transactions ───────────────────────────────
+
+    @Test
+    void updateRecurringItem_cascadesCategoryToLinkedTransactions() {
+        RecurringItem ri = buildRecurringItem();
+        UUID newCategoryId = UUID.randomUUID();
+        Transaction txn1 = Transaction.builder().id(UUID.randomUUID()).workspaceId(workspaceId)
+                .accountId(accountId).merchantId(merchantId).amount(new BigDecimal("-15.99"))
+                .recurringItemId(recurringItemId).categoryId(categoryId).tagIds(new HashSet<>()).build();
+        Transaction txn2 = Transaction.builder().id(UUID.randomUUID()).workspaceId(workspaceId)
+                .accountId(accountId).merchantId(merchantId).amount(new BigDecimal("-15.99"))
+                .recurringItemId(recurringItemId).categoryId(categoryId).tagIds(new HashSet<>()).build();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(categoryService.getCategory(newCategoryId, workspaceId))
+                .thenReturn(Category.builder().id(newCategoryId).workspaceId(workspaceId).build());
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of(txn1, txn2));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        dto.assignCategoryId(newCategoryId);
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        assertThat(txn1.getCategoryId()).isEqualTo(newCategoryId);
+        assertThat(txn2.getCategoryId()).isEqualTo(newCategoryId);
+        verify(transactionRepository, times(2)).save(any());
+    }
+
+    @Test
+    void updateRecurringItem_cascadesAllLockedFieldsToLinkedTransactions() {
+        RecurringItem ri = buildRecurringItem();
+        UUID newAccountId = UUID.randomUUID();
+        UUID newMerchantId = UUID.randomUUID();
+        UUID newTagId = UUID.randomUUID();
+        Transaction txn = Transaction.builder().id(UUID.randomUUID()).workspaceId(workspaceId)
+                .accountId(accountId).merchantId(merchantId).amount(new BigDecimal("-15.99"))
+                .recurringItemId(recurringItemId).categoryId(categoryId)
+                .currencyCode(CurrencyCode.USD).tagIds(new HashSet<>()).build();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(accountService.getAccount(newAccountId, workspaceId))
+                .thenReturn(Account.builder().id(newAccountId).workspaceId(workspaceId).build());
+        when(merchantService.resolveMerchant("NewMerch", workspaceId))
+                .thenReturn(Merchant.builder().id(newMerchantId).workspaceId(workspaceId).name("NewMerch").status(Status.ACTIVE).build());
+        when(tagService.getTag(newTagId, workspaceId))
+                .thenReturn(Tag.builder().id(newTagId).workspaceId(workspaceId).name("New Tag").build());
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+                .accountId(newAccountId)
+                .merchantName("NewMerch")
+                .currencyCode(CurrencyCode.EUR)
+                .build();
+        dto.assignNotes("new notes");
+        dto.assignTagIds(Set.of(newTagId));
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        assertThat(txn.getAccountId()).isEqualTo(newAccountId);
+        assertThat(txn.getMerchantId()).isEqualTo(newMerchantId);
+        assertThat(txn.getCurrencyCode()).isEqualTo(CurrencyCode.EUR);
+        assertThat(txn.getNotes()).isEqualTo("new notes");
+        assertThat(txn.getTagIds()).containsExactly(newTagId);
+    }
+
+    @Test
+    void updateRecurringItem_noLinkedTransactions_noCascade() {
+        RecurringItem ri = buildRecurringItem();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of());
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        dto.assignNotes("updated");
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        verify(transactionRepository, never()).save(any());
+    }
 }

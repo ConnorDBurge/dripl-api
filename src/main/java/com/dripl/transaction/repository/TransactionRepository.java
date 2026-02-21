@@ -23,6 +23,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findAllBySplitIdAndWorkspaceId(UUID splitId, UUID workspaceId);
 
+    List<Transaction> findAllByRecurringItemIdAndWorkspaceId(UUID recurringItemId, UUID workspaceId);
+
     long countByGroupId(UUID groupId);
 
     long countBySplitId(UUID splitId);
