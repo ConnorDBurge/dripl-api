@@ -291,17 +291,22 @@ Async fire-and-forget transaction change history using Spring's `ApplicationEven
 
 **Test totals: 459 unit + 216 IT = 675 tests, all passing**
 
-## Checkpoint 14: Frontend (Future)
-Next.js frontend with OAuth login.
+---
 
-- [ ] Scaffold Next.js app (dripl-ui)
-- [ ] NextAuth.js with Google/Apple OAuth
-- [ ] Bootstrap API call from NextAuth server-side
-- [ ] JWT storage and authenticated API calls
+## Future Roadmap
 
-## Checkpoint 15: AI & Deployment (Future)
-Spring AI MCP server and cloud deployment.
+Ideas captured for future consideration:
 
-- [ ] Spring AI MCP server integration
-- [ ] Cloud deployment preparation
-- [ ] CI/CD pipeline
+- **Bulk transaction operations** — Delete/update multiple transactions at once (UI multi-select)
+- **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
+- **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)
+- **CSV import/export** — Import from bank exports, export for spreadsheets
+- **Transaction templates** — Quick-create from saved templates (different from recurring)
+- **Account-to-account transfers** — Single API call creates linked expense/income pair with shared `transferId`
+- **Spring AI MCP server** — AI-powered transaction categorization and insights
+- **Cloud deployment** — Production infrastructure, CI/CD pipeline
+
+## Nice to Have
+
+- **Rules Engine** - Rule-based automation
+- **Zapier Integration** - Add zaps for Zapier automation (not Dripl-specific)

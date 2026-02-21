@@ -518,3 +518,18 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 17. **Domain event framework** — A generic `DomainEvent` record in `common/event` uses "domain.action" naming (e.g., `transaction.created`, `transaction.updated`). Events are published via Spring's `ApplicationEventPublisher` and consumed by `@TransactionalEventListener` + `@Async` listeners. The event contains a `Map<String, FieldChange>` capturing per-field diffs (oldValue → newValue) with human-readable values. Currently used for transaction change history — designed to be Kafka-pluggable later by swapping the publisher without changing event structure. No DLQ or retry — if async persistence fails, the event is lost (acceptable for display-only history). Kafka should be introduced when multiple consumers, cross-service communication, or guaranteed delivery is required.
 
 18. **Cached balance with synchronous recompute** — Accounts store a `startingBalance` (set once at creation) and a computed `balance` (`startingBalance + SUM(transactions.amount)`). Balance is recomputed synchronously within the same `@Transactional` boundary on every transaction create/update/delete. No event-driven balance updates, no eventual consistency — the balance is always accurate when the API response returns.
+
+---
+
+## Future Roadmap
+
+Ideas for future work, captured as we think of them.
+
+- **Bulk transaction operations** — Delete/update multiple transactions at once (useful for UI multi-select)
+- **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
+- **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)
+- **CSV import/export** — Import transactions from bank exports, export for spreadsheets
+- **Transaction templates** — Quick-create from a saved template (different from recurring items)
+- **Account-to-account transfers** — Single API call that creates a linked expense/income pair across two accounts with a shared `transferId`
+- **Spring AI MCP server** — AI-powered transaction categorization and insights
+- **Cloud deployment** — Production infrastructure, CI/CD pipeline
