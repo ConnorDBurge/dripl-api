@@ -1,6 +1,7 @@
 package com.dripl.transaction.split;
 
 import com.dripl.account.enums.CurrencyCode;
+import com.dripl.account.service.AccountService;
 import com.dripl.category.entity.Category;
 import com.dripl.category.service.CategoryService;
 import com.dripl.common.exception.BadRequestException;
@@ -41,6 +42,7 @@ class TransactionSplitServiceTest {
 
     @Mock private TransactionSplitRepository transactionSplitRepository;
     @Mock private TransactionRepository transactionRepository;
+    @Mock private AccountService accountService;
     @Mock private MerchantService merchantService;
     @Mock private CategoryService categoryService;
     @Mock private TagService tagService;

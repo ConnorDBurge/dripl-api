@@ -29,17 +29,17 @@
         "name": "Personal Checking",
         "type": "CASH",
         "subType": "CHECKING",
-        "balance": 3100.0,
         "currency": "USD",
-        "institutionName": "USAA"
+        "institutionName": "USAA",
+        "startingBalance": 3100.0
       },
       {
         "name": "Discover Card",
         "type": "CREDIT",
         "subType": "CREDIT_CARD",
-        "balance": -420.75,
         "currency": "USD",
-        "institutionName": "Discover"
+        "institutionName": "Discover",
+        "startingBalance": -420.75
       }
     ],
     "merchants": [
@@ -105,7 +105,7 @@
             "description": "Clothes and accessories"
           },
           {
-            "name": "Home Décor",
+            "name": "Home D\u00e9cor",
             "description": "Decorations and furnishings"
           }
         ]
@@ -170,7 +170,7 @@
       {
         "accountName": "Discover Card",
         "merchantName": "Etsy",
-        "categoryName": "Home Décor",
+        "categoryName": "Home D\u00e9cor",
         "date": "2025-07-08",
         "amount": -28.99,
         "notes": "Wall art",
@@ -203,25 +203,25 @@
         "name": "BoA Checking",
         "type": "CASH",
         "subType": "CHECKING",
-        "balance": 2800.0,
         "currency": "USD",
-        "institutionName": "Bank of America"
+        "institutionName": "Bank of America",
+        "startingBalance": 2800.0
       },
       {
         "name": "Vanguard Brokerage",
         "type": "INVESTMENT",
         "subType": "BROKERAGE",
-        "balance": 45000.0,
         "currency": "USD",
-        "institutionName": "Vanguard"
+        "institutionName": "Vanguard",
+        "startingBalance": 45000.0
       },
       {
         "name": "Student Loan",
         "type": "LOAN",
         "subType": "STUDENT_LOAN",
-        "balance": -32000.0,
         "currency": "USD",
-        "institutionName": "Navient"
+        "institutionName": "Navient",
+        "startingBalance": -32000.0
       }
     ],
     "merchants": [

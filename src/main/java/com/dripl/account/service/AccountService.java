@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -45,18 +46,19 @@ public class AccountService {
             throw new ConflictException("An account named '" + dto.getName() + "' already exists");
         }
 
-        // Check the subtype is valid for an account type
         if (dto.getType() != null && dto.getSubType() != null && !dto.getType().supportsSubType(dto.getSubType())) {
             throw typeSubTypeMismatch(dto.getType(), dto.getSubType());
         }
 
+        BigDecimal startBal = dto.getStartingBalance() != null ? dto.getStartingBalance() : BigDecimal.ZERO;
+
         Account account = accountRepository.save(Account.builder()
                 .workspaceId(workspaceId)
                 .name(dto.getName())
-
                 .type(dto.getType())
                 .subType(dto.getSubType())
-                .balance(dto.getBalance() != null ? dto.getBalance() : BigDecimal.ZERO)
+                .startingBalance(startBal)
+                .balance(startBal)
                 .currency(dto.getCurrency() != null ? dto.getCurrency() : com.dripl.account.enums.CurrencyCode.USD)
                 .institutionName(dto.getInstitutionName())
                 .source(dto.getSource() != null ? dto.getSource() : com.dripl.account.enums.AccountSource.MANUAL)
@@ -76,6 +78,8 @@ public class AccountService {
             throw new ConflictException("An account named '" + dto.getName() + "' already exists");
         }
 
+        boolean startingBalanceChanged = dto.getStartingBalance() != null;
+
         accountMapper.updateEntity(dto, account);
 
         if (account.getType() != null && account.getSubType() != null
@@ -83,8 +87,15 @@ public class AccountService {
             throw typeSubTypeMismatch(account.getType(), account.getSubType());
         }
 
+        account = accountRepository.save(account);
+
+        if (startingBalanceChanged) {
+            recomputeBalance(accountId);
+            account = accountRepository.findById(accountId).orElseThrow();
+        }
+
         log.info("Updating account '{}' ({})", account.getName(), accountId);
-        return accountRepository.save(account);
+        return account;
     }
 
     @Transactional
@@ -92,6 +103,16 @@ public class AccountService {
         Account account = getAccount(accountId, workspaceId);
         log.info("Deleting account '{}' ({})", account.getName(), accountId);
         accountRepository.delete(account);
+    }
+
+    @Transactional
+    public void recomputeBalance(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        BigDecimal txnSum = accountRepository.sumTransactionAmounts(accountId);
+        account.setBalance(account.getStartingBalance().add(txnSum));
+        account.setBalanceLastUpdated(LocalDateTime.now());
+        accountRepository.save(account);
     }
 
     private BadRequestException typeSubTypeMismatch(AccountType type, AccountSubType subType) {

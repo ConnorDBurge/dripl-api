@@ -30,7 +30,7 @@ public class CreateAccountDto {
     @NotNull(message = "Account sub-type must be provided")
     private AccountSubType subType;
 
-    private BigDecimal balance;
+    private BigDecimal startingBalance;
 
     private CurrencyCode currency;
 

@@ -3,120 +3,120 @@
     "name": "Primary Checking",
     "type": "CASH",
     "subType": "CHECKING",
-    "balance": 7250.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 7250.0
   },
   {
     "name": "Joint Savings",
     "type": "CASH",
     "subType": "SAVINGS",
-    "balance": 6500.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 6500.0
   },
   {
     "name": "Emergency Fund",
     "type": "CASH",
     "subType": "SAVINGS",
-    "balance": 12000.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 12000.0
   },
   {
     "name": "Vacation Fund",
     "type": "CASH",
     "subType": "SAVINGS",
-    "balance": 1150.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 1150.0
   },
   {
     "name": "Tax Savings",
     "type": "CASH",
     "subType": "SAVINGS",
-    "balance": 2400.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 2400.0
   },
   {
     "name": "Vehicle Fund",
     "type": "CASH",
     "subType": "SAVINGS",
-    "balance": 800.0,
     "currency": "USD",
-    "institutionName": "First National Bank"
+    "institutionName": "First National Bank",
+    "startingBalance": 800.0
   },
   {
     "name": "Rewards Credit Card",
     "type": "CREDIT",
     "subType": "CREDIT_CARD",
-    "balance": -1250.0,
     "currency": "USD",
-    "institutionName": "Atlas Bank"
+    "institutionName": "Atlas Bank",
+    "startingBalance": -1250.0
   },
   {
     "name": "Cashback Credit Card",
     "type": "CREDIT",
     "subType": "CREDIT_CARD",
-    "balance": -365.0,
     "currency": "USD",
-    "institutionName": "Summit Credit Union"
+    "institutionName": "Summit Credit Union",
+    "startingBalance": -365.0
   },
   {
     "name": "Brokerage Account",
     "type": "INVESTMENT",
     "subType": "BROKERAGE",
-    "balance": 18760.0,
     "currency": "USD",
-    "institutionName": "Ridgeline Investments"
+    "institutionName": "Ridgeline Investments",
+    "startingBalance": 18760.0
   },
   {
     "name": "Roth IRA",
     "type": "INVESTMENT",
     "subType": "RETIREMENT",
-    "balance": 1800.0,
     "currency": "USD",
-    "institutionName": "Ridgeline Investments"
+    "institutionName": "Ridgeline Investments",
+    "startingBalance": 1800.0
   },
   {
     "name": "401k",
     "type": "INVESTMENT",
     "subType": "RETIREMENT",
-    "balance": 57000.0,
     "currency": "USD",
-    "institutionName": "Keystone Financial"
+    "institutionName": "Keystone Financial",
+    "startingBalance": 57000.0
   },
   {
     "name": "Pension",
     "type": "INVESTMENT",
     "subType": "RETIREMENT",
-    "balance": 21100.0,
     "currency": "USD",
-    "institutionName": "Keystone Financial"
+    "institutionName": "Keystone Financial",
+    "startingBalance": 21100.0
   },
   {
     "name": "Family SUV",
     "type": "VEHICLE",
     "subType": "CAR",
-    "balance": 13800.0,
     "currency": "USD",
-    "institutionName": "Personal Property"
+    "institutionName": "Personal Property",
+    "startingBalance": 13800.0
   },
   {
     "name": "Pickup Truck",
     "type": "VEHICLE",
     "subType": "TRUCK",
-    "balance": 9100.0,
     "currency": "USD",
-    "institutionName": "Personal Property"
+    "institutionName": "Personal Property",
+    "startingBalance": 9100.0
   },
   {
     "name": "Venmo",
     "type": "CASH",
     "subType": "DIGITAL_WALLET",
-    "balance": 0.0,
     "currency": "USD",
-    "institutionName": "Venmo"
+    "institutionName": "Venmo",
+    "startingBalance": 0.0
   }
 ]

@@ -39,6 +39,7 @@ class AccountCrudIT extends BaseIntegrationTest {
         assertThat(response.getBody().get("name")).isEqualTo("Chase Checking");
         assertThat(response.getBody().get("type")).isEqualTo("CASH");
         assertThat(response.getBody().get("subType")).isEqualTo("CHECKING");
+        assertThat(response.getBody().get("startingBalance")).isEqualTo(0);
         assertThat(response.getBody().get("balance")).isEqualTo(0);
         assertThat(response.getBody().get("currency")).isEqualTo("USD");
         assertThat(response.getBody().get("source")).isEqualTo("MANUAL");
@@ -54,7 +55,7 @@ class AccountCrudIT extends BaseIntegrationTest {
                             "name":"Amex Gold",
                             "type":"CREDIT",
                             "subType":"CREDIT_CARD",
-                            "balance":-1500.00,
+                            "startingBalance":-1500.00,
                             "currency":"EUR",
                             "institutionName":"American Express",
                             "source":"AUTOMATIC"
@@ -231,6 +232,97 @@ class AccountCrudIT extends BaseIntegrationTest {
                 new HttpEntity<>(authHeaders(token)),
                 Map.class);
         assertThat(get.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void balanceRecompute_afterTransactionCreate_balanceUpdates() {
+        // Create account with starting balance
+        var acctResp = restTemplate.exchange(
+                "/api/v1/accounts", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Balance Test","type":"CASH","subType":"CHECKING","startingBalance":5000.00}
+                        """, authHeaders(token)),
+                Map.class);
+        String acctId = (String) acctResp.getBody().get("id");
+        assertThat(((Number) acctResp.getBody().get("balance")).doubleValue()).isEqualTo(5000.00);
+
+        // Create a transaction against this account
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"TestStore","date":"2025-07-01T00:00:00","amount":-120.50}
+                        """.formatted(acctId), authHeaders(token)),
+                Map.class);
+
+        // Check balance was recomputed
+        var getResp = restTemplate.exchange(
+                "/api/v1/accounts/" + acctId, HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+        assertThat(((Number) getResp.getBody().get("startingBalance")).doubleValue()).isEqualTo(5000.00);
+        assertThat(((Number) getResp.getBody().get("balance")).doubleValue()).isEqualTo(4879.50);
+        assertThat(getResp.getBody().get("balanceLastUpdated")).isNotNull();
+    }
+
+    @Test
+    void balanceRecompute_afterTransactionDelete_balanceRestores() {
+        var acctResp = restTemplate.exchange(
+                "/api/v1/accounts", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Del Balance","type":"CASH","subType":"CHECKING","startingBalance":1000.00}
+                        """, authHeaders(token)),
+                Map.class);
+        String acctId = (String) acctResp.getBody().get("id");
+
+        var txnResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Store","date":"2025-07-01T00:00:00","amount":-200.00}
+                        """.formatted(acctId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) txnResp.getBody().get("id");
+
+        // Delete the transaction
+        restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.DELETE,
+                new HttpEntity<>(authHeaders(token)),
+                Void.class);
+
+        // Balance should restore to starting balance
+        var getResp = restTemplate.exchange(
+                "/api/v1/accounts/" + acctId, HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+        assertThat(((Number) getResp.getBody().get("balance")).doubleValue()).isEqualTo(1000.00);
+    }
+
+    @Test
+    void balanceRecompute_updateStartingBalance_recomputes() {
+        var acctResp = restTemplate.exchange(
+                "/api/v1/accounts", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"SB Update","type":"CASH","subType":"CHECKING","startingBalance":3000.00}
+                        """, authHeaders(token)),
+                Map.class);
+        String acctId = (String) acctResp.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Shop","date":"2025-07-01T00:00:00","amount":-500.00}
+                        """.formatted(acctId), authHeaders(token)),
+                Map.class);
+
+        // Update starting balance
+        var patchResp = restTemplate.exchange(
+                "/api/v1/accounts/" + acctId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"startingBalance":4000.00}
+                        """, authHeaders(token)),
+                Map.class);
+
+        assertThat(((Number) patchResp.getBody().get("startingBalance")).doubleValue()).isEqualTo(4000.00);
+        assertThat(((Number) patchResp.getBody().get("balance")).doubleValue()).isEqualTo(3500.00);
     }
 
     @Test

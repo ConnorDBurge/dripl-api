@@ -47,9 +47,10 @@ public class Account extends BaseEntity {
     @Column(name = "sub_type", nullable = false)
     private AccountSubType subType;
 
-    /** TODO: Figure out how to keep this in sync with transactions, maybe event driven processing?
-     *      Maybe just total it up from transactions? That could be expensive on the db.
-     */
+    @Builder.Default
+    @Column(name = "starting_balance", nullable = false)
+    private BigDecimal startingBalance = BigDecimal.ZERO;
+
     @Builder.Default
     @Column(name = "balance", nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;

@@ -119,12 +119,16 @@ public class TransactionService {
                 .build();
 
         log.info("Created transaction for merchant '{}'", merchantId);
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        accountService.recomputeBalance(accountId);
+        return saved;
     }
 
     @Transactional
     public Transaction updateTransaction(UUID transactionId, UUID workspaceId, UpdateTransactionDto dto) {
         Transaction transaction = getTransaction(transactionId, workspaceId);
+        UUID oldAccountId = transaction.getAccountId();
+        BigDecimal oldAmount = transaction.getAmount();
 
         // Enforce mutual exclusivity: can't link to recurring item if grouped
         if (dto.isRecurringItemIdSpecified() && dto.getRecurringItemId() != null && transaction.getGroupId() != null && !isUnlinkingGroup(dto)) {
@@ -228,7 +232,7 @@ public class TransactionService {
             }
         }
 
-        // Re-validate polarity if amount changed but category stayed the same
+        // Re-validate polarity if the amount changed but the category stayed the same
         if (dto.getAmount() != null && !dto.isCategoryIdSpecified() && transaction.getCategoryId() != null) {
             categoryService.validateCategoryPolarity(transaction.getCategoryId(), dto.getAmount(), workspaceId);
         }
@@ -248,14 +252,28 @@ public class TransactionService {
         }
 
         log.info("Updating transaction {}", transactionId);
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+
+        boolean accountChanged = !saved.getAccountId().equals(oldAccountId);
+        boolean amountChanged = saved.getAmount().compareTo(oldAmount) != 0;
+        if (accountChanged || amountChanged) {
+            accountService.recomputeBalance(saved.getAccountId());
+            if (accountChanged) {
+                accountService.recomputeBalance(oldAccountId);
+            }
+        }
+
+        return saved;
     }
 
     @Transactional
     public void deleteTransaction(UUID transactionId, UUID workspaceId) {
         Transaction transaction = getTransaction(transactionId, workspaceId);
+        UUID accountId = transaction.getAccountId();
         log.info("Deleting transaction {}", transactionId);
         transactionRepository.delete(transaction);
+        transactionRepository.flush();
+        accountService.recomputeBalance(accountId);
     }
 
     private void applyStatusTransition(Transaction transaction, TransactionStatus newStatus) {

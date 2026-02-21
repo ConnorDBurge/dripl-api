@@ -1,5 +1,6 @@
 package com.dripl.transaction.split.service;
 
+import com.dripl.account.service.AccountService;
 import com.dripl.category.service.CategoryService;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
@@ -34,6 +35,7 @@ public class TransactionSplitService {
 
     private final TransactionSplitRepository transactionSplitRepository;
     private final TransactionRepository transactionRepository;
+    private final AccountService accountService;
     private final MerchantService merchantService;
     private final CategoryService categoryService;
     private final TagService tagService;
@@ -90,6 +92,7 @@ public class TransactionSplitService {
         transactionRepository.delete(source);
 
         log.info("Created transaction split from transaction {} with {} children", dto.getTransactionId(), dto.getChildren().size());
+        accountService.recomputeBalance(split.getAccountId());
         return split;
     }
 
@@ -152,15 +155,18 @@ public class TransactionSplitService {
         }
 
         log.info("Updated transaction split {}", splitId);
+        accountService.recomputeBalance(split.getAccountId());
         return split;
     }
 
     @Transactional
     public void deleteTransactionSplit(UUID splitId, UUID workspaceId) {
         TransactionSplit split = getTransactionSplit(splitId, workspaceId);
+        UUID accountId = split.getAccountId();
         transactionRepository.clearSplitId(splitId);
         transactionSplitRepository.delete(split);
         log.info("Dissolved transaction split {}", splitId);
+        accountService.recomputeBalance(accountId);
     }
 
     private void createChildTransaction(TransactionSplit split, Transaction source, SplitChildDto child, UUID workspaceId) {

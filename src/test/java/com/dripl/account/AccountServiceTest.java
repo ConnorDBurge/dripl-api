@@ -136,7 +136,7 @@ class AccountServiceTest {
                 .name("Amex Gold")
                 .type(AccountType.CREDIT)
                 .subType(AccountSubType.CREDIT_CARD)
-                .balance(new BigDecimal("-1500.00"))
+                .startingBalance(new BigDecimal("-1500.00"))
                 .currency(CurrencyCode.EUR)
                 .institutionName("American Express")
                 .source(AccountSource.AUTOMATIC)
@@ -148,6 +148,7 @@ class AccountServiceTest {
         Account result = accountService.createAccount(workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Amex Gold");
+        assertThat(result.getStartingBalance()).isEqualByComparingTo(new BigDecimal("-1500.00"));
         assertThat(result.getBalance()).isEqualByComparingTo(new BigDecimal("-1500.00"));
         assertThat(result.getCurrency()).isEqualTo(CurrencyCode.EUR);
         assertThat(result.getInstitutionName()).isEqualTo("American Express");
@@ -227,15 +228,18 @@ class AccountServiceTest {
     }
 
     @Test
-    void updateAccount_balance_setsBalanceLastUpdated() {
+    void updateAccount_startingBalance_triggersRecompute() {
         Account account = buildAccount("Checking", AccountType.CASH, AccountSubType.CHECKING);
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.sumTransactionAmounts(accountId)).thenReturn(new BigDecimal("-200.00"));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().balance(new BigDecimal("1000.00")).build();
+        UpdateAccountDto dto = UpdateAccountDto.builder().startingBalance(new BigDecimal("1000.00")).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
-        assertThat(result.getBalance()).isEqualByComparingTo(new BigDecimal("1000.00"));
+        assertThat(result.getStartingBalance()).isEqualByComparingTo(new BigDecimal("1000.00"));
+        assertThat(result.getBalance()).isEqualByComparingTo(new BigDecimal("800.00"));
         assertThat(result.getBalanceLastUpdated()).isNotNull();
     }
 
@@ -307,6 +311,43 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accountService.deleteAccount(accountId, workspaceId))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // --- recomputeBalance ---
+
+    @Test
+    void recomputeBalance_addsTransactionSumToStartingBalance() {
+        Account account = buildAccount("Checking", AccountType.CASH, AccountSubType.CHECKING);
+        account.setStartingBalance(new BigDecimal("5000.00"));
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.sumTransactionAmounts(accountId)).thenReturn(new BigDecimal("-1200.50"));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.recomputeBalance(accountId);
+
+        assertThat(account.getBalance()).isEqualByComparingTo(new BigDecimal("3799.50"));
+        assertThat(account.getBalanceLastUpdated()).isNotNull();
+    }
+
+    @Test
+    void recomputeBalance_noTransactions_balanceEqualsStarting() {
+        Account account = buildAccount("Checking", AccountType.CASH, AccountSubType.CHECKING);
+        account.setStartingBalance(new BigDecimal("2500.00"));
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.sumTransactionAmounts(accountId)).thenReturn(BigDecimal.ZERO);
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.recomputeBalance(accountId);
+
+        assertThat(account.getBalance()).isEqualByComparingTo(new BigDecimal("2500.00"));
+    }
+
+    @Test
+    void recomputeBalance_accountNotFound_throws() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.recomputeBalance(accountId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }

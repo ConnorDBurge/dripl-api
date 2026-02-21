@@ -25,7 +25,7 @@ public class UpdateAccountDto {
 
     private AccountSubType subType;
 
-    private BigDecimal balance;
+    private BigDecimal startingBalance;
 
     private CurrencyCode currency;
 

@@ -27,6 +27,7 @@ public interface AccountMapper {
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "workspaceId", ignore = true)
     @Mapping(target = "source", ignore = true)
+    @Mapping(target = "balance", ignore = true)
     @Mapping(target = "balanceLastUpdated", ignore = true)
     @Mapping(target = "closedAt", ignore = true)
     @Mapping(target = "externalId", ignore = true)
@@ -34,9 +35,6 @@ public interface AccountMapper {
 
     @AfterMapping
     default void handleSideEffects(UpdateAccountDto dto, @MappingTarget Account account) {
-        if (dto.getBalance() != null) {
-            account.setBalanceLastUpdated(LocalDateTime.now());
-        }
         if (dto.getStatus() != null) {
             if (dto.getStatus() == Status.CLOSED && account.getClosedAt() == null) {
                 account.setClosedAt(LocalDateTime.now());

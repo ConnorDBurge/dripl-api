@@ -27,6 +27,7 @@ public class AccountDto extends BaseDto {
     private String name;
     private AccountType type;
     private AccountSubType subType;
+    private BigDecimal startingBalance;
     private BigDecimal balance;
     private CurrencyCode currency;
     private String institutionName;
