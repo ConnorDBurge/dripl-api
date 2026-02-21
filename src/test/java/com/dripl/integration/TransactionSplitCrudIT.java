@@ -621,9 +621,10 @@ class TransactionSplitCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions?splitId=" + splitId, HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
-                List.class);
+                Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2);
+        List<?> content = (List<?>) response.getBody().get("content");
+        assertThat(content).hasSize(2);
     }
 }

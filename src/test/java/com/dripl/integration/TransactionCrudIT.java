@@ -174,10 +174,12 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
-                List.class);
+                Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSizeGreaterThanOrEqualTo(2);
+        List<?> content = (List<?>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(response.getBody()).containsKey("page");
     }
 
     @Test
@@ -888,5 +890,493 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    // ── Pagination ───────────────────────────────────────────────────
+
+    @Test
+    void listTransactions_defaultPagination_returnsPageMetadata() {
+        // Create 3 transactions
+        for (int i = 1; i <= 3; i++) {
+            restTemplate.exchange(
+                    "/api/v1/transactions", HttpMethod.POST,
+                    new HttpEntity<>("""
+                            {"accountId":"%s","merchantName":"Store%d","date":"2025-07-0%dT00:00:00","amount":-%d.00}
+                            """.formatted(accountId, i, i, i * 10), authHeaders(token)),
+                    Map.class);
+        }
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> page = (Map<String, Object>) response.getBody().get("page");
+        assertThat(page.get("number")).isEqualTo(0);
+        assertThat(page.get("size")).isEqualTo(25);
+        assertThat((int) page.get("totalElements")).isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    void listTransactions_customSize_respectsSize() {
+        for (int i = 1; i <= 3; i++) {
+            restTemplate.exchange(
+                    "/api/v1/transactions", HttpMethod.POST,
+                    new HttpEntity<>("""
+                            {"accountId":"%s","merchantName":"PageStore%d","date":"2025-07-0%dT00:00:00","amount":-%d.00}
+                            """.formatted(accountId, i, i, i * 10), authHeaders(token)),
+                    Map.class);
+        }
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?size=2", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<?> content = (List<?>) response.getBody().get("content");
+        assertThat(content).hasSize(2);
+        Map<String, Object> page = (Map<String, Object>) response.getBody().get("page");
+        assertThat(page.get("size")).isEqualTo(2);
+        assertThat((int) page.get("totalPages")).isGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void listTransactions_page2_returnsDifferentResults() {
+        for (int i = 1; i <= 3; i++) {
+            restTemplate.exchange(
+                    "/api/v1/transactions", HttpMethod.POST,
+                    new HttpEntity<>("""
+                            {"accountId":"%s","merchantName":"PageTwoStore%d","date":"2025-07-0%dT00:00:00","amount":-%d.00}
+                            """.formatted(accountId, i, i, i * 10), authHeaders(token)),
+                    Map.class);
+        }
+
+        var page0 = restTemplate.exchange(
+                "/api/v1/transactions?size=1&page=0", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+        var page1 = restTemplate.exchange(
+                "/api/v1/transactions?size=1&page=1", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<?> content0 = (List<?>) page0.getBody().get("content");
+        List<?> content1 = (List<?>) page1.getBody().get("content");
+        assertThat(content0).hasSize(1);
+        assertThat(content1).hasSize(1);
+        // Different transactions on different pages
+        String id0 = (String) ((Map<?, ?>) content0.get(0)).get("id");
+        String id1 = (String) ((Map<?, ?>) content1.get(0)).get("id");
+        assertThat(id0).isNotEqualTo(id1);
+    }
+
+    @Test
+    void listTransactions_outOfRangePage_returnsEmptyContent() {
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?page=9999", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<?> content = (List<?>) response.getBody().get("content");
+        assertThat(content).isEmpty();
+    }
+
+    @Test
+    void listTransactions_sizeClamped_above250Returns250() {
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?size=500", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> page = (Map<String, Object>) response.getBody().get("page");
+        assertThat(page.get("size")).isEqualTo(250);
+    }
+
+    // ── Sorting ──────────────────────────────────────────────────────
+
+    @Test
+    void listTransactions_sortByDateAsc_returnsOldestFirst() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"OldStore","date":"2025-01-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"NewStore","date":"2025-12-01T00:00:00","amount":-20.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?sortBy=date&sortDirection=ASC", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+        // First should be older date
+        String firstDate = (String) content.get(0).get("date");
+        String lastDate = (String) content.get(content.size() - 1).get("date");
+        assertThat(firstDate.compareTo(lastDate)).isLessThanOrEqualTo(0);
+    }
+
+    @Test
+    void listTransactions_sortByAmountDesc_returnsLargestFirst() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"SmallStore","date":"2025-07-01T00:00:00","amount":-1.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"BigStore","date":"2025-07-02T00:00:00","amount":-999.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?sortBy=amount&sortDirection=DESC", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+        double first = ((Number) content.get(0).get("amount")).doubleValue();
+        double last = ((Number) content.get(content.size() - 1).get("amount")).doubleValue();
+        assertThat(first).isGreaterThanOrEqualTo(last);
+    }
+
+    @Test
+    void listTransactions_sortByCategory_sortsByCategoryName() {
+        // Create categories with known alphabetical order
+        var catA = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"AAA Category"}
+                        """, authHeaders(token)),
+                Map.class);
+        String catAId = (String) catA.getBody().get("id");
+
+        var catZ = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"ZZZ Category"}
+                        """, authHeaders(token)),
+                Map.class);
+        String catZId = (String) catZ.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"CatStoreZ","date":"2025-07-01T00:00:00","amount":-10.00,"categoryId":"%s"}
+                        """.formatted(accountId, catZId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"CatStoreA","date":"2025-07-02T00:00:00","amount":-20.00,"categoryId":"%s"}
+                        """.formatted(accountId, catAId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?sortBy=category&sortDirection=ASC", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void listTransactions_sortByMerchant_sortsByMerchantName() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Zebra Market","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Apple Store","date":"2025-07-02T00:00:00","amount":-20.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?sortBy=merchant&sortDirection=ASC", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    // ── Date Range Filters ───────────────────────────────────────────
+
+    @Test
+    void listTransactions_startDateFilter_returnsOnOrAfter() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"EarlyStore","date":"2024-01-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"LateStore","date":"2025-12-01T00:00:00","amount":-20.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?startDate=2025-06-01T00:00:00", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        for (var txn : content) {
+            assertThat(txn.get("date").toString()).isGreaterThanOrEqualTo("2025-06-01");
+        }
+    }
+
+    @Test
+    void listTransactions_endDateFilter_returnsOnOrBefore() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"FutureStore","date":"2026-12-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"PastStore","date":"2024-06-01T00:00:00","amount":-20.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?endDate=2025-01-01T00:00:00", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        for (var txn : content) {
+            assertThat(txn.get("date").toString()).isLessThanOrEqualTo("2025-01-01T23:59:59");
+        }
+    }
+
+    @Test
+    void listTransactions_dateRange_returnsWithinRange() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"InRangeStore","date":"2025-06-15T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"OutOfRangeStore","date":"2024-01-01T00:00:00","amount":-20.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?startDate=2025-06-01T00:00:00&endDate=2025-07-01T00:00:00", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isNotEmpty();
+        for (var txn : content) {
+            assertThat(txn.get("date").toString()).isGreaterThanOrEqualTo("2025-06-01");
+            assertThat(txn.get("date").toString()).isLessThanOrEqualTo("2025-07-01T23:59:59");
+        }
+    }
+
+    // ── Amount Range Filters ─────────────────────────────────────────
+
+    @Test
+    void listTransactions_minAmountFilter_returnsAboveMin() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"CheapStore","date":"2025-07-01T00:00:00","amount":-1.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"ExpensiveStore","date":"2025-07-02T00:00:00","amount":-500.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?minAmount=-100", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        for (var txn : content) {
+            double amount = ((Number) txn.get("amount")).doubleValue();
+            assertThat(amount).isGreaterThanOrEqualTo(-100.0);
+        }
+    }
+
+    @Test
+    void listTransactions_maxAmountFilter_returnsBelowMax() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"TinyStore","date":"2025-07-01T00:00:00","amount":-5.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?maxAmount=-2", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        for (var txn : content) {
+            double amount = ((Number) txn.get("amount")).doubleValue();
+            assertThat(amount).isLessThanOrEqualTo(-2.0);
+        }
+    }
+
+    // ── Search ───────────────────────────────────────────────────────
+
+    @Test
+    void listTransactions_searchByNotes_matchesNotesField() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"SomeStore","date":"2025-07-01T00:00:00","amount":-10.00,"notes":"unicorn sparkle purchase"}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?search=unicorn sparkle", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isNotEmpty();
+        assertThat((String) content.get(0).get("notes")).containsIgnoringCase("unicorn sparkle");
+    }
+
+    @Test
+    void listTransactions_searchByMerchantName_matchesMerchant() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"XylophoneEmporium","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?search=XylophoneEmpor", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isNotEmpty();
+    }
+
+    @Test
+    void listTransactions_searchByCategoryName_matchesCategory() {
+        var catResp = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Qwerty Utilities"}
+                        """, authHeaders(token)),
+                Map.class);
+        String qCatId = (String) catResp.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"UtilStore","date":"2025-07-01T00:00:00","amount":-10.00,"categoryId":"%s"}
+                        """.formatted(accountId, qCatId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?search=Qwerty", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isNotEmpty();
+    }
+
+    @Test
+    void listTransactions_searchByAmount_matchesAmountSubstring() {
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"AmountSearchStore","date":"2025-07-01T00:00:00","amount":-829.47}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?search=829", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isNotEmpty();
+        assertThat(content).allSatisfy(t -> {
+            String amount = String.valueOf(t.get("amount"));
+            assertThat(amount).contains("829");
+        });
+    }
+
+    @Test
+    void listTransactions_searchNoMatch_returnsEmpty() {
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?search=zzz_no_match_xyz_9999", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).isEmpty();
+    }
+
+    // ── Combined Filters ─────────────────────────────────────────────
+
+    @Test
+    void listTransactions_combinedFiltersAndPagination_work() {
+        // Create transactions with distinct dates and amounts
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"ComboStore1","date":"2025-08-01T00:00:00","amount":-50.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+        restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"ComboStore2","date":"2025-08-15T00:00:00","amount":-100.00}
+                        """.formatted(accountId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions?startDate=2025-08-01T00:00:00&endDate=2025-08-31T00:00:00&sortBy=amount&sortDirection=ASC&size=10", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+        assertThat(content).hasSizeGreaterThanOrEqualTo(2);
+        Map<String, Object> page = (Map<String, Object>) response.getBody().get("page");
+        assertThat(page.get("size")).isEqualTo(10);
     }
 }

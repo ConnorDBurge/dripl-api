@@ -1,0 +1,30 @@
+[
+  {
+    "name": "July Dining Out",
+    "categoryName": "Restaurants",
+    "notes": "Restaurant visits in July"
+  },
+  {
+    "name": "August Grocery Runs",
+    "categoryName": "Groceries",
+    "notes": "Grocery shopping in August"
+  },
+  {
+    "name": "September Fill-ups",
+    "categoryName": "Gas",
+    "notes": "Gas station visits in September"
+  },
+  {
+    "name": "October Coffee Runs",
+    "categoryName": "Coffee Shops",
+    "notes": "Coffee shop visits in October"
+  },
+  {
+    "name": "Holiday Shopping",
+    "notes": "Holiday gift shopping in December",
+    "tagNames": [
+      "gift",
+      "shopping"
+    ]
+  }
+]

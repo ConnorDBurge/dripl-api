@@ -1,0 +1,320 @@
+[
+  {
+    "name": "AT&T"
+  },
+  {
+    "name": "AWS"
+  },
+  {
+    "name": "Aldi"
+  },
+  {
+    "name": "Amazon"
+  },
+  {
+    "name": "Apple"
+  },
+  {
+    "name": "Applebee's"
+  },
+  {
+    "name": "BP"
+  },
+  {
+    "name": "Bath & Body Works"
+  },
+  {
+    "name": "Best Buy"
+  },
+  {
+    "name": "Big Lots"
+  },
+  {
+    "name": "Blue Ridge BBQ"
+  },
+  {
+    "name": "Bob Evans"
+  },
+  {
+    "name": "CVS Pharmacy"
+  },
+  {
+    "name": "Caribou Coffee"
+  },
+  {
+    "name": "Chevron"
+  },
+  {
+    "name": "Chewy"
+  },
+  {
+    "name": "Chick-fil-A"
+  },
+  {
+    "name": "Chili's"
+  },
+  {
+    "name": "Chipotle"
+  },
+  {
+    "name": "City Water Authority"
+  },
+  {
+    "name": "Cloudflare"
+  },
+  {
+    "name": "Corner Bakery"
+  },
+  {
+    "name": "Costco"
+  },
+  {
+    "name": "Cracker Barrel"
+  },
+  {
+    "name": "Disney Plus"
+  },
+  {
+    "name": "Dollar General"
+  },
+  {
+    "name": "Dollar Tree"
+  },
+  {
+    "name": "Dunkin'"
+  },
+  {
+    "name": "Dutch Bros"
+  },
+  {
+    "name": "Exxon"
+  },
+  {
+    "name": "Fidelity"
+  },
+  {
+    "name": "FirstEnergy"
+  },
+  {
+    "name": "Five Guys"
+  },
+  {
+    "name": "Food Lion"
+  },
+  {
+    "name": "Geico"
+  },
+  {
+    "name": "GitHub"
+  },
+  {
+    "name": "Golden Dragon"
+  },
+  {
+    "name": "Google"
+  },
+  {
+    "name": "H-E-B"
+  },
+  {
+    "name": "HBO Max"
+  },
+  {
+    "name": "Harbor Grill"
+  },
+  {
+    "name": "Home Depot"
+  },
+  {
+    "name": "IHOP"
+  },
+  {
+    "name": "Joe's Pizza"
+  },
+  {
+    "name": "Kroger"
+  },
+  {
+    "name": "Liberty Mutual"
+  },
+  {
+    "name": "Lowe's"
+  },
+  {
+    "name": "Lyft"
+  },
+  {
+    "name": "Main Street Deli"
+  },
+  {
+    "name": "McDonald's"
+  },
+  {
+    "name": "Michaels"
+  },
+  {
+    "name": "Napoli's Trattoria"
+  },
+  {
+    "name": "Netflix"
+  },
+  {
+    "name": "Nike"
+  },
+  {
+    "name": "Old Navy"
+  },
+  {
+    "name": "Olive Garden"
+  },
+  {
+    "name": "OneLife Fitness"
+  },
+  {
+    "name": "OpenAI"
+  },
+  {
+    "name": "Outback Steakhouse"
+  },
+  {
+    "name": "Panera Bread"
+  },
+  {
+    "name": "PayPal"
+  },
+  {
+    "name": "PetSmart"
+  },
+  {
+    "name": "Petco"
+  },
+  {
+    "name": "Pho King Good"
+  },
+  {
+    "name": "Piggly Wiggly"
+  },
+  {
+    "name": "Planet Fitness"
+  },
+  {
+    "name": "Popeyes"
+  },
+  {
+    "name": "Publix"
+  },
+  {
+    "name": "QuikTrip"
+  },
+  {
+    "name": "RaceTrac"
+  },
+  {
+    "name": "Raising Cane's"
+  },
+  {
+    "name": "Red Lobster"
+  },
+  {
+    "name": "Rite Aid"
+  },
+  {
+    "name": "Riverside Cafe"
+  },
+  {
+    "name": "Ross"
+  },
+  {
+    "name": "Safeway"
+  },
+  {
+    "name": "Sakura Sushi"
+  },
+  {
+    "name": "Shell"
+  },
+  {
+    "name": "Spotify"
+  },
+  {
+    "name": "Sprouts"
+  },
+  {
+    "name": "Starbucks"
+  },
+  {
+    "name": "State Farm"
+  },
+  {
+    "name": "Subway"
+  },
+  {
+    "name": "Sunny's Taqueria"
+  },
+  {
+    "name": "TJ Maxx"
+  },
+  {
+    "name": "Taco Bell"
+  },
+  {
+    "name": "Target"
+  },
+  {
+    "name": "Texas Roadhouse"
+  },
+  {
+    "name": "The Brew House"
+  },
+  {
+    "name": "Trader Joe's"
+  },
+  {
+    "name": "USAA"
+  },
+  {
+    "name": "Uber"
+  },
+  {
+    "name": "Vanguard"
+  },
+  {
+    "name": "Venmo"
+  },
+  {
+    "name": "Vercel"
+  },
+  {
+    "name": "Verizon"
+  },
+  {
+    "name": "Waffle House"
+  },
+  {
+    "name": "Walgreens"
+  },
+  {
+    "name": "Walmart"
+  },
+  {
+    "name": "Waste Management"
+  },
+  {
+    "name": "Wendy's"
+  },
+  {
+    "name": "Whole Foods"
+  },
+  {
+    "name": "Wingstop"
+  },
+  {
+    "name": "Xfinity"
+  },
+  {
+    "name": "Zaxby's"
+  },
+  {
+    "name": "Zelle"
+  }
+]

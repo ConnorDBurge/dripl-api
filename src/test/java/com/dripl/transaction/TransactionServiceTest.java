@@ -133,24 +133,26 @@ class TransactionServiceTest {
 
     @Test
     void listAllByWorkspaceId_returnsTransactions() {
-        when(transactionRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
-                .thenReturn(List.of(buildTransaction()));
+        when(transactionRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(buildTransaction())));
 
-        List<Transaction> result = transactionService.listAll(
-                org.springframework.data.jpa.domain.Specification.where(null));
+        org.springframework.data.domain.Page<Transaction> result = transactionService.listAll(
+                org.springframework.data.jpa.domain.Specification.where(null),
+                org.springframework.data.domain.PageRequest.of(0, 25));
 
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
     void listAllByWorkspaceId_emptyList() {
-        when(transactionRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
-                .thenReturn(List.of());
+        when(transactionRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
 
-        List<Transaction> result = transactionService.listAll(
-                org.springframework.data.jpa.domain.Specification.where(null));
+        org.springframework.data.domain.Page<Transaction> result = transactionService.listAll(
+                org.springframework.data.jpa.domain.Specification.where(null),
+                org.springframework.data.domain.PageRequest.of(0, 25));
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     // --- getTransaction ---

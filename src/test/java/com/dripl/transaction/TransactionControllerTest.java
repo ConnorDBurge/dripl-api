@@ -1,8 +1,10 @@
 package com.dripl.transaction;
 
 import com.dripl.account.enums.CurrencyCode;
+import com.dripl.common.dto.PagedResponse;
 import com.dripl.transaction.controller.TransactionController;
 import com.dripl.transaction.dto.CreateTransactionDto;
+import com.dripl.transaction.dto.TransactionDto;
 import com.dripl.transaction.dto.UpdateTransactionDto;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionSource;
@@ -16,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
@@ -64,22 +68,52 @@ class TransactionControllerTest {
 
     @Test
     void listTransactions_returns200() {
-        when(transactionService.listAll(any())).thenReturn(List.of(buildTransaction()));
+        when(transactionService.listAll(any(), any())).thenReturn(new PageImpl<>(List.of(buildTransaction())));
 
-        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null, null, null);
+        var response = transactionController.listTransactions(
+                workspaceId, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 25, "date", Sort.Direction.DESC);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody().content()).hasSize(1);
     }
 
     @Test
     void listTransactions_empty_returns200() {
-        when(transactionService.listAll(any())).thenReturn(List.of());
+        when(transactionService.listAll(any(), any())).thenReturn(new PageImpl<>(List.of()));
 
-        var response = transactionController.listTransactions(workspaceId, null, null, null, null, null, null, null, null, null, null);
+        var response = transactionController.listTransactions(
+                workspaceId, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 25, "date", Sort.Direction.DESC);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEmpty();
+        assertThat(response.getBody().content()).isEmpty();
+    }
+
+    @Test
+    void listTransactions_pageMetadata() {
+        when(transactionService.listAll(any(), any())).thenReturn(new PageImpl<>(List.of(buildTransaction())));
+
+        var response = transactionController.listTransactions(
+                workspaceId, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 25, "date", Sort.Direction.DESC);
+
+        PagedResponse<TransactionDto> body = response.getBody();
+        assertThat(body.page().number()).isZero();
+        assertThat(body.page().size()).isEqualTo(1);
+        assertThat(body.page().totalElements()).isEqualTo(1);
+        assertThat(body.page().totalPages()).isEqualTo(1);
+    }
+
+    @Test
+    void listTransactions_clampsMaxSize() {
+        when(transactionService.listAll(any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+        transactionController.listTransactions(
+                workspaceId, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 500, "date", Sort.Direction.DESC);
+
+        verify(transactionService).listAll(any(), any());
     }
 
     @Test

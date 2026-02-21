@@ -49,6 +49,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -115,9 +118,11 @@ public class SeedDataLoader implements CommandLineRunner {
         return usersByEmail;
     }
 
+    private long dateOffsetDays;
+
     private void seedWorkspaces(Map<String, User> usersByEmail) throws Exception {
         List<Map<String, Object>> seedWorkspaces = readJson("seed-data/workspaces.json");
-
+        dateOffsetDays = computeDateOffset(seedWorkspaces);
         Set<String> defaultRenamed = new HashSet<>();
 
         for (Map<String, Object> seedWorkspace : seedWorkspaces) {
@@ -127,7 +132,6 @@ public class SeedDataLoader implements CommandLineRunner {
 
             UUID workspaceId;
             if (!defaultRenamed.contains(ownerEmail)) {
-                // Rename the default workspace created by bootstrap
                 workspaceId = owner.getLastWorkspaceId();
                 jdbcTemplate.update("UPDATE workspaces SET name = ? WHERE id = ?",
                         workspaceName, workspaceId);
@@ -138,259 +142,310 @@ public class SeedDataLoader implements CommandLineRunner {
                 workspaceId = workspace.getId();
             }
 
-            // Add members
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> members = (List<Map<String, Object>>) seedWorkspace.get("members");
-            if (members != null) {
-                for (Map<String, Object> member : members) {
-                    String memberEmail = (String) member.get("email");
-                    User memberUser = usersByEmail.get(memberEmail);
-                    if (memberUser == null) {
-                        log.warn("Member {} not found, skipping", memberEmail);
-                        continue;
-                    }
+            seedMembers(seedWorkspace, usersByEmail, workspaceId);
 
-                    @SuppressWarnings("unchecked")
-                    List<String> roleNames = (List<String>) member.get("roles");
-                    Set<Role> roles = roleNames.stream()
-                            .map(Role::valueOf)
-                            .collect(Collectors.toSet());
-                    membershipService.createMembership(memberUser.getId(), workspaceId, roles);
+            Map<String, UUID> accountsByName = seedAccounts(seedWorkspace, workspaceId);
+            Map<String, UUID> merchantsByName = seedMerchants(seedWorkspace, workspaceId);
+            Map<String, UUID> tagsByName = seedTags(seedWorkspace, workspaceId);
+            Map<String, UUID> categoriesByName = seedCategories(seedWorkspace, workspaceId);
+            Map<String, UUID> recurringByDesc = seedRecurringItems(seedWorkspace, workspaceId,
+                    accountsByName, categoriesByName, tagsByName);
+
+            Map<String, List<UUID>> txnsByGroup = seedTransactions(seedWorkspace, workspaceId,
+                    accountsByName, categoriesByName, tagsByName, recurringByDesc);
+
+            seedTransactionGroups(seedWorkspace, workspaceId, categoriesByName, tagsByName, txnsByGroup);
+            seedTransactionSplits(seedWorkspace, workspaceId, accountsByName, categoriesByName, tagsByName);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void seedMembers(Map<String, Object> ws, Map<String, User> usersByEmail, UUID workspaceId) {
+        List<Map<String, Object>> members = (List<Map<String, Object>>) ws.get("members");
+        if (members == null) return;
+
+        for (Map<String, Object> member : members) {
+            String email = (String) member.get("email");
+            User user = usersByEmail.get(email);
+            if (user == null) { log.warn("Member {} not found, skipping", email); continue; }
+
+            List<String> roleNames = (List<String>) member.get("roles");
+            Set<Role> roles = roleNames.stream().map(Role::valueOf).collect(Collectors.toSet());
+            membershipService.createMembership(user.getId(), workspaceId, roles);
+        }
+    }
+
+    private Map<String, UUID> seedAccounts(Map<String, Object> ws, UUID workspaceId) throws Exception {
+        Map<String, UUID> map = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "accounts");
+        if (items == null) return map;
+
+        for (Map<String, Object> seed : items) {
+            Account entity = accountService.createAccount(workspaceId,
+                    objectMapper.convertValue(seed, CreateAccountDto.class));
+            map.put(entity.getName(), entity.getId());
+        }
+        return map;
+    }
+
+    private Map<String, UUID> seedMerchants(Map<String, Object> ws, UUID workspaceId) throws Exception {
+        Map<String, UUID> map = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "merchants");
+        if (items == null) return map;
+
+        for (Map<String, Object> seed : items) {
+            Merchant entity = merchantService.createMerchant(workspaceId,
+                    objectMapper.convertValue(seed, CreateMerchantDto.class));
+            map.put(entity.getName(), entity.getId());
+        }
+        return map;
+    }
+
+    private Map<String, UUID> seedTags(Map<String, Object> ws, UUID workspaceId) throws Exception {
+        Map<String, UUID> map = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "tags");
+        if (items == null) return map;
+
+        for (Map<String, Object> seed : items) {
+            Tag entity = tagService.createTag(workspaceId,
+                    objectMapper.convertValue(seed, CreateTagDto.class));
+            map.put(entity.getName(), entity.getId());
+        }
+        return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, UUID> seedCategories(Map<String, Object> ws, UUID workspaceId) throws Exception {
+        Map<String, UUID> map = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "categories");
+        if (items == null) return map;
+
+        for (Map<String, Object> seed : items) {
+            List<Map<String, Object>> children = (List<Map<String, Object>>) seed.get("children");
+            seed.remove("children");
+
+            Category parent = categoryService.createCategory(workspaceId,
+                    objectMapper.convertValue(seed, CreateCategoryDto.class));
+            map.put(parent.getName(), parent.getId());
+
+            if (children != null) {
+                for (Map<String, Object> child : children) {
+                    child.put("parentId", parent.getId().toString());
+                    Category childEntity = categoryService.createCategory(workspaceId,
+                            objectMapper.convertValue(child, CreateCategoryDto.class));
+                    map.put(childEntity.getName(), childEntity.getId());
                 }
             }
+        }
+        return map;
+    }
 
-            // Create accounts
-            Map<String, UUID> accountsByName = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> accounts = (List<Map<String, Object>>) seedWorkspace.get("accounts");
-            if (accounts != null) {
-                for (Map<String, Object> seedAccount : accounts) {
-                    CreateAccountDto dto = objectMapper.convertValue(seedAccount, CreateAccountDto.class);
-                    Account account = accountService.createAccount(workspaceId, dto);
-                    accountsByName.put(account.getName(), account.getId());
-                }
+    @SuppressWarnings("unchecked")
+    private Map<String, UUID> seedRecurringItems(Map<String, Object> ws, UUID workspaceId,
+            Map<String, UUID> accounts, Map<String, UUID> categories, Map<String, UUID> tags) throws Exception {
+        Map<String, UUID> map = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "recurringItems");
+        if (items == null) return map;
+
+        for (Map<String, Object> seed : items) {
+            String categoryName = (String) seed.get("categoryName");
+            Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
+
+            List<String> anchorDateStrings = (List<String>) seed.get("anchorDates");
+            List<LocalDateTime> anchorDates = anchorDateStrings.stream()
+                    .map(this::offsetDate)
+                    .collect(Collectors.toList());
+
+            CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+                    .description((String) seed.get("description"))
+                    .merchantName((String) seed.get("merchantName"))
+                    .accountId(accounts.get((String) seed.get("accountName")))
+                    .categoryId(categoryName != null ? categories.get(categoryName) : null)
+                    .amount(new java.math.BigDecimal(seed.get("amount").toString()))
+                    .notes((String) seed.get("notes"))
+                    .frequencyGranularity(FrequencyGranularity.valueOf((String) seed.get("frequencyGranularity")))
+                    .frequencyQuantity(((Number) seed.get("frequencyQuantity")).intValue())
+                    .anchorDates(anchorDates)
+                    .startDate(offsetDate((String) seed.get("startDate")))
+                    .tagIds(tagIds)
+                    .build();
+
+            var item = recurringItemService.createRecurringItem(workspaceId, dto);
+            map.put(item.getDescription(), item.getId());
+        }
+        return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, List<UUID>> seedTransactions(Map<String, Object> ws, UUID workspaceId,
+            Map<String, UUID> accounts, Map<String, UUID> categories,
+            Map<String, UUID> tags, Map<String, UUID> recurringByDesc) throws Exception {
+        Map<String, List<UUID>> txnsByGroup = new LinkedHashMap<>();
+        List<Map<String, Object>> items = resolveSeedData(ws, "transactions");
+        if (items == null) return txnsByGroup;
+
+        for (Map<String, Object> seed : items) {
+            String categoryName = (String) seed.get("categoryName");
+            String recurringDesc = (String) seed.get("recurringDescription");
+            Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
+
+            CreateTransactionDto dto = CreateTransactionDto.builder()
+                    .accountId(accounts.get((String) seed.get("accountName")))
+                    .merchantName((String) seed.get("merchantName"))
+                    .categoryId(categoryName != null ? categories.get(categoryName) : null)
+                    .date(offsetDate((String) seed.get("date")))
+                    .amount(new java.math.BigDecimal(seed.get("amount").toString()))
+                    .notes((String) seed.get("notes"))
+                    .recurringItemId(recurringDesc != null ? recurringByDesc.get(recurringDesc) : null)
+                    .tagIds(tagIds)
+                    .build();
+
+            Transaction txn = transactionService.createTransaction(workspaceId, dto);
+
+            if ("POSTED".equals(seed.get("status"))) {
+                txn.setStatus(TransactionStatus.POSTED);
+                txn.setPostedAt(java.time.LocalDateTime.now());
             }
 
-            // Create merchants
-            Map<String, UUID> merchantsByName = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> merchants = (List<Map<String, Object>>) seedWorkspace.get("merchants");
-            if (merchants != null) {
-                for (Map<String, Object> seedMerchant : merchants) {
-                    CreateMerchantDto dto = objectMapper.convertValue(seedMerchant, CreateMerchantDto.class);
-                    Merchant merchant = merchantService.createMerchant(workspaceId, dto);
-                    merchantsByName.put(merchant.getName(), merchant.getId());
-                }
+            String groupName = (String) seed.get("groupName");
+            if (groupName != null) {
+                txnsByGroup.computeIfAbsent(groupName, k -> new ArrayList<>()).add(txn.getId());
+            }
+        }
+        return txnsByGroup;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void seedTransactionGroups(Map<String, Object> ws, UUID workspaceId,
+            Map<String, UUID> categories, Map<String, UUID> tags,
+            Map<String, List<UUID>> txnsByGroup) throws Exception {
+        List<Map<String, Object>> items = resolveSeedData(ws, "transactionGroups");
+        if (items == null) return;
+
+        for (Map<String, Object> seed : items) {
+            String groupName = (String) seed.get("name");
+            String categoryName = (String) seed.get("categoryName");
+            Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
+
+            List<UUID> txnIds = txnsByGroup.getOrDefault(groupName, List.of());
+            if (txnIds.size() < 2) continue;
+
+            CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+                    .name(groupName)
+                    .categoryId(categoryName != null ? categories.get(categoryName) : null)
+                    .notes((String) seed.get("notes"))
+                    .tagIds(tagIds)
+                    .transactionIds(new LinkedHashSet<>(txnIds))
+                    .build();
+
+            transactionGroupService.createTransactionGroup(workspaceId, dto);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void seedTransactionSplits(Map<String, Object> ws, UUID workspaceId,
+            Map<String, UUID> accounts, Map<String, UUID> categories, Map<String, UUID> tags) throws Exception {
+        List<Map<String, Object>> items = resolveSeedData(ws, "transactionSplits");
+        if (items == null) return;
+
+        for (Map<String, Object> seed : items) {
+            List<Map<String, Object>> seedChildren = (List<Map<String, Object>>) seed.get("children");
+            if (seedChildren == null || seedChildren.size() < 2) {
+                log.warn("Split seed requires at least 2 children, skipping: {}", seed.get("name"));
+                continue;
             }
 
-            // Create tags
-            Map<String, UUID> tagsByName = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> tags = (List<Map<String, Object>>) seedWorkspace.get("tags");
-            if (tags != null) {
-                for (Map<String, Object> seedTag : tags) {
-                    CreateTagDto dto = objectMapper.convertValue(seedTag, CreateTagDto.class);
-                    Tag tag = tagService.createTag(workspaceId, dto);
-                    tagsByName.put(tag.getName(), tag.getId());
-                }
+            String categoryName = (String) seed.get("categoryName");
+            CreateTransactionDto sourceDto = CreateTransactionDto.builder()
+                    .accountId(accounts.get((String) seed.get("accountName")))
+                    .merchantName((String) seed.get("merchantName"))
+                    .categoryId(categoryName != null ? categories.get(categoryName) : null)
+                    .date(offsetDate((String) seed.get("date")))
+                    .amount(new java.math.BigDecimal(seed.get("amount").toString()))
+                    .notes((String) seed.get("notes"))
+                    .build();
+
+            Transaction sourceTxn = transactionService.createTransaction(workspaceId, sourceDto);
+
+            List<SplitChildDto> childDtos = new ArrayList<>();
+            for (Map<String, Object> seedChild : seedChildren) {
+                String childCatName = (String) seedChild.get("categoryName");
+                Set<UUID> childTagIds = resolveTagIds((List<String>) seedChild.get("tagNames"), tags);
+
+                childDtos.add(SplitChildDto.builder()
+                        .amount(new java.math.BigDecimal(seedChild.get("amount").toString()))
+                        .merchantName((String) seedChild.get("merchantName"))
+                        .categoryId(childCatName != null ? categories.get(childCatName) : null)
+                        .tagIds(childTagIds)
+                        .notes((String) seedChild.get("notes"))
+                        .build());
             }
 
-            // Create categories (with parent-child nesting)
-            Map<String, UUID> categoriesByName = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> categories = (List<Map<String, Object>>) seedWorkspace.get("categories");
-            if (categories != null) {
-                for (Map<String, Object> seedCategory : categories) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> children = (List<Map<String, Object>>) seedCategory.get("children");
-                    seedCategory.remove("children");
+            transactionSplitService.createTransactionSplit(workspaceId,
+                    CreateTransactionSplitDto.builder()
+                            .transactionId(sourceTxn.getId())
+                            .children(childDtos)
+                            .build());
+        }
+    }
 
-                    CreateCategoryDto parentDto = objectMapper.convertValue(seedCategory, CreateCategoryDto.class);
-                    Category parent = categoryService.createCategory(workspaceId, parentDto);
-                    categoriesByName.put(parent.getName(), parent.getId());
+    private Set<UUID> resolveTagIds(List<String> tagNames, Map<String, UUID> tagsByName) {
+        if (tagNames == null) return Set.of();
+        return tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
 
-                    if (children != null) {
-                        for (Map<String, Object> child : children) {
-                            child.put("parentId", parent.getId().toString());
-                            CreateCategoryDto childDto = objectMapper.convertValue(child, CreateCategoryDto.class);
-                            Category childCategory = categoryService.createCategory(workspaceId, childDto);
-                            categoriesByName.put(childCategory.getName(), childCategory.getId());
+    private LocalDateTime offsetDate(String dateStr) {
+        return LocalDate.parse(dateStr).plusDays(dateOffsetDays).atStartOfDay();
+    }
+
+    @SuppressWarnings("unchecked")
+    private long computeDateOffset(List<Map<String, Object>> workspaces) throws Exception {
+        LocalDate maxDate = LocalDate.MIN;
+        for (Map<String, Object> ws : workspaces) {
+            maxDate = maxDateIn(resolveSeedData(ws, "transactions"), maxDate, "date");
+            maxDate = maxDateIn(resolveSeedData(ws, "transactionSplits"), maxDate, "date");
+            List<Map<String, Object>> recurring = resolveSeedData(ws, "recurringItems");
+            if (recurring != null) {
+                maxDate = maxDateIn(recurring, maxDate, "startDate");
+                for (Map<String, Object> ri : recurring) {
+                    List<String> anchors = (List<String>) ri.get("anchorDates");
+                    if (anchors != null) {
+                        for (String a : anchors) {
+                            LocalDate d = LocalDate.parse(a);
+                            if (d.isAfter(maxDate)) maxDate = d;
                         }
                     }
                 }
             }
+        }
+        return ChronoUnit.DAYS.between(maxDate, LocalDate.now());
+    }
 
-            // Create recurring items (before transactions so we can link them)
-            Map<String, UUID> recurringItemsByDescription = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> recurringItems = (List<Map<String, Object>>) seedWorkspace.get("recurringItems");
-            if (recurringItems != null) {
-                for (Map<String, Object> seedItem : recurringItems) {
-                    String accountName = (String) seedItem.get("accountName");
-                    String categoryName = (String) seedItem.get("categoryName");
-                    String merchantName = (String) seedItem.get("merchantName");
-
-                    @SuppressWarnings("unchecked")
-                    List<String> tagNames = (List<String>) seedItem.get("tagNames");
-                    Set<UUID> tagIds = tagNames != null
-                            ? tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
-                            : Set.of();
-
-                    @SuppressWarnings("unchecked")
-                    List<String> anchorDateStrings = (List<String>) seedItem.get("anchorDates");
-                    List<java.time.LocalDateTime> anchorDates = anchorDateStrings.stream()
-                            .map(s -> java.time.LocalDate.parse(s).atStartOfDay())
-                            .collect(Collectors.toList());
-
-                    CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
-                            .description((String) seedItem.get("description"))
-                            .merchantName(merchantName)
-                            .accountId(accountsByName.get(accountName))
-                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
-                            .amount(new java.math.BigDecimal(seedItem.get("amount").toString()))
-                            .notes((String) seedItem.get("notes"))
-                            .frequencyGranularity(FrequencyGranularity.valueOf((String) seedItem.get("frequencyGranularity")))
-                            .frequencyQuantity(((Number) seedItem.get("frequencyQuantity")).intValue())
-                            .anchorDates(anchorDates)
-                            .startDate(java.time.LocalDate.parse((String) seedItem.get("startDate")).atStartOfDay())
-                            .tagIds(tagIds)
-                            .build();
-
-                    var item = recurringItemService.createRecurringItem(workspaceId, dto);
-                    recurringItemsByDescription.put(item.getDescription(), item.getId());
-                }
-            }
-
-            // Create transactions (track by groupName for later grouping)
-            Map<String, List<UUID>> transactionsByGroupName = new LinkedHashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> transactions = (List<Map<String, Object>>) seedWorkspace.get("transactions");
-            if (transactions != null) {
-                for (Map<String, Object> seedTxn : transactions) {
-                    String accountName = (String) seedTxn.get("accountName");
-                    String categoryName = (String) seedTxn.get("categoryName");
-                    String merchantName = (String) seedTxn.get("merchantName");
-                    String recurringDescription = (String) seedTxn.get("recurringDescription");
-
-                    @SuppressWarnings("unchecked")
-                    List<String> tagNames = (List<String>) seedTxn.get("tagNames");
-                    Set<UUID> tagIds = tagNames != null
-                            ? tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
-                            : Set.of();
-
-                    CreateTransactionDto dto = CreateTransactionDto.builder()
-                            .accountId(accountsByName.get(accountName))
-                            .merchantName(merchantName)
-                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
-                            .date(java.time.LocalDate.parse((String) seedTxn.get("date")).atStartOfDay())
-                            .amount(new java.math.BigDecimal(seedTxn.get("amount").toString()))
-                            .notes((String) seedTxn.get("notes"))
-                            .recurringItemId(recurringDescription != null ? recurringItemsByDescription.get(recurringDescription) : null)
-                            .tagIds(tagIds)
-                            .build();
-
-                    Transaction txn = transactionService.createTransaction(workspaceId, dto);
-
-                    String statusStr = (String) seedTxn.get("status");
-                    if ("POSTED".equals(statusStr)) {
-                        txn.setStatus(TransactionStatus.POSTED);
-                        txn.setPostedAt(java.time.LocalDateTime.now());
-                    }
-
-                    String groupName = (String) seedTxn.get("groupName");
-                    if (groupName != null) {
-                        transactionsByGroupName.computeIfAbsent(groupName, k -> new ArrayList<>()).add(txn.getId());
-                    }
-                }
-            }
-
-            // Create transaction groups
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> groups = (List<Map<String, Object>>) seedWorkspace.get("transactionGroups");
-            if (groups != null) {
-                for (Map<String, Object> seedGroup : groups) {
-                    String groupName = (String) seedGroup.get("name");
-                    String categoryName = (String) seedGroup.get("categoryName");
-                    @SuppressWarnings("unchecked")
-                    List<String> groupTagNames = (List<String>) seedGroup.get("tagNames");
-                    Set<UUID> groupTagIds = groupTagNames != null
-                            ? groupTagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
-                            : Set.of();
-
-                    List<UUID> txnIds = transactionsByGroupName.getOrDefault(groupName, List.of());
-                    if (txnIds.size() < 2) continue;
-
-                    CreateTransactionGroupDto groupDto = CreateTransactionGroupDto.builder()
-                            .name(groupName)
-                            .categoryId(categoryName != null ? categoriesByName.get(categoryName) : null)
-                            .notes((String) seedGroup.get("notes"))
-                            .tagIds(groupTagIds)
-                            .transactionIds(new LinkedHashSet<>(txnIds))
-                            .build();
-
-                    transactionGroupService.createTransactionGroup(workspaceId, groupDto);
-                }
-            }
-
-            // Create transaction splits
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> splits = (List<Map<String, Object>>) seedWorkspace.get("transactionSplits");
-            if (splits != null) {
-                for (Map<String, Object> seedSplit : splits) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> seedChildren = (List<Map<String, Object>>) seedSplit.get("children");
-                    if (seedChildren == null || seedChildren.size() < 2) {
-                        log.warn("Split seed requires at least 2 children, skipping: {}", seedSplit.get("name"));
-                        continue;
-                    }
-
-                    String sourceAccountName = (String) seedSplit.get("accountName");
-                    String sourceCategoryName = (String) seedSplit.get("categoryName");
-
-                    CreateTransactionDto sourceDto = CreateTransactionDto.builder()
-                            .accountId(accountsByName.get(sourceAccountName))
-                            .merchantName((String) seedSplit.get("merchantName"))
-                            .categoryId(sourceCategoryName != null ? categoriesByName.get(sourceCategoryName) : null)
-                            .date(java.time.LocalDate.parse((String) seedSplit.get("date")).atStartOfDay())
-                            .amount(new java.math.BigDecimal(seedSplit.get("amount").toString()))
-                            .notes((String) seedSplit.get("notes"))
-                            .build();
-
-                    Transaction sourceTxn = transactionService.createTransaction(workspaceId, sourceDto);
-
-                    List<SplitChildDto> childDtos = new ArrayList<>();
-                    for (Map<String, Object> seedChild : seedChildren) {
-                        String childCategoryName = (String) seedChild.get("categoryName");
-                        @SuppressWarnings("unchecked")
-                        List<String> childTagNames = (List<String>) seedChild.get("tagNames");
-                        Set<UUID> childTagIds = childTagNames != null
-                                ? childTagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet())
-                                : Set.of();
-
-                        SplitChildDto childDto = SplitChildDto.builder()
-                                .amount(new java.math.BigDecimal(seedChild.get("amount").toString()))
-                                .merchantName((String) seedChild.get("merchantName"))
-                                .categoryId(childCategoryName != null ? categoriesByName.get(childCategoryName) : null)
-                                .tagIds(childTagIds)
-                                .notes((String) seedChild.get("notes"))
-                                .build();
-                        childDtos.add(childDto);
-                    }
-
-                    CreateTransactionSplitDto splitDto = CreateTransactionSplitDto.builder()
-                            .transactionId(sourceTxn.getId())
-                            .children(childDtos)
-                            .build();
-
-                    transactionSplitService.createTransactionSplit(workspaceId, splitDto);
-                }
+    private LocalDate maxDateIn(List<Map<String, Object>> items, LocalDate current, String field) {
+        if (items == null) return current;
+        for (Map<String, Object> item : items) {
+            String val = (String) item.get(field);
+            if (val != null) {
+                LocalDate d = LocalDate.parse(val);
+                if (d.isAfter(current)) current = d;
             }
         }
+        return current;
     }
 
     private List<Map<String, Object>> readJson(String path) throws Exception {
         InputStream inputStream = new ClassPathResource(path).getInputStream();
         return objectMapper.readValue(inputStream, new TypeReference<>() {});
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> resolveSeedData(Map<String, Object> workspace, String key) throws Exception {
+        Object value = workspace.get(key);
+        if (value == null) return null;
+        if (value instanceof String ref && ref.startsWith("$ref:")) {
+            return readJson("seed-data/" + ref.substring(5));
+        }
+        return (List<Map<String, Object>>) value;
     }
 
     private void wipeDatabase() {

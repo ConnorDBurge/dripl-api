@@ -1,0 +1,265 @@
+[
+  {
+    "name": "Income",
+    "income": true,
+    "children": [
+      {
+        "name": "Salary"
+      },
+      {
+        "name": "Side Income"
+      },
+      {
+        "name": "Investment Income"
+      },
+      {
+        "name": "Savings Withdrawals"
+      },
+      {
+        "name": "Reimbursements"
+      }
+    ]
+  },
+  {
+    "name": "Transfers to Investments",
+    "income": true,
+    "children": [
+      {
+        "name": "Roth IRA Contribution"
+      },
+      {
+        "name": "Brokerage Contribution"
+      }
+    ]
+  },
+  {
+    "name": "Transfers to Savings",
+    "income": true,
+    "children": [
+      {
+        "name": "Emergency Fund Transfer"
+      },
+      {
+        "name": "Tax Savings Transfer"
+      },
+      {
+        "name": "Vacation Fund Transfer"
+      },
+      {
+        "name": "Vehicle Fund Transfer"
+      }
+    ]
+  },
+  {
+    "name": "Food & Supplies",
+    "children": [
+      {
+        "name": "Groceries"
+      },
+      {
+        "name": "Household Supplies"
+      },
+      {
+        "name": "Baby Items"
+      },
+      {
+        "name": "Meal Kits"
+      },
+      {
+        "name": "Restaurants"
+      },
+      {
+        "name": "Lunch"
+      },
+      {
+        "name": "Breakfast"
+      },
+      {
+        "name": "Coffee Shops"
+      },
+      {
+        "name": "Snacks"
+      }
+    ]
+  },
+  {
+    "name": "Recurring Bills",
+    "children": [
+      {
+        "name": "Rent"
+      },
+      {
+        "name": "Phone Bill"
+      },
+      {
+        "name": "Auto Insurance"
+      },
+      {
+        "name": "Internet"
+      },
+      {
+        "name": "Water & Sewer"
+      },
+      {
+        "name": "Electric"
+      },
+      {
+        "name": "Trash Pickup"
+      },
+      {
+        "name": "Renters Insurance"
+      }
+    ]
+  },
+  {
+    "name": "Entertainment",
+    "children": [
+      {
+        "name": "Streaming Services"
+      },
+      {
+        "name": "Music Subscription"
+      },
+      {
+        "name": "Gaming"
+      },
+      {
+        "name": "Movies & Events"
+      }
+    ]
+  },
+  {
+    "name": "Tech & Tools",
+    "children": [
+      {
+        "name": "Cloud Hosting"
+      },
+      {
+        "name": "AI Tools"
+      },
+      {
+        "name": "Developer Tools"
+      },
+      {
+        "name": "Domain & DNS"
+      },
+      {
+        "name": "SaaS Subscriptions"
+      }
+    ]
+  },
+  {
+    "name": "Transportation",
+    "children": [
+      {
+        "name": "Gas"
+      },
+      {
+        "name": "Vehicle Maintenance"
+      },
+      {
+        "name": "Registration & Taxes"
+      },
+      {
+        "name": "Travel"
+      },
+      {
+        "name": "Public Transit"
+      },
+      {
+        "name": "Parking & Tolls"
+      }
+    ]
+  },
+  {
+    "name": "Pets",
+    "children": [
+      {
+        "name": "Pet Food"
+      },
+      {
+        "name": "Vet Visits"
+      },
+      {
+        "name": "Pet Medication"
+      },
+      {
+        "name": "Grooming"
+      },
+      {
+        "name": "Boarding"
+      }
+    ]
+  },
+  {
+    "name": "Health & Fitness",
+    "children": [
+      {
+        "name": "Gym Membership"
+      },
+      {
+        "name": "Supplements"
+      }
+    ]
+  },
+  {
+    "name": "Lifestyle",
+    "children": [
+      {
+        "name": "His Fun Money"
+      },
+      {
+        "name": "Her Fun Money"
+      },
+      {
+        "name": "Kid Fun Money"
+      },
+      {
+        "name": "Outings"
+      },
+      {
+        "name": "Clothing"
+      },
+      {
+        "name": "Gifts"
+      },
+      {
+        "name": "Education"
+      },
+      {
+        "name": "Home Decor"
+      }
+    ]
+  },
+  {
+    "name": "Miscellaneous",
+    "children": [
+      {
+        "name": "Unexpected Expenses"
+      },
+      {
+        "name": "Bank Fees"
+      },
+      {
+        "name": "Service Fees"
+      },
+      {
+        "name": "Vacation Spending"
+      },
+      {
+        "name": "Corrections"
+      }
+    ]
+  },
+  {
+    "name": "Internal Transfers",
+    "children": [
+      {
+        "name": "External Transfer"
+      },
+      {
+        "name": "Internal Transfer"
+      }
+    ]
+  }
+]

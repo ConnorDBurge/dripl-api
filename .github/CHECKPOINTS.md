@@ -260,3 +260,35 @@ Cross-cutting category polarity validation, spec-based category filtering, split
 - [x] Integration tests: Updated split unlink IT (2 tests → 1 rejection test)
 
 **Test totals: 448 unit + 183 integration = 631 tests, all passing**
+
+## Checkpoint 12: Transaction Filtering, Pagination & Sorting ✅
+Offset-based pagination, single-column sorting (including JOIN-based), date/amount range filters, and cross-field text search.
+
+- [x] `PagedResponse<T>` wrapper in `common/dto` — `content` list + `PageInfo` record (number, size, totalElements, totalPages), factory method `from(Page<T>)`
+- [x] New filter specs: `dateOnOrAfter`, `dateOnOrBefore`, `amountGreaterThanOrEqual`, `amountLessThanOrEqual`, `searchText` (ILIKE OR across notes, merchant name correlated subquery, category name correlated subquery)
+- [x] Sorting: `sortBy` + `sortDirection` params, default `date` DESC. Direct columns: `date`, `amount`, `createdAt` via Spring `Sort`. JOIN columns: `category`, `merchant`, `account` via correlated subqueries in Specification `ORDER BY`. Tiebreaker: `id` ASC
+- [x] Controller/service: `page` (default 0), `size` (default 25, max 250, clamped), return `PagedResponse<TransactionDto>` instead of `List<TransactionDto>`
+- [x] Unit tests: updated TransactionController (8 tests, +2 for pageMetadata and clampsMaxSize), updated TransactionService list tests for Page/Pageable
+- [x] Integration tests: pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range (start, end, both), amount range (min, max), search (notes, merchant, category, no match), combined filters+sort+pagination
+- [x] Documentation: ARCHITECTURE.md + CHECKPOINTS.md updated
+- **Test totals**: 450 unit + 202 IT = 652 tests, all passing
+
+## Checkpoint 13: Transaction History / Event Log (Future)
+Audit trail of create/update events per transaction.
+
+- [ ] Plan TBD
+
+## Checkpoint 14: Frontend (Future)
+Next.js frontend with OAuth login.
+
+- [ ] Scaffold Next.js app (dripl-ui)
+- [ ] NextAuth.js with Google/Apple OAuth
+- [ ] Bootstrap API call from NextAuth server-side
+- [ ] JWT storage and authenticated API calls
+
+## Checkpoint 15: AI & Deployment (Future)
+Spring AI MCP server and cloud deployment.
+
+- [ ] Spring AI MCP server integration
+- [ ] Cloud deployment preparation
+- [ ] CI/CD pipeline

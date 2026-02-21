@@ -20,6 +20,8 @@ import com.dripl.transaction.split.entity.TransactionSplit;
 import com.dripl.transaction.split.repository.TransactionSplitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,8 +50,8 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
 
     @Transactional(readOnly = true)
-    public List<Transaction> listAll(Specification<Transaction> spec) {
-        return transactionRepository.findAll(spec);
+    public Page<Transaction> listAll(Specification<Transaction> spec, Pageable pageable) {
+        return transactionRepository.findAll(spec, pageable);
     }
 
     @Transactional(readOnly = true)

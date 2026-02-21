@@ -1,0 +1,171 @@
+[
+  {
+    "description": "Netflix Subscription",
+    "merchantName": "Netflix",
+    "accountName": "Primary Checking",
+    "categoryName": "Streaming Services",
+    "amount": -22.99,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-15"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "streaming",
+      "subscription"
+    ]
+  },
+  {
+    "description": "Spotify Premium",
+    "merchantName": "Spotify",
+    "accountName": "Primary Checking",
+    "categoryName": "Music Subscription",
+    "amount": -10.99,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-05"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "music",
+      "subscription"
+    ]
+  },
+  {
+    "description": "Phone Bill",
+    "merchantName": "Verizon",
+    "accountName": "Primary Checking",
+    "categoryName": "Phone Bill",
+    "amount": -181.0,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-20"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "phone"
+    ]
+  },
+  {
+    "description": "Internet Service",
+    "merchantName": "Xfinity",
+    "accountName": "Primary Checking",
+    "categoryName": "Internet",
+    "amount": -89.99,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-12"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "internet"
+    ]
+  },
+  {
+    "description": "GitHub Copilot",
+    "merchantName": "GitHub",
+    "accountName": "Rewards Credit Card",
+    "categoryName": "Developer Tools",
+    "amount": -19.0,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-08"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "software",
+      "subscription"
+    ]
+  },
+  {
+    "description": "AI Assistant",
+    "merchantName": "OpenAI",
+    "accountName": "Rewards Credit Card",
+    "categoryName": "AI Tools",
+    "amount": -20.0,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-22"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "software",
+      "subscription"
+    ]
+  },
+  {
+    "description": "Auto Insurance",
+    "merchantName": "USAA",
+    "accountName": "Primary Checking",
+    "categoryName": "Auto Insurance",
+    "amount": -285.0,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-01"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "insurance",
+      "car"
+    ]
+  },
+  {
+    "description": "Gym Memberships",
+    "merchantName": "OneLife Fitness",
+    "accountName": "Primary Checking",
+    "categoryName": "Gym Membership",
+    "amount": -129.98,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-01"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "gym"
+    ],
+    "notes": "His + hers memberships"
+  },
+  {
+    "description": "Bi-Monthly Paycheck",
+    "merchantName": "Liberty Mutual",
+    "accountName": "Primary Checking",
+    "categoryName": "Salary",
+    "amount": 3392.53,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-15",
+      "2025-01-30"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "income"
+    ],
+    "notes": "Bi-monthly paycheck"
+  },
+  {
+    "description": "Disney Plus",
+    "merchantName": "Disney Plus",
+    "accountName": "Primary Checking",
+    "categoryName": "Streaming Services",
+    "amount": -13.99,
+    "frequencyGranularity": "MONTH",
+    "frequencyQuantity": 1,
+    "anchorDates": [
+      "2025-01-18"
+    ],
+    "startDate": "2025-01-01",
+    "tagNames": [
+      "streaming",
+      "subscription"
+    ]
+  }
+]

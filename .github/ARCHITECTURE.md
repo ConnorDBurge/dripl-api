@@ -319,7 +319,9 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 - `FlexibleLocalDateTimeDeserializer` accepts both `"2025-07-01"` and `"2025-07-01T00:00:00"`
 - Cross-entity validation delegates to AccountService/CategoryService/TagService (returns 404, not 400)
 - Uses verified entity IDs from service responses, not raw DTO values
-- Spec-based filtering via `TransactionSpecifications` + `optionally()` helper — query params: `accountId`, `merchantId`, `categoryId`, `recurringItemId`, `groupId`, `splitId`, `status`, `source`, `currencyCode`, `tagIds` (any-match via join)
+- Spec-based filtering via `TransactionSpecifications` + `optionally()` helper — query params: `accountId`, `merchantId`, `categoryId`, `recurringItemId`, `groupId`, `splitId`, `status`, `source`, `currencyCode`, `tagIds` (any-match via join), `startDate`, `endDate` (date range), `minAmount`, `maxAmount` (amount range), `search` (ILIKE across notes, merchant name, category name via JOINs)
+- **Pagination**: Offset-based via Spring Data `Pageable` — `page` (0-indexed, default 0), `size` (default 25, max 250). Response wrapped in `PagedResponse<T>` with `content` list and `page` metadata (`number`, `size`, `totalElements`, `totalPages`)
+- **Sorting**: Single column via `sortBy` + `sortDirection` params. Default: `date` DESC. Sortable columns: `date`, `amount`, `createdAt` (direct), `category`, `merchant`, `account` (LEFT JOIN on entity name). Deterministic tiebreaker: `id` ASC always appended as secondary sort
 - Recurring item inheritance on create/update (see Recurring Items section)
 - Field locking when linked to a recurring item, group, or split (see Field Locking section)
 
@@ -416,14 +418,14 @@ When a transaction is linked to a recurring item, in a group, or in a split, cer
 
 ## Testing
 
-### Unit Tests (448)
+### Unit Tests (450)
 - **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (36), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19)
-- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (6), RecurringItemController (6), TransactionGroupController (5), TransactionSplitController (5)
+- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (6), TransactionGroupController (5), TransactionSplitController (5)
 - **Utilities**: JwtUtil (7), GlobalExceptionHandler (12), WorkspaceCleanupListener (3)
 - **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5)
 - **Context**: DriplApplicationTests (1)
 
-### Integration Tests (183)
+### Integration Tests (202)
 All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton container pattern.
 
 - **BootstrapAndAuthIT** (7): New user bootstrap, idempotent re-bootstrap, validation, auth/unauth access
@@ -437,7 +439,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 - **MerchantCrudIT** (11): Create merchant, list merchants, get by ID, update name, update status, archive merchant, delete merchant, workspace isolation, duplicate name prevention, create without name, get nonexistent
 - **TagCrudIT** (13): Create with name only, create with description, list tags, get by ID, update name, update description, update status, delete tag, workspace isolation, duplicate name, case-insensitive duplicate, update to duplicate name, get nonexistent
 - **CategoryCrudIT** (22): Create root category, create with all fields, create child, child depth limit, parent not found, list categories, get by ID, get with children, get tree, update name, set parent, remove parent, parentId omitted preserves parent, self-parent, parent too deep via update, category with children cannot be nested, parent not found via update, clear children, delete category, delete parent cascades SET NULL, workspace isolation, get nonexistent
-- **TransactionCrudIT** (32): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects)
+- **TransactionCrudIT** (51): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects), pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range filters (start, end, both), amount range filters (min, max), search (notes, merchant, category, no match), combined filters + pagination
 - **RecurringItemCrudIT** (16): Full CRUD, workspace isolation, merchant auto-resolution, tag management, validation
 - **TransactionGroupCrudIT** (17): Create group, list groups, get group, update metadata, add/remove transactions via transactionIds, remove below minimum, dissolve group, already-grouped, transaction shows groupId, min 2, create override, update override, add inherits overrides, remove clears groupId, add RI-linked rejects, delete clears all groupIds
 - **TransactionSplitCrudIT** (20): Create split, list splits, get split, update children, add/remove children, dissolve split, amount mismatch on create/update, locked field rejection (accountId, amount, date), allow category change, split child can't be grouped, grouped txn can't be split, split child RI-linked, RI account mismatch, unlinkSplitChild rejects, assign splitId rejects, child shows splitId, filter by splitId

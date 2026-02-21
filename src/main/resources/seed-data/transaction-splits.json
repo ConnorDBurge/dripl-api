@@ -1,0 +1,141 @@
+[
+  {
+    "name": "Costco Trip Split",
+    "accountName": "Primary Checking",
+    "merchantName": "Costco",
+    "date": "2025-08-10",
+    "amount": -245.67,
+    "categoryName": "Groceries",
+    "notes": "Monthly Costco run",
+    "children": [
+      {
+        "amount": -165.43,
+        "categoryName": "Groceries",
+        "notes": "Food items",
+        "tagNames": [
+          "groceries",
+          "costco"
+        ]
+      },
+      {
+        "amount": -52.24,
+        "categoryName": "Household Supplies",
+        "notes": "Cleaning and paper goods",
+        "tagNames": [
+          "costco"
+        ]
+      },
+      {
+        "amount": -28.0,
+        "categoryName": "Pet Food",
+        "notes": "Dog food bulk pack",
+        "tagNames": [
+          "pet",
+          "costco"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Target Run Split",
+    "accountName": "Rewards Credit Card",
+    "merchantName": "Target",
+    "date": "2025-09-15",
+    "amount": -187.32,
+    "notes": "Big Target haul",
+    "children": [
+      {
+        "amount": -89.99,
+        "categoryName": "Clothing",
+        "notes": "Kids clothes",
+        "tagNames": [
+          "clothing",
+          "child"
+        ]
+      },
+      {
+        "amount": -45.33,
+        "categoryName": "Baby Items",
+        "notes": "Baby supplies",
+        "tagNames": [
+          "baby",
+          "diapers"
+        ]
+      },
+      {
+        "amount": -52.0,
+        "categoryName": "Household Supplies",
+        "notes": "Cleaning supplies"
+      }
+    ]
+  },
+  {
+    "name": "Amazon Order Split",
+    "accountName": "Primary Checking",
+    "merchantName": "Amazon",
+    "date": "2025-10-22",
+    "amount": -156.78,
+    "notes": "Amazon bulk order",
+    "children": [
+      {
+        "amount": -67.99,
+        "categoryName": "Pet Food",
+        "notes": "Dog treats and toys",
+        "tagNames": [
+          "amazon",
+          "pet"
+        ]
+      },
+      {
+        "amount": -42.8,
+        "categoryName": "Household Supplies",
+        "notes": "Kitchen stuff",
+        "tagNames": [
+          "amazon"
+        ]
+      },
+      {
+        "amount": -45.99,
+        "notes": "Electronics cable",
+        "tagNames": [
+          "amazon",
+          "shopping"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Walmart Trip Split",
+    "accountName": "Cashback Credit Card",
+    "merchantName": "Walmart",
+    "date": "2025-11-05",
+    "amount": -198.45,
+    "categoryName": "Groceries",
+    "notes": "Weekly Walmart trip",
+    "children": [
+      {
+        "amount": -134.2,
+        "categoryName": "Groceries",
+        "notes": "Groceries",
+        "tagNames": [
+          "groceries",
+          "walmart"
+        ]
+      },
+      {
+        "amount": -32.25,
+        "categoryName": "Baby Items",
+        "notes": "Diapers and wipes",
+        "tagNames": [
+          "diapers",
+          "baby"
+        ]
+      },
+      {
+        "amount": -32.0,
+        "categoryName": "Household Supplies",
+        "notes": "Cleaning supplies"
+      }
+    ]
+  }
+]
