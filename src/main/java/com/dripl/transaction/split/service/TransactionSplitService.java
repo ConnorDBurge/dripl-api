@@ -2,11 +2,14 @@ package com.dripl.transaction.split.service;
 
 import com.dripl.account.service.AccountService;
 import com.dripl.category.service.CategoryService;
+import com.dripl.common.event.DomainEventPublisher;
+import com.dripl.common.event.FieldChange;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.enums.TransactionAction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.repository.TransactionRepository;
 import com.dripl.transaction.split.dto.CreateTransactionSplitDto;
@@ -39,6 +42,7 @@ public class TransactionSplitService {
     private final MerchantService merchantService;
     private final CategoryService categoryService;
     private final TagService tagService;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional(readOnly = true)
     public List<TransactionSplit> listAllByWorkspaceId(UUID workspaceId) {
@@ -85,7 +89,8 @@ public class TransactionSplitService {
 
         // Create child transactions
         for (SplitChildDto child : dto.getChildren()) {
-            createChildTransaction(split, source, child, workspaceId);
+            Transaction childTxn = createChildTransaction(split, source, child, workspaceId);
+            publishSplitEvent(childTxn.getId(), workspaceId, split.getId());
         }
 
         // Delete the source transaction
@@ -163,13 +168,17 @@ public class TransactionSplitService {
     public void deleteTransactionSplit(UUID splitId, UUID workspaceId) {
         TransactionSplit split = getTransactionSplit(splitId, workspaceId);
         UUID accountId = split.getAccountId();
+        List<Transaction> children = transactionRepository.findAllBySplitIdAndWorkspaceId(splitId, workspaceId);
         transactionRepository.clearSplitId(splitId);
         transactionSplitRepository.delete(split);
+        for (Transaction child : children) {
+            publishUnsplitEvent(child.getId(), workspaceId, splitId);
+        }
         log.info("Dissolved transaction split {}", splitId);
         accountService.recomputeBalance(accountId);
     }
 
-    private void createChildTransaction(TransactionSplit split, Transaction source, SplitChildDto child, UUID workspaceId) {
+    private Transaction createChildTransaction(TransactionSplit split, Transaction source, SplitChildDto child, UUID workspaceId) {
         UUID merchantId = child.getMerchantName() != null
                 ? merchantService.resolveMerchant(child.getMerchantName(), workspaceId).getId()
                 : source.getMerchantId();
@@ -200,7 +209,7 @@ public class TransactionSplitService {
                 .tagIds(tagIds)
                 .build();
 
-        transactionRepository.save(txn);
+        return transactionRepository.save(txn);
     }
 
     private void createChildFromUpdate(TransactionSplit split, UpdateSplitChildDto child, UUID workspaceId) {
@@ -258,5 +267,15 @@ public class TransactionSplitService {
                         "All child amounts must be " + expected + " to match the source transaction sign, but got " + amount);
             }
         }
+    }
+
+    private void publishSplitEvent(UUID transactionId, UUID workspaceId, UUID splitId) {
+        domainEventPublisher.publish(TransactionAction.SPLIT, transactionId, workspaceId,
+                List.of(new FieldChange("splitId", null, splitId.toString())));
+    }
+
+    private void publishUnsplitEvent(UUID transactionId, UUID workspaceId, UUID splitId) {
+        domainEventPublisher.publish(TransactionAction.UNSPLIT, transactionId, workspaceId,
+                List.of(new FieldChange("splitId", splitId.toString(), null)));
     }
 }

@@ -10,6 +10,7 @@ import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.mapper.TransactionMapper;
+import com.dripl.transaction.event.service.TransactionEventService;
 import com.dripl.transaction.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class TransactionControllerTest {
 
     @Mock
     private TransactionService transactionService;
+
+    @Mock
+    private TransactionEventService transactionEventService;
 
     @Spy
     private TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);

@@ -1138,7 +1138,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
 
         var response = restTemplate.exchange(
-                "/api/v1/transactions?startDate=2025-06-01T00:00:00", HttpMethod.GET,
+                "/api/v1/transactions?startDate=2025-06-01", HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
                 Map.class);
 
@@ -1164,7 +1164,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
 
         var response = restTemplate.exchange(
-                "/api/v1/transactions?endDate=2025-01-01T00:00:00", HttpMethod.GET,
+                "/api/v1/transactions?endDate=2025-01-01", HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
                 Map.class);
 
@@ -1190,7 +1190,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
 
         var response = restTemplate.exchange(
-                "/api/v1/transactions?startDate=2025-06-01T00:00:00&endDate=2025-07-01T00:00:00", HttpMethod.GET,
+                "/api/v1/transactions?startDate=2025-06-01&endDate=2025-07-01", HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
                 Map.class);
 
@@ -1369,7 +1369,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
 
         var response = restTemplate.exchange(
-                "/api/v1/transactions?startDate=2025-08-01T00:00:00&endDate=2025-08-31T00:00:00&sortBy=amount&sortDirection=ASC&size=10", HttpMethod.GET,
+                "/api/v1/transactions?startDate=2025-08-01&endDate=2025-08-31&sortBy=amount&sortDirection=ASC&size=10", HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)),
                 Map.class);
 

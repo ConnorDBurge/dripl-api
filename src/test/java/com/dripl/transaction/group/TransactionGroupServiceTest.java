@@ -13,6 +13,7 @@ import com.dripl.transaction.group.entity.TransactionGroup;
 import com.dripl.transaction.group.repository.TransactionGroupRepository;
 import com.dripl.transaction.group.service.TransactionGroupService;
 import com.dripl.transaction.repository.TransactionRepository;
+import com.dripl.common.event.DomainEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,6 +39,7 @@ class TransactionGroupServiceTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private CategoryService categoryService;
     @Mock private TagService tagService;
+    @Mock private DomainEventPublisher domainEventPublisher;
 
     @InjectMocks
     private TransactionGroupService transactionGroupService;

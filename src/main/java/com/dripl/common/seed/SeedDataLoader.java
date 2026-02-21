@@ -97,7 +97,11 @@ public class SeedDataLoader implements CommandLineRunner {
     }
 
     private void setSeedAuthentication() {
-        Claims claims = Jwts.claims().subject("seed-data@dripl.dev").build();
+        setAuthenticationForEmail("seed-data@dripl.dev");
+    }
+
+    private void setAuthenticationForEmail(String email) {
+        Claims claims = Jwts.claims().subject(email).build();
         var auth = new UsernamePasswordAuthenticationToken(claims, null, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
@@ -129,6 +133,8 @@ public class SeedDataLoader implements CommandLineRunner {
             String ownerEmail = (String) seedWorkspace.get("ownerEmail");
             String workspaceName = (String) seedWorkspace.get("name");
             User owner = usersByEmail.get(ownerEmail);
+
+            setAuthenticationForEmail(ownerEmail);
 
             UUID workspaceId;
             if (!defaultRenamed.contains(ownerEmail)) {

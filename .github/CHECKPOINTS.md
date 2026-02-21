@@ -273,10 +273,23 @@ Offset-based pagination, single-column sorting (including JOIN-based), date/amou
 - [x] Documentation: ARCHITECTURE.md + CHECKPOINTS.md updated
 - **Test totals**: 450 unit + 202 IT = 652 tests, all passing
 
-## Checkpoint 13: Transaction History / Event Log (Future)
-Audit trail of create/update events per transaction.
+## Checkpoint 13: Transaction Event History ✅
+Async fire-and-forget transaction change history using Spring's `ApplicationEventPublisher`.
 
-- [ ] Plan TBD
+- [x] Flyway V17: `transaction_events` table (id UUID PK, transaction_id FK CASCADE, workspace_id, event_type, changes JSONB, performed_by, performed_at)
+- [x] `DomainEvent` + `FieldChange` + `DomainEvents` records in `common/event` — generic "domain.action" event with `FieldChange` map
+- [x] `TransactionEvent` entity + `TransactionEventRepository`
+- [x] `TransactionEventDto` response DTO
+- [x] `TransactionEventService` — `@Async` + `@TransactionalEventListener` + `REQUIRES_NEW` listener that persists events + read API
+- [x] Publish events from `TransactionService` (create, update — no delete due to FK constraint)
+- [x] Publish events from `TransactionGroupService` (grouped, ungrouped)
+- [x] Publish events from `TransactionSplitService` (split, unsplit)
+- [x] `GET /api/v1/transactions/{id}/events` endpoint on `TransactionController`
+- [x] BigDecimal normalization fix (`stripTrailingZeros`) for amount diff comparison
+- [x] Unit tests: 6 TransactionEventService tests
+- [x] Integration tests: 10 TransactionEventIT tests (create/update/grouped/ungrouped/split/unsplit events, change diffs, ordering, GET endpoint)
+
+**Test totals: 459 unit + 216 IT = 675 tests, all passing**
 
 ## Checkpoint 14: Frontend (Future)
 Next.js frontend with OAuth login.

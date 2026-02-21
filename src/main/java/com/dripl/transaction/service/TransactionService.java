@@ -3,6 +3,7 @@ package com.dripl.transaction.service;
 import com.dripl.account.enums.CurrencyCode;
 import com.dripl.account.service.AccountService;
 import com.dripl.category.service.CategoryService;
+import com.dripl.common.event.DomainEventPublisher;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.service.MerchantService;
@@ -12,6 +13,7 @@ import com.dripl.tag.service.TagService;
 import com.dripl.transaction.dto.CreateTransactionDto;
 import com.dripl.transaction.dto.UpdateTransactionDto;
 import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.enums.TransactionAction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.enums.TransactionStatus;
 import com.dripl.transaction.mapper.TransactionMapper;
@@ -30,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -48,6 +51,7 @@ public class TransactionService {
     private final RecurringItemService recurringItemService;
     private final TransactionSplitRepository transactionSplitRepository;
     private final TransactionMapper transactionMapper;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional(readOnly = true)
     public Page<Transaction> listAll(Specification<Transaction> spec, Pageable pageable) {
@@ -121,6 +125,7 @@ public class TransactionService {
         log.info("Created transaction for merchant '{}'", merchantId);
         Transaction saved = transactionRepository.save(transaction);
         accountService.recomputeBalance(accountId);
+        domainEventPublisher.publish(TransactionAction.CREATED, saved, buildDisplayNames(workspaceId, saved));
         return saved;
     }
 
@@ -129,6 +134,8 @@ public class TransactionService {
         Transaction transaction = getTransaction(transactionId, workspaceId);
         UUID oldAccountId = transaction.getAccountId();
         BigDecimal oldAmount = transaction.getAmount();
+
+        Transaction before = transaction.snapshot();
 
         // Enforce mutual exclusivity: can't link to recurring item if grouped
         if (dto.isRecurringItemIdSpecified() && dto.getRecurringItemId() != null && transaction.getGroupId() != null && !isUnlinkingGroup(dto)) {
@@ -217,7 +224,14 @@ public class TransactionService {
         // MapStruct handles simple fields: date, amount, currencyCode
         transactionMapper.updateEntity(dto, transaction);
 
-        if (dto.getMerchantName() != null) {
+        if (dto.isMerchantIdSpecified()) {
+            if (dto.getMerchantId() != null) {
+                var merchant = merchantService.getMerchant(dto.getMerchantId(), workspaceId);
+                transaction.setMerchantId(merchant.getId());
+            } else {
+                transaction.setMerchantId(null);
+            }
+        } else if (dto.getMerchantName() != null) {
             var merchant = merchantService.resolveMerchant(dto.getMerchantName(), workspaceId);
             transaction.setMerchantId(merchant.getId());
         }
@@ -263,6 +277,7 @@ public class TransactionService {
             }
         }
 
+        domainEventPublisher.publish(TransactionAction.UPDATED, before, saved, buildDisplayNames(workspaceId, before, saved));
         return saved;
     }
 
@@ -311,7 +326,7 @@ public class TransactionService {
     private void rejectLockedFieldsForRecurringItem(UpdateTransactionDto dto) {
         List<String> locked = new java.util.ArrayList<>();
         if (dto.getAccountId() != null) locked.add("accountId");
-        if (dto.getMerchantName() != null) locked.add("merchantName");
+        if (dto.getMerchantName() != null || dto.isMerchantIdSpecified()) locked.add("merchantName");
         if (dto.isCategoryIdSpecified()) locked.add("categoryId");
         if (dto.isTagIdsSpecified()) locked.add("tagIds");
         if (dto.isNotesSpecified()) locked.add("notes");
@@ -344,4 +359,40 @@ public class TransactionService {
                     "Cannot modify " + String.join(", ", locked) + " while in a transaction split. Use the transaction-splits API.");
         }
     }
+
+    /**
+     * Builds a map of UUID string → human-readable display name for all FK fields
+     * on the given transactions. Used by the event publisher to store readable values.
+     */
+    private Map<String, String> buildDisplayNames(UUID workspaceId, Transaction... transactions) {
+        Map<String, String> names = new java.util.HashMap<>();
+        for (Transaction t : transactions) {
+            resolveDisplayName(names, t.getAccountId(), id -> accountService.getAccount(id, workspaceId), a -> a.getName());
+            resolveDisplayName(names, t.getMerchantId(), id -> merchantService.getMerchant(id, workspaceId), m -> m.getName());
+            resolveDisplayName(names, t.getCategoryId(), id -> categoryService.getCategory(id, workspaceId), c -> c.getName());
+            resolveDisplayName(names, t.getRecurringItemId(), id -> recurringItemService.getRecurringItem(id, workspaceId), r -> r.getDescription());
+            if (t.getTagIds() != null) {
+                for (UUID tagId : t.getTagIds()) {
+                    resolveDisplayName(names, tagId, id -> tagService.getTag(id, workspaceId), tag -> tag.getName());
+                }
+            }
+        }
+        return names;
+    }
+
+    private <T> void resolveDisplayName(Map<String, String> names, UUID id, Function<UUID, T> fetcher, Function<T, String> nameExtractor) {
+        if (id == null) return;
+        String key = id.toString();
+        if (names.containsKey(key)) return;
+        try {
+            T entity = fetcher.apply(id);
+            if (entity != null) {
+                String name = nameExtractor.apply(entity);
+                if (name != null) names.put(key, name);
+            }
+        } catch (Exception ignored) {
+            // Entity may not exist (deleted); fall back to raw UUID
+        }
+    }
+
 }

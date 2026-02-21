@@ -98,13 +98,18 @@ com.dripl
 │   │   ├── mapper/         # TransactionGroupMapper (MapStruct, computed fields via toBuilder)
 │   │   ├── repository/     # TransactionGroupRepository
 │   │   └── service/        # TransactionGroupService (membership reconciliation, group overrides)
-│   └── split/
-│       ├── controller/     # TransactionSplitController (/api/v1/transaction-splits)
-│       ├── dto/            # TransactionSplitDto, CreateTransactionSplitDto, SplitChildDto, UpdateTransactionSplitDto, UpdateSplitChildDto
-│       ├── entity/         # TransactionSplit (JPA entity)
-│       ├── mapper/         # TransactionSplitMapper (MapStruct)
-│       ├── repository/     # TransactionSplitRepository
-│       └── service/        # TransactionSplitService (amount sum enforcement, child sign validation, polarity validation)
+│   ├── split/
+│   │   ├── controller/     # TransactionSplitController (/api/v1/transaction-splits)
+│   │   ├── dto/            # TransactionSplitDto, CreateTransactionSplitDto, SplitChildDto, UpdateTransactionSplitDto, UpdateSplitChildDto
+│   │   ├── entity/         # TransactionSplit (JPA entity)
+│   │   ├── mapper/         # TransactionSplitMapper (MapStruct)
+│   │   ├── repository/     # TransactionSplitRepository
+│   │   └── service/        # TransactionSplitService (amount sum enforcement, child sign validation, polarity validation)
+│   └── event/
+│       ├── dto/            # TransactionEventDto (response DTO for change history)
+│       ├── entity/         # TransactionEvent (JPA entity, JSONB changes column)
+│       ├── repository/     # TransactionEventRepository
+│       └── service/        # TransactionEventService (persists events asynchronously via @TransactionalEventListener)
 ├── recurring/
 │   ├── controller/         # RecurringItemController (/api/v1/recurring-items)
 │   ├── dto/                # RecurringItemDto, CreateRecurringItemDto, UpdateRecurringItemDto (specified flags)
@@ -117,8 +122,9 @@ com.dripl
     ├── annotation/         # @WorkspaceId, @UserId, @Subject
     ├── audit/              # BaseEntity (createdAt, updatedAt), JpaAuditConfig
     ├── config/             # WebMvcConfig (registers argument resolvers), FlexibleLocalDateTimeDeserializer
-    ├── dto/                # BaseDto
+    ├── dto/                # BaseDto, PagedResponse
     ├── enums/              # Status (ACTIVE, ARCHIVED, CLOSED — shared across domains)
+    ├── event/              # DomainEvent record (domain.action pattern — Kafka-pluggable), FieldChange record
     ├── exception/          # GlobalExceptionHandler, ErrorResponse, custom exceptions
     ├── filter/             # CorrelationIdFilter (MDC + response header), ApiKeyFilter
     ├── resolver/           # UserIdArgumentResolver, WorkspaceIdArgumentResolver, SubjectArgumentResolver
@@ -400,6 +406,30 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 - `GET /transactions?splitId=...` filters transactions by split
 - **Split children CAN be RI-linked** (e.g., one gym charge split into two separate membership recurring items) — RI's `accountId` and `currencyCode` must match the split's values
 
+### Transaction Events (Change History)
+
+`GET /api/v1/transactions/{id}/events` — Returns ordered change history for a transaction (READ auth).
+
+**Transaction Event Design:**
+- Async fire-and-forget event persistence using Spring's `ApplicationEventPublisher` + `@TransactionalEventListener` + `@Async` (same pattern as `WorkspaceCleanupListener`)
+- Events are published from service layer after mutations, persisted by `TransactionEventService` in a separate thread/transaction (`REQUIRES_NEW`)
+- If event persistence fails, the transaction mutation is NOT rolled back — events are display-only, not transactional guarantees
+- `DomainEvent` record in `common/event` uses "domain.action" naming convention (e.g., `transaction.created`, `transaction.updated`) — Kafka-pluggable in the future by swapping publisher
+- `FieldChange` record stores `{ field, oldValue, newValue }` for each changed field — human-readable values (category names, not UUIDs) for UI rendering
+- `transaction_events` table: `id`, `transaction_id` FK (CASCADE DELETE), `workspace_id`, `event_type`, `changes` (JSONB), `performed_by`, `performed_at`
+- When a transaction is deleted, its events cascade-delete with it — no orphaned history
+
+**Event types:**
+| Event Type | Trigger | Changes Content |
+|---|---|---|
+| `transaction.created` | Transaction created manually | All initial field values (oldValue = null) |
+| `transaction.updated` | Transaction fields modified | Only changed fields (old → new) |
+| `transaction.deleted` | Transaction deleted | Final field snapshot (newValue = null) |
+| `transaction.grouped` | Added to a transaction group | groupId (null → groupId) |
+| `transaction.ungrouped` | Removed from a group | groupId (groupId → null) |
+| `transaction.split` | Transaction split into children | splitId (null → splitId) |
+| `transaction.unsplit` | Split dissolved | splitId (splitId → null) |
+
 **Field Locking:**
 
 When a transaction is linked to a recurring item, in a group, or in a split, certain fields are immutable — changes are rejected with 400.
@@ -418,14 +448,14 @@ When a transaction is linked to a recurring item, in a group, or in a split, cer
 
 ## Testing
 
-### Unit Tests (450)
-- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (36), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19)
+### Unit Tests (459)
+- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (36), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6)
 - **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (6), TransactionGroupController (5), TransactionSplitController (5)
 - **Utilities**: JwtUtil (7), GlobalExceptionHandler (12), WorkspaceCleanupListener (3)
 - **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5)
 - **Context**: DriplApplicationTests (1)
 
-### Integration Tests (202)
+### Integration Tests (216)
 All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton container pattern.
 
 - **BootstrapAndAuthIT** (7): New user bootstrap, idempotent re-bootstrap, validation, auth/unauth access
@@ -443,6 +473,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 - **RecurringItemCrudIT** (16): Full CRUD, workspace isolation, merchant auto-resolution, tag management, validation
 - **TransactionGroupCrudIT** (17): Create group, list groups, get group, update metadata, add/remove transactions via transactionIds, remove below minimum, dissolve group, already-grouped, transaction shows groupId, min 2, create override, update override, add inherits overrides, remove clears groupId, add RI-linked rejects, delete clears all groupIds
 - **TransactionSplitCrudIT** (20): Create split, list splits, get split, update children, add/remove children, dissolve split, amount mismatch on create/update, locked field rejection (accountId, amount, date), allow category change, split child can't be grouped, grouped txn can't be split, split child RI-linked, RI account mismatch, unlinkSplitChild rejects, assign splitId rejects, child shows splitId, filter by splitId
+- **TransactionEventIT** (10): Create event verification, update change diff, grouped/ungrouped events, split/unsplit events, event ordering, BigDecimal normalization, GET endpoint
 
 ### Test Infrastructure
 - **Testcontainers**: Singleton PostgreSQL container shared across all IT tests
@@ -483,3 +514,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 15. **Service-layer field locking** — When a transaction is linked to a recurring item, group, or split, locked fields are enforced purely in `TransactionService` — no DB triggers, no extra columns. The presence of `recurringItemId`, `groupId`, or `splitId` on the transaction implies which fields are locked. Locked fields always come from the source entity on link. Unlink requests for RI and group bypass locking checks via helper methods (`isUnlinkingRecurringItem()`, `isUnlinkingGroup()`), allowing unlink + modify in a single PATCH. `splitId` is fully locked — any attempt to set or null it via the transaction API is rejected; splits must be dissolved via the transaction-splits API to preserve the amount sum invariant.
 
 16. **Category polarity validation** — `CategoryService.validateCategoryPolarity()` ensures income categories (`income=true`) are only assigned to positive amounts and expense categories (`income=false`) to negative/zero amounts. This is a cross-cutting concern wired into all 4 domain services (TransactionService, TransactionSplitService, TransactionGroupService, RecurringItemService) on both create and update paths. For groups, the category is validated against every member transaction's amount. For splits, each child's category is validated against its own amount, and all children must match the sign of the split's `totalAmount`.
+
+17. **Domain event framework** — A generic `DomainEvent` record in `common/event` uses "domain.action" naming (e.g., `transaction.created`, `transaction.updated`). Events are published via Spring's `ApplicationEventPublisher` and consumed by `@TransactionalEventListener` + `@Async` listeners. The event contains a `Map<String, FieldChange>` capturing per-field diffs (oldValue → newValue) with human-readable values. Currently used for transaction change history — designed to be Kafka-pluggable later by swapping the publisher without changing event structure. No DLQ or retry — if async persistence fails, the event is lost (acceptable for display-only history). Kafka should be introduced when multiple consumers, cross-service communication, or guaranteed delivery is required.
+
+18. **Cached balance with synchronous recompute** — Accounts store a `startingBalance` (set once at creation) and a computed `balance` (`startingBalance + SUM(transactions.amount)`). Balance is recomputed synchronously within the same `@Transactional` boundary on every transaction create/update/delete. No event-driven balance updates, no eventual consistency — the balance is always accurate when the API response returns.

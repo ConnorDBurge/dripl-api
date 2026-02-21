@@ -9,6 +9,8 @@ import com.dripl.transaction.dto.UpdateTransactionDto;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.enums.TransactionStatus;
+import com.dripl.transaction.event.dto.TransactionEventDto;
+import com.dripl.transaction.event.service.TransactionEventService;
 import com.dripl.transaction.mapper.TransactionMapper;
 import com.dripl.transaction.repository.TransactionSpecifications;
 import com.dripl.transaction.service.TransactionService;
@@ -33,7 +35,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -47,6 +51,7 @@ public class TransactionController {
     private static final int MAX_PAGE_SIZE = 250;
 
     private final TransactionService transactionService;
+    private final TransactionEventService transactionEventService;
     private final TransactionMapper transactionMapper;
 
     @PreAuthorize("hasAuthority('READ')")
@@ -63,8 +68,8 @@ public class TransactionController {
             @RequestParam(required = false) TransactionSource source,
             @RequestParam(required = false) CurrencyCode currencyCode,
             @RequestParam(required = false) Set<UUID> tagIds,
-            @RequestParam(required = false) LocalDateTime startDate,
-            @RequestParam(required = false) LocalDateTime endDate,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) BigDecimal minAmount,
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(required = false) String search,
@@ -73,7 +78,8 @@ public class TransactionController {
             @RequestParam(defaultValue = "date") String sortBy,
             @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection) {
 
-        int clampedSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : null;
 
         Specification<Transaction> spec = Specification
                 .where(TransactionSpecifications.inWorkspace(workspaceId))
@@ -87,12 +93,13 @@ public class TransactionController {
                 .and(optionally(source,             TransactionSpecifications::hasSource))
                 .and(optionally(currencyCode,       TransactionSpecifications::hasCurrency))
                 .and(optionally(tagIds,             TransactionSpecifications::hasAnyTag))
-                .and(optionally(startDate,          TransactionSpecifications::dateOnOrAfter))
-                .and(optionally(endDate,            TransactionSpecifications::dateOnOrBefore))
+                .and(optionally(search,             TransactionSpecifications::searchText))
                 .and(optionally(minAmount,          TransactionSpecifications::amountGreaterThanOrEqual))
                 .and(optionally(maxAmount,          TransactionSpecifications::amountLessThanOrEqual))
-                .and(optionally(search,             TransactionSpecifications::searchText));
+                .and(optionally(start,              TransactionSpecifications::dateOnOrAfter))
+                .and(optionally(end,                TransactionSpecifications::dateOnOrBefore));
 
+        int clampedSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         Pageable pageable;
         if (TransactionSpecifications.isRelatedSort(sortBy)) {
             spec = spec.and(TransactionSpecifications.sortByRelatedName(sortBy, sortDirection));
@@ -138,5 +145,13 @@ public class TransactionController {
             @WorkspaceId UUID workspaceId, @PathVariable UUID transactionId) {
         transactionService.deleteTransaction(transactionId, workspaceId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAuthority('READ')")
+    @GetMapping(value = "/{transactionId}/events", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<TransactionEventDto>> getTransactionEvents(
+            @WorkspaceId UUID workspaceId, @PathVariable UUID transactionId) {
+        transactionService.getTransaction(transactionId, workspaceId);
+        return ResponseEntity.ok(transactionEventService.getEventsForTransaction(transactionId, workspaceId));
     }
 }

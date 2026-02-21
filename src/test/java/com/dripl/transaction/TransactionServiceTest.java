@@ -8,6 +8,7 @@ import com.dripl.category.service.CategoryService;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.common.enums.Status;
+import com.dripl.common.event.DomainEventPublisher;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.entity.RecurringItem;
@@ -64,6 +65,8 @@ class TransactionServiceTest {
     private RecurringItemService recurringItemService;
     @Mock
     private TransactionSplitRepository transactionSplitRepository;
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
 
     @Spy
     private TransactionMapper transactionMapper = Mappers.getMapper(TransactionMapper.class);
@@ -402,6 +405,69 @@ class TransactionServiceTest {
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
+    }
+
+    @Test
+    void updateTransaction_merchantId_setsDirectly() {
+        Transaction txn = buildTransaction();
+        UUID newMerchantId = UUID.randomUUID();
+        Merchant merchant = Merchant.builder().id(newMerchantId).workspaceId(workspaceId).name("Direct Merchant").build();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(merchantService.getMerchant(newMerchantId, workspaceId)).thenReturn(merchant);
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignMerchantId(newMerchantId);
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+
+        assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
+        verify(merchantService, never()).resolveMerchant(any(), any());
+    }
+
+    @Test
+    void updateTransaction_merchantId_null_clearsMerchant() {
+        Transaction txn = buildTransaction();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignMerchantId(null);
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+
+        assertThat(result.getMerchantId()).isNull();
+    }
+
+    @Test
+    void updateTransaction_merchantId_takesPrecedenceOverMerchantName() {
+        Transaction txn = buildTransaction();
+        UUID newMerchantId = UUID.randomUUID();
+        Merchant merchant = Merchant.builder().id(newMerchantId).workspaceId(workspaceId).name("Direct").build();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(merchantService.getMerchant(newMerchantId, workspaceId)).thenReturn(merchant);
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("Ignored Name").build();
+        dto.assignMerchantId(newMerchantId);
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+
+        assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
+        verify(merchantService, never()).resolveMerchant(any(), any());
+    }
+
+    @Test
+    void updateTransaction_merchantId_notSpecified_doesNotClear() {
+        Transaction txn = buildTransaction();
+
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
+
+        assertThat(result.getMerchantId()).isEqualTo(merchantId);
     }
 
     @Test
@@ -889,6 +955,21 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
         UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("New Merchant").build();
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("merchantName")
+                .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsMerchantId() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        dto.assignMerchantId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)

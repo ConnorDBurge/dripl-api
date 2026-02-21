@@ -27,6 +27,10 @@ public class UpdateTransactionDto {
     @Size(min = 1, max = 100, message = "Merchant name must be between 1 and 100 characters")
     private String merchantName;
 
+    private UUID merchantId;
+    @Getter
+    private boolean merchantIdSpecified;
+
     private UUID categoryId;
     @Getter
     private boolean categoryIdSpecified;
@@ -60,6 +64,12 @@ public class UpdateTransactionDto {
     private UUID recurringItemId;
     @Getter
     private boolean recurringItemIdSpecified;
+
+    @JsonSetter("merchantId")
+    public void assignMerchantId(UUID merchantId) {
+        this.merchantId = merchantId;
+        this.merchantIdSpecified = true;
+    }
 
     @JsonSetter("categoryId")
     public void assignCategoryId(UUID categoryId) {

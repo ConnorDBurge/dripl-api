@@ -8,6 +8,7 @@ import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
+import com.dripl.common.event.DomainEventPublisher;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
@@ -46,6 +47,7 @@ class TransactionSplitServiceTest {
     @Mock private MerchantService merchantService;
     @Mock private CategoryService categoryService;
     @Mock private TagService tagService;
+    @Mock private DomainEventPublisher domainEventPublisher;
 
     @InjectMocks
     private TransactionSplitService transactionSplitService;

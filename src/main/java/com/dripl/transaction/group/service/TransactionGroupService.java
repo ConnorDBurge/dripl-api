@@ -1,10 +1,13 @@
 package com.dripl.transaction.group.service;
 
 import com.dripl.category.service.CategoryService;
+import com.dripl.common.event.DomainEventPublisher;
+import com.dripl.common.event.FieldChange;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
+import com.dripl.transaction.enums.TransactionAction;
 import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
 import com.dripl.transaction.group.dto.UpdateTransactionGroupDto;
 import com.dripl.transaction.group.entity.TransactionGroup;
@@ -31,6 +34,7 @@ public class TransactionGroupService {
     private final TransactionRepository transactionRepository;
     private final CategoryService categoryService;
     private final TagService tagService;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Transactional(readOnly = true)
     public List<TransactionGroup> listAllByWorkspaceId(UUID workspaceId) {
@@ -83,6 +87,10 @@ public class TransactionGroupService {
 
         transactionRepository.setGroupId(group.getId(), transactionIds, workspaceId);
         applyGroupOverrides(group, transactionIds, workspaceId);
+
+        for (UUID txnId : transactionIds) {
+            publishGroupedEvent(txnId, workspaceId, group.getId());
+        }
 
         log.info("Created transaction group '{}' with {} transactions", group.getName(), transactionIds.size());
         return group;
@@ -140,6 +148,7 @@ public class TransactionGroupService {
                         .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + txnId));
                 txn.setGroupId(null);
                 transactionRepository.save(txn);
+                publishUngroupedEvent(txnId, workspaceId, groupId);
             }
 
             // Add new transactions
@@ -148,6 +157,9 @@ public class TransactionGroupService {
             if (!toAdd.isEmpty()) {
                 validateTransactionsForGrouping(toAdd, workspaceId);
                 transactionRepository.setGroupId(groupId, toAdd, workspaceId);
+                for (UUID txnId : toAdd) {
+                    publishGroupedEvent(txnId, workspaceId, groupId);
+                }
             }
         }
 
@@ -179,8 +191,12 @@ public class TransactionGroupService {
     @Transactional
     public void deleteTransactionGroup(UUID groupId, UUID workspaceId) {
         TransactionGroup group = getTransactionGroup(groupId, workspaceId);
+        List<Transaction> members = transactionRepository.findAllByGroupIdAndWorkspaceId(groupId, workspaceId);
         transactionRepository.clearGroupId(groupId);
         transactionGroupRepository.delete(group);
+        for (Transaction txn : members) {
+            publishUngroupedEvent(txn.getId(), workspaceId, groupId);
+        }
         log.info("Dissolved transaction group '{}'", group.getName());
     }
 
@@ -224,5 +240,15 @@ public class TransactionGroupService {
             }
             transactionRepository.save(txn);
         }
+    }
+
+    private void publishGroupedEvent(UUID transactionId, UUID workspaceId, UUID groupId) {
+        domainEventPublisher.publish(TransactionAction.GROUPED, transactionId, workspaceId,
+                List.of(new FieldChange("groupId", null, groupId.toString())));
+    }
+
+    private void publishUngroupedEvent(UUID transactionId, UUID workspaceId, UUID groupId) {
+        domainEventPublisher.publish(TransactionAction.UNGROUPED, transactionId, workspaceId,
+                List.of(new FieldChange("groupId", groupId.toString(), null)));
     }
 }
