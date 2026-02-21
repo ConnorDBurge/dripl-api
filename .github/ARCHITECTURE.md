@@ -521,6 +521,71 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 
 ---
 
+## Phase 14: Budgeting
+
+### Domain Overview
+
+One budget per workspace. Budget period configuration is stored in `WorkspaceSettings` (a general-purpose workspace preferences entity) alongside settings like timezone and default currency. The settings response includes computed `currentPeriodStart` and `currentPeriodEnd` so the UI can default transaction views to the active budget window without a separate call.
+
+Per-category rollover preferences and per-period expected amounts are stored in two supporting tables (`budget_category_configs`, `budget_period_entries`). Activity (actual spending) is computed at query time by summing transactions. All rollover values are computed dynamically by chaining back through prior periods.
+
+### Period Types
+
+| Type | Description | Config |
+|------|-------------|--------|
+| `MONTHLY` | 1st to last day of month | none |
+| `WEEKLY` | 7-day window, configurable start day | `budgetWeekStartDay` (DayOfWeek) |
+| `SEMI_MONTHLY` | 1st–15th and 16th–EOM | none |
+| `FIXED_INTERVAL` | Every N days from an anchor date (e.g. every 14 days starting on a Friday) | `budgetIntervalDays`, `budgetAnchorDate` |
+
+Period computation is pure server-side math via `BudgetPeriodCalculator` — no DB rows are created per period.
+
+### Rollover Types (per category)
+
+| Type | Behavior |
+|------|----------|
+| `NONE` | No rollover — unused or overspent funds disappear at period end |
+| `SAME_CATEGORY` | Unused or overspent carries forward into the same category next period |
+| `AVAILABLE_POOL` | Unused or overspent goes into a workspace-level pool shown on the period summary |
+
+Overspending always carries forward as a **negative** rollover (no floor at zero). Rollover is computed dynamically at query time by chaining back through previous periods, capped at 24 periods.
+
+### Budget View
+
+The period view splits categories into **inflow** (income=true) and **outflow** (income=false) sections, each as a nested category tree. Per-category columns:
+
+- `expected` — amount set in `budget_period_entries` for this period (0 if not set)
+- `activity` — `SUM(transactions.amount)` where `categoryId` matches and date falls in the period
+- `rolledOver` — amount carried from the prior period (per rollover type)
+- `available` = `expected + rolledOver - activity`
+
+Parent categories show rollup totals (sum of all children). `excludeFromBudget` categories are omitted. Group children already have the effective `categoryId` cascaded onto them, so activity queries need no special JOIN.
+
+A top-level `availablePool` field aggregates all `AVAILABLE_POOL` rollovers from the previous period.
+
+### Data Model (V18–V20)
+
+| Table | Purpose |
+|-------|---------|
+| `workspace_settings` (V18) | One row per workspace; holds timezone, default currency, and budget period config |
+| `budget_category_configs` (V19) | Rollover type per (workspace, category); UNIQUE on (workspace_id, category_id) |
+| `budget_period_entries` (V20) | Expected amount per (workspace, category, period_start); UNIQUE on all three |
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/workspaces/current/settings` | Settings + computed currentPeriodStart/End |
+| PATCH | `/api/v1/workspaces/current/settings` | Update timezone, currency, budget period config |
+| GET | `/api/v1/budget/periods/current` | Full period view (category tree) for today |
+| GET | `/api/v1/budget/periods/{periodStart}` | Full period view for a specific period |
+| GET | `/api/v1/budget/periods` | Navigable period list (last 24 + up to 3 future) |
+| PATCH | `/api/v1/budget/categories/{categoryId}` | Upsert rollover type for a category |
+| PUT | `/api/v1/budget/periods/{periodStart}/categories/{categoryId}` | Set expected amount for a period |
+| DELETE | `/api/v1/budget/periods/{periodStart}/categories/{categoryId}` | Clear expected amount (reset to $0) |
+
+---
+
 ## Future Roadmap
 
 Ideas for future work, captured as we think of them.

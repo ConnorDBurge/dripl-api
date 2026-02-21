@@ -293,6 +293,36 @@ Async fire-and-forget transaction change history using Spring's `ApplicationEven
 
 ---
 
+---
+
+## Checkpoint 14: Budgeting (In Progress)
+
+One budget per workspace. Period config lives in `WorkspaceSettings` (general-purpose preferences entity). Settings response returns computed `currentPeriodStart`/`currentPeriodEnd` for the UI to default transaction views.
+
+**Period types:** MONTHLY, WEEKLY (configurable start day), SEMI_MONTHLY (1st–15th / 16th–EOM), FIXED_INTERVAL (every N days from anchor date — e.g. every 14 days on Fridays). Period math is pure server-side computation via `BudgetPeriodCalculator`.
+
+**Rollover:** NONE / SAME_CATEGORY (carries unused/overspent forward, including negatives) / AVAILABLE_POOL (collects into a workspace pool). Computed dynamically by chaining back through prior periods (capped at 24).
+
+**Budget view:** Category tree split into inflow/outflow sections. Per-category: expected, activity (summed from transactions), rolledOver, available. Parent rows show rollup totals. `excludeFromBudget` categories omitted.
+
+**New tables:** `workspace_settings` (V18), `budget_category_configs` (V19), `budget_period_entries` (V20).
+
+**Planned work items:**
+- [ ] Flyway V18–V20 migrations
+- [ ] WorkspaceSettings entity, service, controller (GET/PATCH `/workspaces/current/settings`)
+- [ ] BudgetPeriodType + RolloverType enums
+- [ ] BudgetCategoryConfig + BudgetPeriodEntry entities
+- [ ] BudgetPeriodCalculator (pure utility, all 4 period types)
+- [ ] Budget DTOs (period view, category view, settings)
+- [ ] BudgetService (CRUD — rollover config, expected amounts)
+- [ ] BudgetViewService (period + rollover computation, category tree build)
+- [ ] BudgetController (8 endpoints)
+- [ ] Unit tests + integration tests
+- [ ] Seed data (Connor: FIXED_INTERVAL 14 days; Burge Family: MONTHLY)
+- [ ] Documentation update
+
+---
+
 ## Future Roadmap
 
 Ideas captured for future consideration:
