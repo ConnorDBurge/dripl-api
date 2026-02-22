@@ -1,1 +1,0 @@
-ALTER TABLE accounts ADD COLUMN starting_balance NUMERIC(19, 4) NOT NULL DEFAULT 0;

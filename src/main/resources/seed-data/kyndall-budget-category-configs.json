@@ -1,0 +1,38 @@
+[
+  {
+    "categoryName": "Food & Drink",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Groceries",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Dining Out",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Self Care",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Beauty",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Wellness",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Shopping",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Clothing",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Home Décor",
+    "rolloverType": "AVAILABLE_POOL"
+  }
+]

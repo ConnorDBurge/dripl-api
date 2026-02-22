@@ -98,7 +98,10 @@ public class TransactionService {
 
         if (ri != null) accountService.getAccount(accountId, workspaceId);
         if (merchantId == null) throw new BadRequestException("Merchant name must be provided");
-        if (categoryId != null) categoryService.getCategory(categoryId, workspaceId);
+        if (categoryId != null) {
+            categoryService.getCategory(categoryId, workspaceId);
+            categoryService.validateNotGroup(categoryId);
+        }
         tagIds.forEach(tagId -> tagService.getTag(tagId, workspaceId));
 
         // Amount: DTO wins, then RI default
@@ -239,6 +242,7 @@ public class TransactionService {
         if (dto.isCategoryIdSpecified()) {
             if (dto.getCategoryId() != null) {
                 var category = categoryService.getCategory(dto.getCategoryId(), workspaceId);
+                categoryService.validateNotGroup(category.getId());
                 categoryService.validateCategoryPolarity(category.getId(), transaction.getAmount(), workspaceId);
                 transaction.setCategoryId(category.getId());
             } else {

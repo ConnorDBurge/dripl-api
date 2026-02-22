@@ -9,6 +9,7 @@ import com.dripl.account.service.AccountService;
 import com.dripl.common.annotation.WorkspaceId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,7 +45,7 @@ public class AccountController {
     public ResponseEntity<AccountDto> createAccount(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateAccountDto dto) {
         Account account = accountService.createAccount(workspaceId, dto);
-        return ResponseEntity.status(201).body(accountMapper.toDto(account));
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountMapper.toDto(account));
     }
 
     @PreAuthorize("hasAuthority('READ')")

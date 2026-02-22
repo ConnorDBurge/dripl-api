@@ -12,6 +12,7 @@ import com.dripl.common.annotation.WorkspaceId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,6 +42,7 @@ public class CategoryController {
     private final CategoryService categoryService;
     private final CategoryMapper categoryMapper;
 
+    // TODO: Add some kind of sort order to have these come back in an expected order in budgets/view
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(value = "/tree", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<CategoryTreeDto>> getCategoryTree(@WorkspaceId UUID workspaceId) {
@@ -68,7 +70,7 @@ public class CategoryController {
     public ResponseEntity<CategoryDto> createCategory(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateCategoryDto dto) {
         Category category = categoryService.createCategory(workspaceId, dto);
-        return ResponseEntity.status(201).body(categoryMapper.toDto(category));
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryMapper.toDto(category));
     }
 
     @PreAuthorize("hasAuthority('READ')")

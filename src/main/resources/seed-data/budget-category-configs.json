@@ -1,0 +1,42 @@
+[
+  {
+    "categoryName": "Food & Supplies",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Groceries",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Restaurants",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Lifestyle",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "His Fun Money",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Her Fun Money",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Transportation",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Pets",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Entertainment",
+    "rolloverType": "NONE"
+  },
+  {
+    "categoryName": "Recurring Bills",
+    "rolloverType": "NONE"
+  }
+]

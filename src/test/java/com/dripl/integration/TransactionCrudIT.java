@@ -401,6 +401,73 @@ class TransactionCrudIT extends BaseIntegrationTest {
     }
 
     @Test
+    void createTransaction_categoryIsGroup_returns400() {
+        // Create a parent category with a child
+        var parentResp = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Food Group"}
+                        """, authHeaders(token)),
+                Map.class);
+        String parentCategoryId = (String) parentResp.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Dining Out","parentId":"%s"}
+                        """.formatted(parentCategoryId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Store","categoryId":"%s","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId, parentCategoryId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat((String) response.getBody().get("detail")).contains("parent category group");
+    }
+
+    @Test
+    void updateTransaction_categoryIsGroup_returns400() {
+        // Create a transaction first
+        var createResp = restTemplate.exchange(
+                "/api/v1/transactions", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"accountId":"%s","merchantName":"Store","categoryId":"%s","date":"2025-07-01T00:00:00","amount":-10.00}
+                        """.formatted(accountId, categoryId), authHeaders(token)),
+                Map.class);
+        String txnId = (String) createResp.getBody().get("id");
+
+        // Create a parent category with a child
+        var parentResp = restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Bills Group"}
+                        """, authHeaders(token)),
+                Map.class);
+        String parentCategoryId = (String) parentResp.getBody().get("id");
+
+        restTemplate.exchange(
+                "/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("""
+                        {"name":"Utilities","parentId":"%s"}
+                        """.formatted(parentCategoryId), authHeaders(token)),
+                Map.class);
+
+        var response = restTemplate.exchange(
+                "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
+                new HttpEntity<>("""
+                        {"categoryId":"%s"}
+                        """.formatted(parentCategoryId), authHeaders(token)),
+                Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat((String) response.getBody().get("detail")).contains("parent category group");
+    }
+
+    @Test
     void createTransaction_tagNotInWorkspace_returns404() {
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,

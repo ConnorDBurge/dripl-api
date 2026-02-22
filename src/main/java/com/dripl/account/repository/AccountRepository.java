@@ -21,4 +21,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountId = :accountId")
     BigDecimal sumTransactionAmounts(UUID accountId);
+
+    @Query("SELECT COALESCE(SUM(a.balance), 0) FROM Account a WHERE a.id IN :accountIds")
+    BigDecimal sumBalancesByIds(List<UUID> accountIds);
 }

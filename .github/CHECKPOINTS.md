@@ -295,31 +295,45 @@ Async fire-and-forget transaction change history using Spring's `ApplicationEven
 
 ---
 
-## Checkpoint 14: Budgeting (In Progress)
+## Checkpoint 14: Budgeting ✅
 
-One budget per workspace. Period config lives in `WorkspaceSettings` (general-purpose preferences entity). Settings response returns computed `currentPeriodStart`/`currentPeriodEnd` for the UI to default transaction views.
+Multiple budgets per workspace. Each budget is a standalone entity with its own period configuration (anchor days/dates), account scope (via `budget_accounts` join table), and category settings. Period config moved from `WorkspaceSettings` to the `Budget` entity. `WorkspaceSettings` now only holds `defaultCurrencyCode` and `timezone`.
 
-**Period types:** MONTHLY, WEEKLY (configurable start day), SEMI_MONTHLY (1st–15th / 16th–EOM), FIXED_INTERVAL (every N days from anchor date — e.g. every 14 days on Fridays). Period math is pure server-side computation via `BudgetPeriodCalculator`.
+**Period modes:** Single anchor (monthly from anchorDay1), dual anchor (semi-monthly from anchorDay1/anchorDay2), fixed interval (every N days from anchorDate). Period math is pure server-side computation via `BudgetPeriodCalculator`.
 
-**Rollover:** NONE / SAME_CATEGORY (carries unused/overspent forward, including negatives) / AVAILABLE_POOL (collects into a workspace pool). Computed dynamically by chaining back through prior periods (capped at 24).
+**Navigation:** Offset-based (`?periodOffset=0/-1/+1`) or date-based (`?date=2026-02-14` finds the period containing that date).
 
-**Budget view:** Category tree split into inflow/outflow sections. Per-category: expected, activity (summed from transactions), rolledOver, available. Parent rows show rollup totals. `excludeFromBudget` categories omitted.
+**Rollover:** NONE / SAME_CATEGORY / AVAILABLE_POOL. Computed dynamically by chaining back through prior periods (capped at 24).
 
-**New tables:** `workspace_settings` (V18), `budget_category_configs` (V19), `budget_period_entries` (V20).
+**Budget view:** Category tree split into inflow/outflow sections. Per-category: expected, recurringExpected, activity, rolledOver, available. Parent rows show rollup totals. `excludeFromBudget` categories omitted.
 
-**Planned work items:**
-- [ ] Flyway V18–V20 migrations
-- [ ] WorkspaceSettings entity, service, controller (GET/PATCH `/workspaces/current/settings`)
-- [ ] BudgetPeriodType + RolloverType enums
-- [ ] BudgetCategoryConfig + BudgetPeriodEntry entities
-- [ ] BudgetPeriodCalculator (pure utility, all 4 period types)
-- [ ] Budget DTOs (period view, category view, settings)
-- [ ] BudgetService (CRUD — rollover config, expected amounts)
-- [ ] BudgetViewService (period + rollover computation, category tree build)
-- [ ] BudgetController (8 endpoints)
-- [ ] Unit tests + integration tests
-- [ ] Seed data (Connor: FIXED_INTERVAL 14 days; Burge Family: MONTHLY)
-- [ ] Documentation update
+**Service pattern:** Services return entities, controllers handle DTO mapping. `Budget.toDto()` and `BudgetCategoryConfig.toDto()` live on the entities. `BudgetViewService` returns DTOs directly (computed projection exception).
+
+**Expected amounts:** Single `PUT /categories/{categoryId}/expected?periodStart=...` endpoint — `null` expectedAmount clears the entry (no separate DELETE).
+
+**New tables (V14–V16):** `budgets` + `budget_accounts` (V14), `budget_category_configs` (V15), `budget_period_entries` (V16).
+
+**Migrations collapsed:** 23 migration files → 16 clean per-table files (V1–V16), one per entity in dependency order.
+
+**Completed work:**
+- [x] Multi-budget entity, repository, service, controller (full CRUD)
+- [x] Budget period config on Budget entity (anchorDay1, anchorDay2, anchorDate, intervalDays)
+- [x] BudgetAccount join table for account scoping
+- [x] BudgetPeriodCalculator (single anchor, dual anchor, fixed interval)
+- [x] BudgetViewService (period view, rollover computation, recurring expected)
+- [x] BudgetCrudController (5 CRUD endpoints) + BudgetController (view, config, expected)
+- [x] Offset-based and date-based period navigation
+- [x] Category rollover config (PATCH /categories/{categoryId})
+- [x] Expected amount set/clear (PUT /categories/{categoryId}/expected?periodStart=...)
+- [x] Recurring items expected computation in budget view
+- [x] Entity toDto() pattern (Budget, BudgetCategoryConfig)
+- [x] Migration collapse (23 → 16 files)
+- [x] Seed data (Burge Family: biweekly budget with rollover configs + expected amounts)
+- [x] Recurring item period override scaffold (PUT /recurring-items/{id}/expected?periodStart=...)
+- [x] Unit tests + integration tests
+- [x] Documentation update (ARCHITECTURE.md + CHECKPOINTS.md)
+
+**Test totals: 571 unit + 246 integration = 817 tests, all passing**
 
 ---
 
@@ -327,6 +341,7 @@ One budget per workspace. Period config lives in `WorkspaceSettings` (general-pu
 
 Ideas captured for future consideration:
 
+- **Recurring item period overrides** — Per-period amount overrides for recurring items (scaffolded at `PUT /recurring-items/{id}/expected?periodStart=...`). Budget view would check for overrides before falling back to the default amount.
 - **Bulk transaction operations** — Delete/update multiple transactions at once (UI multi-select)
 - **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
 - **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)

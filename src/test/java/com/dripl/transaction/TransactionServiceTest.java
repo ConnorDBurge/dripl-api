@@ -320,6 +320,27 @@ class TransactionServiceTest {
     }
 
     @Test
+    void createTransaction_categoryIsGroup_throws() {
+        CreateTransactionDto dto = CreateTransactionDto.builder()
+                .accountId(accountId)
+                .merchantName("Kroger")
+                .categoryId(categoryId)
+                .date(LocalDateTime.of(2025, 7, 1, 0, 0))
+                .amount(new BigDecimal("-20.00"))
+                .build();
+
+        when(accountService.getAccount(accountId, workspaceId)).thenReturn(buildAccount());
+        when(merchantService.resolveMerchant("Kroger", workspaceId)).thenReturn(buildMerchant("Kroger"));
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory());
+        doThrow(new BadRequestException("Cannot assign a transaction to a parent category group"))
+                .when(categoryService).validateNotGroup(categoryId);
+
+        assertThatThrownBy(() -> transactionService.createTransaction(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("parent category group");
+    }
+
+    @Test
     void createTransaction_tagNotInWorkspace_throws() {
         CreateTransactionDto dto = CreateTransactionDto.builder()
                 .accountId(accountId)
@@ -685,6 +706,24 @@ class TransactionServiceTest {
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Category not found");
+    }
+
+    @Test
+    void updateTransaction_categoryIsGroup_throws() {
+        Transaction txn = buildTransaction();
+        UUID groupCategoryId = UUID.randomUUID();
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+        when(categoryService.getCategory(groupCategoryId, workspaceId))
+                .thenReturn(Category.builder().id(groupCategoryId).workspaceId(workspaceId).build());
+        doThrow(new BadRequestException("Cannot assign a transaction to a parent category group"))
+                .when(categoryService).validateNotGroup(groupCategoryId);
+
+        UpdateTransactionDto dto = new UpdateTransactionDto();
+        dto.assignCategoryId(groupCategoryId);
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("parent category group");
     }
 
     @Test

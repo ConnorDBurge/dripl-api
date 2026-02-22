@@ -26,7 +26,7 @@ server:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %5p [%X{correlationId:-}] [u:%X{userId:-}] [ws:%X{workspaceId:-}] --- [%t] %-40.40logger{39} : %m%n"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %5p [id:%X{correlationId:-}] [u:%X{userId:-}] [ws:%X{workspaceId:-}] --- [%t] %-40.40logger{39} : %m%n"
 
 management:
   endpoints:

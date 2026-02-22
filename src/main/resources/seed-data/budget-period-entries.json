@@ -1,0 +1,144 @@
+[
+  {
+    "periodOffset": 0,
+    "entries": [
+      {
+        "categoryName": "Groceries",
+        "expectedAmount": 600.0
+      },
+      {
+        "categoryName": "Restaurants",
+        "expectedAmount": 250.0
+      },
+      {
+        "categoryName": "Lunch",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Coffee Shops",
+        "expectedAmount": 50.0
+      },
+      {
+        "categoryName": "Household Supplies",
+        "expectedAmount": 75.0
+      },
+      {
+        "categoryName": "Baby Items",
+        "expectedAmount": 75.0
+      },
+      {
+        "categoryName": "Rent",
+        "expectedAmount": 2200.0
+      },
+      {
+        "categoryName": "Water & Sewer",
+        "expectedAmount": 120.0
+      },
+      {
+        "categoryName": "Electric",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Internet",
+        "expectedAmount": 80.0
+      },
+      {
+        "categoryName": "Phone Bill",
+        "expectedAmount": 175.0
+      },
+      {
+        "categoryName": "Auto Insurance",
+        "expectedAmount": 215.0
+      },
+      {
+        "categoryName": "Renters Insurance",
+        "expectedAmount": 40.0
+      },
+      {
+        "categoryName": "Trash Pickup",
+        "expectedAmount": 30.0
+      },
+      {
+        "categoryName": "Gas",
+        "expectedAmount": 250.0
+      },
+      {
+        "categoryName": "Pet Food",
+        "expectedAmount": 70.0
+      },
+      {
+        "categoryName": "His Fun Money",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Her Fun Money",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Kid Fun Money",
+        "expectedAmount": 50.0
+      }
+    ]
+  },
+  {
+    "periodOffset": -1,
+    "entries": [
+      {
+        "categoryName": "Groceries",
+        "expectedAmount": 550.0
+      },
+      {
+        "categoryName": "Restaurants",
+        "expectedAmount": 200.0
+      },
+      {
+        "categoryName": "Lunch",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Coffee Shops",
+        "expectedAmount": 50.0
+      },
+      {
+        "categoryName": "Household Supplies",
+        "expectedAmount": 75.0
+      },
+      {
+        "categoryName": "Rent",
+        "expectedAmount": 2200.0
+      },
+      {
+        "categoryName": "Water & Sewer",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Electric",
+        "expectedAmount": 130.0
+      },
+      {
+        "categoryName": "Internet",
+        "expectedAmount": 80.0
+      },
+      {
+        "categoryName": "Phone Bill",
+        "expectedAmount": 175.0
+      },
+      {
+        "categoryName": "Auto Insurance",
+        "expectedAmount": 215.0
+      },
+      {
+        "categoryName": "Renters Insurance",
+        "expectedAmount": 40.0
+      },
+      {
+        "categoryName": "Trash Pickup",
+        "expectedAmount": 30.0
+      },
+      {
+        "categoryName": "Gas",
+        "expectedAmount": 200.0
+      }
+    ]
+  }
+]

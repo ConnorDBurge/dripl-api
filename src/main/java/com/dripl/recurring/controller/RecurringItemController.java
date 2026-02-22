@@ -9,11 +9,14 @@ import com.dripl.recurring.mapper.RecurringItemMapper;
 import com.dripl.recurring.service.RecurringItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,7 +48,7 @@ public class RecurringItemController {
     public ResponseEntity<RecurringItemDto> createRecurringItem(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateRecurringItemDto dto) {
         RecurringItem item = recurringItemService.createRecurringItem(workspaceId, dto);
-        return ResponseEntity.status(201).body(recurringItemMapper.toDto(item));
+        return ResponseEntity.status(HttpStatus.CREATED).body(recurringItemMapper.toDto(item));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -63,5 +66,21 @@ public class RecurringItemController {
             @WorkspaceId UUID workspaceId, @PathVariable UUID recurringItemId) {
         recurringItemService.deleteRecurringItem(recurringItemId, workspaceId);
         return ResponseEntity.noContent().build();
+    }
+
+    // TODO: Implement per-period amount overrides for recurring items.
+    //  - Create RecurringItemPeriodEntry entity + repository + migration
+    //  - Create SetRecurringItemExpectedDto (nullable BigDecimal expectedAmount; null = clear)
+    //  - Implement service methods in RecurringItemService
+    //  - Update BudgetViewService.recurringItemsExpected to check for period overrides
+    //  - Add unit tests, controller tests, and integration tests
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PutMapping(value = "/{recurringItemId}/expected", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> setExpectedAmount(
+            @WorkspaceId UUID workspaceId,
+            @PathVariable UUID recurringItemId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodStart) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 }

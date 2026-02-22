@@ -9,14 +9,14 @@ CREATE TABLE accounts (
     type VARCHAR(50) NOT NULL,
     sub_type VARCHAR(50) NOT NULL,
     balance NUMERIC(19, 4) NOT NULL DEFAULT 0,
+    starting_balance NUMERIC(19, 4) NOT NULL DEFAULT 0,
     currency VARCHAR(3) NOT NULL DEFAULT 'USD',
     institution_name VARCHAR(120),
     source VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     balance_last_updated TIMESTAMP,
     closed_at TIMESTAMP,
-    external_id VARCHAR(255),
-    exclude_from_transactions BOOLEAN NOT NULL DEFAULT false
+    external_id VARCHAR(255)
 );
 
 CREATE INDEX idx_accounts_workspace_id ON accounts(workspace_id);

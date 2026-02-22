@@ -1,5 +1,6 @@
 package com.dripl.category.service;
 
+import com.dripl.budget.repository.BudgetPeriodEntryRepository;
 import com.dripl.category.dto.CreateCategoryDto;
 import com.dripl.category.dto.UpdateCategoryDto;
 import com.dripl.category.entity.Category;
@@ -27,6 +28,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final BudgetPeriodEntryRepository budgetPeriodEntryRepository;
 
     @Transactional(readOnly = true)
     public List<Category> listAll(Specification<Category> spec) {
@@ -51,6 +53,7 @@ public class CategoryService {
         if (dto.getParentId() != null) {
             Category parent = validateParent(workspaceId, dto.getParentId());
             income = parent.isIncome();
+            budgetPeriodEntryRepository.deleteByCategoryId(dto.getParentId());
         }
 
         Category category = Category.builder()
@@ -90,6 +93,7 @@ public class CategoryService {
                     ensureNoCategoryChildren(categoryId);
                 }
                 category.setIncome(parent.isIncome());
+                budgetPeriodEntryRepository.deleteByCategoryId(parentId);
             }
             category.setParentId(parentId);
         }
@@ -133,6 +137,17 @@ public class CategoryService {
     private void ensureNoCategoryChildren(UUID categoryId) {
         if (categoryRepository.existsByParentId(categoryId)) {
             throw new BadRequestException("Cannot nest a category that already has children (maximum depth is 2)");
+        }
+    }
+
+    /**
+     * Validates that a category is not a group (has no children).
+     * Transactions can only be assigned to leaf categories.
+     */
+    @Transactional(readOnly = true)
+    public void validateNotGroup(UUID categoryId) {
+        if (categoryId != null && categoryRepository.existsByParentId(categoryId)) {
+            throw new BadRequestException("Cannot assign a transaction to a parent category group");
         }
     }
 

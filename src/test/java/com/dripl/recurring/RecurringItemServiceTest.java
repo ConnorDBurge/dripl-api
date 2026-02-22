@@ -335,6 +335,31 @@ class RecurringItemServiceTest {
     }
 
     @Test
+    void createRecurringItem_groupCategory_throws() {
+        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+                .accountId(accountId)
+                .merchantName("Netflix")
+                .categoryId(categoryId)
+                .description("Netflix Subscription")
+                .amount(new BigDecimal("-15.99"))
+                .frequencyGranularity(FrequencyGranularity.MONTH)
+                .frequencyQuantity(1)
+                .anchorDates(List.of(LocalDateTime.of(2025, 7, 1, 0, 0)))
+                .startDate(LocalDateTime.of(2025, 7, 1, 0, 0))
+                .build();
+
+        when(accountService.getAccount(accountId, workspaceId)).thenReturn(buildAccount());
+        when(merchantService.resolveMerchant("Netflix", workspaceId)).thenReturn(buildMerchant("Netflix"));
+        when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory());
+        doThrow(new BadRequestException("Cannot assign a parent category group"))
+                .when(categoryService).validateNotGroup(categoryId);
+
+        assertThatThrownBy(() -> recurringItemService.createRecurringItem(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("parent category group");
+    }
+
+    @Test
     void createRecurringItem_noCategoryId_success() {
         CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
                 .accountId(accountId)
@@ -422,6 +447,25 @@ class RecurringItemServiceTest {
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getCategoryId()).isEqualTo(newCategoryId);
+    }
+
+    @Test
+    void updateRecurringItem_groupCategory_throws() {
+        RecurringItem item = buildRecurringItem();
+        UUID groupCategoryId = UUID.randomUUID();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
+        when(categoryService.getCategory(groupCategoryId, workspaceId))
+                .thenReturn(Category.builder().id(groupCategoryId).workspaceId(workspaceId).build());
+        doThrow(new BadRequestException("Cannot assign a parent category group"))
+                .when(categoryService).validateNotGroup(groupCategoryId);
+
+        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        dto.assignCategoryId(groupCategoryId);
+
+        assertThatThrownBy(() -> recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("parent category group");
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.dripl.transaction.group.mapper.TransactionGroupMapper;
 import com.dripl.transaction.group.service.TransactionGroupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,7 +52,7 @@ public class TransactionGroupController {
     public ResponseEntity<TransactionGroupDto> createTransactionGroup(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateTransactionGroupDto dto) {
         TransactionGroup group = transactionGroupService.createTransactionGroup(workspaceId, dto);
-        return ResponseEntity.status(201).body(transactionGroupMapper.toDto(
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionGroupMapper.toDto(
                 group, transactionGroupService.getGroupTransactions(group.getId(), workspaceId)));
     }
 

@@ -3,7 +3,6 @@
     "name": "Costco Trip Split",
     "accountName": "Primary Checking",
     "merchantName": "Costco",
-    "date": "2025-08-10",
     "amount": -245.67,
     "categoryName": "Groceries",
     "notes": "Monthly Costco run",
@@ -34,13 +33,13 @@
           "costco"
         ]
       }
-    ]
+    ],
+    "daysAgo": 143
   },
   {
     "name": "Target Run Split",
     "accountName": "Rewards Credit Card",
     "merchantName": "Target",
-    "date": "2025-09-15",
     "amount": -187.32,
     "notes": "Big Target haul",
     "children": [
@@ -67,13 +66,13 @@
         "categoryName": "Household Supplies",
         "notes": "Cleaning supplies"
       }
-    ]
+    ],
+    "daysAgo": 107
   },
   {
     "name": "Amazon Order Split",
     "accountName": "Primary Checking",
     "merchantName": "Amazon",
-    "date": "2025-10-22",
     "amount": -156.78,
     "notes": "Amazon bulk order",
     "children": [
@@ -102,13 +101,13 @@
           "shopping"
         ]
       }
-    ]
+    ],
+    "daysAgo": 70
   },
   {
     "name": "Walmart Trip Split",
     "accountName": "Cashback Credit Card",
     "merchantName": "Walmart",
-    "date": "2025-11-05",
     "amount": -198.45,
     "categoryName": "Groceries",
     "notes": "Weekly Walmart trip",
@@ -136,6 +135,7 @@
         "categoryName": "Household Supplies",
         "notes": "Cleaning supplies"
       }
-    ]
+    ],
+    "daysAgo": 56
   }
 ]

@@ -7,13 +7,13 @@
     "amount": -22.99,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-15"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "streaming",
       "subscription"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      15
     ]
   },
   {
@@ -24,13 +24,13 @@
     "amount": -10.99,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-05"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "music",
       "subscription"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      5
     ]
   },
   {
@@ -41,12 +41,12 @@
     "amount": -181.0,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-20"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "phone"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      20
     ]
   },
   {
@@ -57,12 +57,12 @@
     "amount": -89.99,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-12"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "internet"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      12
     ]
   },
   {
@@ -73,13 +73,13 @@
     "amount": -19.0,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-08"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "software",
       "subscription"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      8
     ]
   },
   {
@@ -90,13 +90,13 @@
     "amount": -20.0,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-22"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "software",
       "subscription"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      22
     ]
   },
   {
@@ -107,13 +107,13 @@
     "amount": -285.0,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-01"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "insurance",
       "car"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      1
     ]
   },
   {
@@ -124,14 +124,14 @@
     "amount": -129.98,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-01"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "gym"
     ],
-    "notes": "His + hers memberships"
+    "notes": "His + hers memberships",
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      1
+    ]
   },
   {
     "description": "Bi-Monthly Paycheck",
@@ -141,15 +141,15 @@
     "amount": 3392.53,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-15",
-      "2025-01-30"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "income"
     ],
-    "notes": "Bi-monthly paycheck"
+    "notes": "Bi-monthly paycheck",
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      15,
+      30
+    ]
   },
   {
     "description": "Disney Plus",
@@ -159,13 +159,13 @@
     "amount": -13.99,
     "frequencyGranularity": "MONTH",
     "frequencyQuantity": 1,
-    "anchorDates": [
-      "2025-01-18"
-    ],
-    "startDate": "2025-01-01",
     "tagNames": [
       "streaming",
       "subscription"
+    ],
+    "startDaysAgo": 180,
+    "anchorDaysOfMonth": [
+      18
     ]
   }
 ]

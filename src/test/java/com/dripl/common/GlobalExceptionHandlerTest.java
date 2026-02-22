@@ -14,7 +14,10 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -160,5 +163,30 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().detail()).isEqualTo("Bad Request");
+    }
+
+    @Test
+    void handleMethodArgumentTypeMismatch_returns400() {
+        MethodArgumentTypeMismatchException ex = new MethodArgumentTypeMismatchException(
+                "2026-09-29", LocalDate.class, "endDate", null,
+                new RuntimeException("Failed to convert"));
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentTypeMismatch(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().detail()).contains("endDate");
+        assertThat(response.getBody().detail()).contains("2026-09-29");
+        assertThat(response.getBody().detail()).contains("LocalDate");
+    }
+
+    @Test
+    void handleMissingServletRequestParameter_returns400() {
+        MissingServletRequestParameterException ex = new MissingServletRequestParameterException(
+                "periodStart", "LocalDate");
+
+        ResponseEntity<ErrorResponse> response = handler.handleMissingServletRequestParameter(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().detail()).isEqualTo("Required parameter 'periodStart' is missing");
     }
 }

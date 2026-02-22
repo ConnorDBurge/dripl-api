@@ -53,7 +53,14 @@ com.dripl
 │   │   ├── repository/     # WorkspaceMembershipRepository
 │   │   └── service/        # MembershipService (publishes events on delete)
 │   ├── repository/         # WorkspaceRepository
-│   └── service/            # WorkspaceService (provision, switch, CRUD)
+│   ├── service/            # WorkspaceService (provision, switch, CRUD)
+│   └── settings/
+│       ├── controller/     # WorkspaceSettingsController (/api/v1/workspaces/current/settings)
+│       ├── dto/            # WorkspaceSettingsDto, UpdateWorkspaceSettingsDto (specified-flag pattern)
+│       ├── entity/         # WorkspaceSettings (JPA entity, budget period config)
+│       ├── mapper/         # WorkspaceSettingsMapper (MapStruct)
+│       ├── repository/     # WorkspaceSettingsRepository
+│       └── service/        # WorkspaceSettingsService (auto-provision, validation, computed period enrichment)
 ├── account/
 │   ├── controller/         # AccountController (/api/v1/accounts)
 │   ├── dto/                # AccountDto, CreateAccountDto, UpdateAccountDto
@@ -118,6 +125,14 @@ com.dripl
 │   ├── mapper/             # RecurringItemMapper (MapStruct)
 │   ├── repository/         # RecurringItemRepository
 │   └── service/            # RecurringItemService (merchant auto-resolution via shared MerchantService, cross-entity validation)
+├── budget/
+│   ├── controller/         # BudgetCrudController (/api/v1/budgets CRUD), BudgetController (view, category config, expected amounts)
+│   ├── dto/                # BudgetDto, CreateBudgetDto, UpdateBudgetDto, BudgetPeriodViewDto, BudgetSectionDto, BudgetCategoryViewDto, BudgetCategoryConfigDto, SetExpectedAmountDto, UpdateBudgetCategoryConfigDto
+│   ├── entity/             # Budget (period config + toDto), BudgetAccount (join), BudgetCategoryConfig (rollover + toDto), BudgetPeriodEntry
+│   ├── enums/              # RolloverType (NONE/SAME_CATEGORY/AVAILABLE_POOL)
+│   ├── repository/         # BudgetRepository, BudgetAccountRepository, BudgetCategoryConfigRepository, BudgetPeriodEntryRepository
+│   ├── service/            # BudgetCrudService (CRUD, returns entities), BudgetService (category config, expected amounts), BudgetViewService (period view builder, rollover computation)
+│   └── util/               # BudgetPeriodCalculator (pure static math), PeriodRange (record)
 └── common/
     ├── annotation/         # @WorkspaceId, @UserId, @Subject
     ├── audit/              # BaseEntity (createdAt, updatedAt), JpaAuditConfig
@@ -179,19 +194,25 @@ Roles:
 
 ### Entities
 
-| Entity                | Table                   | Key Fields |
-|-----------------------|-------------------------|------------|
-| User                  | `users`                 | email, givenName, familyName, lastWorkspaceId |
-| Workspace             | `workspaces`            | name, status |
-| WorkspaceMembership   | `workspace_memberships` | user, workspace, roles, status |
-| Account               | `accounts`              | workspaceId, name, balance, type, subType, currency, source, status |
-| Merchant              | `merchants`             | workspaceId, name, status |
-| Category              | `categories`            | workspaceId, name, parentId, income, excludeFromBudget, excludeFromTotals |
-| Tag                   | `tags`                  | workspaceId, name, description, status |
-| Transaction           | `transactions`          | workspaceId, accountId, merchantId, categoryId, amount, date, status, source, recurringItemId, groupId, splitId |
-| RecurringItem         | `recurring_items`       | workspaceId, merchantId, accountId, categoryId, amount, frequencyGranularity, frequencyQuantity, anchorDates, status |
-| TransactionGroup      | `transaction_groups`    | workspaceId, name, categoryId, notes, tagIds |
-| TransactionSplit      | `transaction_splits`    | workspaceId, totalAmount, currencyCode, accountId, date |
+| Entity                | Table                       | Key Fields |
+|-----------------------|-----------------------------|------------|
+| User                  | `users`                     | email, givenName, familyName, lastWorkspaceId |
+| Workspace             | `workspaces`                | name, status |
+| WorkspaceMembership   | `workspace_memberships`     | user, workspace, roles, status |
+| WorkspaceSettings     | `workspace_settings`        | workspaceId, defaultCurrencyCode, timezone |
+| Account               | `accounts`                  | workspaceId, name, balance, type, subType, currency, source, status |
+| Merchant              | `merchants`                 | workspaceId, name, status |
+| Category              | `categories`                | workspaceId, name, parentId, income, excludeFromBudget, excludeFromTotals |
+| Tag                   | `tags`                      | workspaceId, name, description, status |
+| Transaction           | `transactions`              | workspaceId, accountId, merchantId, categoryId, amount, date, status, source, recurringItemId, groupId, splitId |
+| TransactionEvent      | `transaction_events`        | transactionId, workspaceId, eventType, changes (JSONB), performedBy, performedAt |
+| RecurringItem         | `recurring_items`           | workspaceId, merchantId, accountId, categoryId, amount, frequencyGranularity, frequencyQuantity, anchorDates, status |
+| TransactionGroup      | `transaction_groups`        | workspaceId, name, categoryId, notes, tagIds |
+| TransactionSplit      | `transaction_splits`        | workspaceId, totalAmount, currencyCode, accountId, date |
+| Budget                | `budgets`                   | workspaceId, name, anchorDay1, anchorDay2, anchorDate, intervalDays |
+| BudgetAccount         | `budget_accounts`           | budgetId, accountId (join table) |
+| BudgetCategoryConfig  | `budget_category_configs`   | budgetId, workspaceId, categoryId, rolloverType |
+| BudgetPeriodEntry     | `budget_period_entries`     | budgetId, workspaceId, categoryId, periodStart, expectedAmount |
 
 ### Workspace Isolation
 
@@ -525,20 +546,32 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 
 ### Domain Overview
 
-One budget per workspace. Budget period configuration is stored in `WorkspaceSettings` (a general-purpose workspace preferences entity) alongside settings like timezone and default currency. The settings response includes computed `currentPeriodStart` and `currentPeriodEnd` so the UI can default transaction views to the active budget window without a separate call.
+Multiple budgets per workspace. Each budget is a standalone entity (`budgets` table) with its own period configuration, account scope, and category settings. Budgets define which accounts are included via a join table (`budget_accounts`), allowing different budgets to track different subsets of a user's accounts.
 
-Per-category rollover preferences and per-period expected amounts are stored in two supporting tables (`budget_category_configs`, `budget_period_entries`). Activity (actual spending) is computed at query time by summing transactions. All rollover values are computed dynamically by chaining back through prior periods.
+Budget period configuration lives directly on the `Budget` entity (not on `WorkspaceSettings`). `WorkspaceSettings` only holds workspace-level preferences: `defaultCurrencyCode` and `timezone`.
 
-### Period Types
+Per-category rollover preferences are stored in `budget_category_configs`. Per-period expected amounts are stored in `budget_period_entries`. Activity (actual spending) is computed at query time by summing transactions. All rollover values are computed dynamically by chaining back through prior periods.
 
-| Type | Description | Config |
-|------|-------------|--------|
-| `MONTHLY` | 1st to last day of month | none |
-| `WEEKLY` | 7-day window, configurable start day | `budgetWeekStartDay` (DayOfWeek) |
-| `SEMI_MONTHLY` | 1st–15th and 16th–EOM | none |
-| `FIXED_INTERVAL` | Every N days from an anchor date (e.g. every 14 days starting on a Friday) | `budgetIntervalDays`, `budgetAnchorDate` |
+### Period Configuration
+
+Budget periods are defined by anchor days/dates on the `Budget` entity:
+
+| Mode | Description | Config Fields |
+|------|-------------|---------------|
+| Single anchor | Monthly period starting on `anchorDay1` | `anchorDay1` (1–31) |
+| Dual anchor | Two periods per month (e.g., 1st–14th, 15th–EOM) | `anchorDay1`, `anchorDay2` |
+| Fixed interval | Every N days from an anchor date (e.g., biweekly on Fridays) | `anchorDate` (LocalDate), `intervalDays` |
 
 Period computation is pure server-side math via `BudgetPeriodCalculator` — no DB rows are created per period.
+
+### Period Navigation
+
+The budget view endpoint supports two navigation modes:
+
+- **Offset-based**: `GET /view?periodOffset=0` (current), `-1` (previous), `+1` (next)
+- **Date-based**: `GET /view?date=2026-02-14` finds the period *containing* that date
+
+The `date` param does **not** need to be a period start — the calculator resolves which period the date falls within.
 
 ### Rollover Types (per category)
 
@@ -555,34 +588,72 @@ Overspending always carries forward as a **negative** rollover (no floor at zero
 The period view splits categories into **inflow** (income=true) and **outflow** (income=false) sections, each as a nested category tree. Per-category columns:
 
 - `expected` — amount set in `budget_period_entries` for this period (0 if not set)
+- `recurringExpected` — sum of recurring item amounts that fall within the period (only from budget's included accounts)
 - `activity` — `SUM(transactions.amount)` where `categoryId` matches and date falls in the period
 - `rolledOver` — amount carried from the prior period (per rollover type)
-- `available` = `expected + rolledOver - activity`
+- `available` = `expected + rolledOver + activity` (expense) or `expected + rolledOver - activity` (income)
 
 Parent categories show rollup totals (sum of all children). `excludeFromBudget` categories are omitted. Group children already have the effective `categoryId` cascaded onto them, so activity queries need no special JOIN.
 
-A top-level `availablePool` field aggregates all `AVAILABLE_POOL` rollovers from the previous period.
+Top-level summary fields: `toBeBudgeted` (inflow expected - outflow expected + available pool), `recurringExpected`, `availablePool`, `totalRolledOver`.
 
-### Data Model (V18–V20)
+### Service Pattern
+
+Services return **entities**, controllers handle DTO mapping:
+
+- `BudgetCrudService` — CRUD operations, returns `Budget` entity. Has `getAccountIds(budgetId)` helper for DTO enrichment.
+- `BudgetService` — Category config (`setCategoryRollover`) and expected amounts (`setExpectedAmount`). Returns entities.
+- `BudgetViewService` — Returns `BudgetPeriodViewDto` directly (exception to pattern — it's a computed projection, not entity CRUD).
+- `Budget.toDto(List<UUID> accountIds)` and `BudgetCategoryConfig.toDto()` — entity-level DTO mapping.
+- `setExpectedAmount` with `expectedAmount: null` clears the entry (no separate delete endpoint).
+
+### Data Model (V4, V14–V16)
 
 | Table | Purpose |
 |-------|---------|
-| `workspace_settings` (V18) | One row per workspace; holds timezone, default currency, and budget period config |
-| `budget_category_configs` (V19) | Rollover type per (workspace, category); UNIQUE on (workspace_id, category_id) |
-| `budget_period_entries` (V20) | Expected amount per (workspace, category, period_start); UNIQUE on all three |
+| `workspace_settings` (V4) | One row per workspace; holds timezone and default currency |
+| `budgets` (V14) | Budget entity with period config (anchorDay1, anchorDay2, anchorDate, intervalDays) |
+| `budget_accounts` (V14) | Join table: which accounts are included in a budget |
+| `budget_category_configs` (V15) | Rollover type per (budget, category); UNIQUE on (budget_id, category_id) |
+| `budget_period_entries` (V16) | Expected amount per (budget, category, period_start); UNIQUE on all three |
 
 ### API Endpoints
 
+#### Budget CRUD (`BudgetCrudController`)
+
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/workspaces/current/settings` | Settings + computed currentPeriodStart/End |
-| PATCH | `/api/v1/workspaces/current/settings` | Update timezone, currency, budget period config |
-| GET | `/api/v1/budget/periods/current` | Full period view (category tree) for today |
-| GET | `/api/v1/budget/periods/{periodStart}` | Full period view for a specific period |
-| GET | `/api/v1/budget/periods` | Navigable period list (last 24 + up to 3 future) |
-| PATCH | `/api/v1/budget/categories/{categoryId}` | Upsert rollover type for a category |
-| PUT | `/api/v1/budget/periods/{periodStart}/categories/{categoryId}` | Set expected amount for a period |
-| DELETE | `/api/v1/budget/periods/{periodStart}/categories/{categoryId}` | Clear expected amount (reset to $0) |
+| GET | `/api/v1/budgets` | List all budgets in workspace |
+| GET | `/api/v1/budgets/{budgetId}` | Get budget details |
+| POST | `/api/v1/budgets` | Create budget (name, period config, account IDs) |
+| PATCH | `/api/v1/budgets/{budgetId}` | Update budget |
+| DELETE | `/api/v1/budgets/{budgetId}` | Delete budget |
+
+#### Budget View & Config (`BudgetController`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/budgets/{budgetId}/view` | Period view; `?periodOffset=0` (default) or `?date=YYYY-MM-DD` |
+| PATCH | `/api/v1/budgets/{budgetId}/categories/{categoryId}` | Update category config (rollover type) |
+| PUT | `/api/v1/budgets/{budgetId}/categories/{categoryId}/expected?periodStart=YYYY-MM-DD` | Set/clear expected amount (null = clear) |
+
+#### Workspace Settings
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/workspaces/current/settings` | Get workspace settings (timezone, currency) |
+| PATCH | `/api/v1/workspaces/current/settings` | Update workspace settings |
+
+### Recurring Items Expected
+
+The budget view includes `recurringExpected` per category — the sum of recurring item amounts that fall within the period. Only recurring items with `status=ACTIVE`, a non-null `categoryId`, and an `accountId` included in the budget are counted. Occurrence counting iterates from each anchor date using frequency granularity/quantity.
+
+**Planned**: Per-period amount overrides for recurring items (`PUT /api/v1/recurring-items/{id}/expected?periodStart=...`), allowing the default `amount` to be overridden for specific periods. The budget view would check for overrides first, falling back to the default amount.
+
+### Test Coverage
+
+- **Unit tests**: BudgetPeriodCalculatorTest (20), BudgetCrudServiceTest (18), BudgetServiceTest (9), BudgetViewServiceTest (17), BudgetCrudControllerTest (5), BudgetControllerTest (6), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
+- **Integration tests**: BudgetIT covering CRUD (10), category config (3), period views (6), rollover behavior (4), fixed interval periods (3), workspace settings (2)
 
 ---
 
@@ -590,6 +661,7 @@ A top-level `availablePool` field aggregates all `AVAILABLE_POOL` rollovers from
 
 Ideas for future work, captured as we think of them.
 
+- **Recurring item period overrides** — Per-period amount overrides for recurring items (scaffolded at `PUT /recurring-items/{id}/expected?periodStart=...`). Budget view would check for overrides before falling back to the default amount.
 - **Bulk transaction operations** — Delete/update multiple transactions at once (useful for UI multi-select)
 - **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
 - **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)

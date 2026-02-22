@@ -3,6 +3,15 @@ package com.dripl.common.seed;
 import com.dripl.account.dto.CreateAccountDto;
 import com.dripl.account.entity.Account;
 import com.dripl.account.service.AccountService;
+import com.dripl.budget.dto.CreateBudgetDto;
+import com.dripl.budget.dto.SetExpectedAmountDto;
+import com.dripl.budget.dto.UpdateBudgetCategoryConfigDto;
+import com.dripl.budget.entity.Budget;
+import com.dripl.budget.enums.RolloverType;
+import com.dripl.budget.service.BudgetService;
+import com.dripl.budget.service.BudgetConfigService;
+import com.dripl.budget.util.BudgetPeriodCalculator;
+import com.dripl.budget.util.PeriodRange;
 import com.dripl.category.dto.CreateCategoryDto;
 import com.dripl.category.entity.Category;
 import com.dripl.category.service.CategoryService;
@@ -31,6 +40,8 @@ import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.membership.enums.Role;
 import com.dripl.workspace.membership.service.MembershipService;
 import com.dripl.workspace.service.WorkspaceService;
+import com.dripl.workspace.settings.dto.UpdateWorkspaceSettingsDto;
+import com.dripl.workspace.settings.service.WorkspaceSettingsService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ch.qos.logback.classic.Level;
@@ -51,7 +62,7 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -72,11 +83,15 @@ public class SeedDataLoader implements CommandLineRunner {
     private final TransactionGroupService transactionGroupService;
     private final TransactionSplitService transactionSplitService;
     private final RecurringItemService recurringItemService;
+    private final BudgetConfigService budgetConfigService;
+    private final BudgetService budgetService;
+    private final WorkspaceSettingsService workspaceSettingsService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
     @Override
     public void run(String... args) throws Exception {
+        log.info("⚠️ Building local seed data");
         Logger driplLogger = (Logger) LoggerFactory.getLogger("com.dripl");
         Level previousLevel = driplLogger.getLevel();
         driplLogger.setLevel(Level.WARN);
@@ -93,7 +108,7 @@ public class SeedDataLoader implements CommandLineRunner {
             driplLogger.setLevel(previousLevel);
         }
 
-        log.info("Local seed data loaded");
+        log.info("✅ Seed data built successfully");
     }
 
     private void setSeedAuthentication() {
@@ -122,11 +137,8 @@ public class SeedDataLoader implements CommandLineRunner {
         return usersByEmail;
     }
 
-    private long dateOffsetDays;
-
     private void seedWorkspaces(Map<String, User> usersByEmail) throws Exception {
         List<Map<String, Object>> seedWorkspaces = readJson("seed-data/workspaces.json");
-        dateOffsetDays = computeDateOffset(seedWorkspaces);
         Set<String> defaultRenamed = new HashSet<>();
 
         for (Map<String, Object> seedWorkspace : seedWorkspaces) {
@@ -162,6 +174,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
             seedTransactionGroups(seedWorkspace, workspaceId, categoriesByName, tagsByName, txnsByGroup);
             seedTransactionSplits(seedWorkspace, workspaceId, accountsByName, categoriesByName, tagsByName);
+            seedBudgetData(seedWorkspace, workspaceId, categoriesByName, new ArrayList<>(accountsByName.values()));
         }
     }
 
@@ -257,10 +270,17 @@ public class SeedDataLoader implements CommandLineRunner {
             String categoryName = (String) seed.get("categoryName");
             Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
 
-            List<String> anchorDateStrings = (List<String>) seed.get("anchorDates");
-            List<LocalDateTime> anchorDates = anchorDateStrings.stream()
-                    .map(this::offsetDate)
+            List<Integer> anchorDaysOfMonth = ((List<Number>) seed.get("anchorDaysOfMonth")).stream()
+                    .map(Number::intValue).toList();
+            List<LocalDateTime> anchorDates = anchorDaysOfMonth.stream()
+                    .map(day -> {
+                        LocalDate now = LocalDate.now();
+                        int clamped = Math.min(day, now.lengthOfMonth());
+                        return now.withDayOfMonth(clamped).atStartOfDay();
+                    })
                     .collect(Collectors.toList());
+
+            int startDaysAgo = ((Number) seed.get("startDaysAgo")).intValue();
 
             CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
                     .description((String) seed.get("description"))
@@ -272,7 +292,7 @@ public class SeedDataLoader implements CommandLineRunner {
                     .frequencyGranularity(FrequencyGranularity.valueOf((String) seed.get("frequencyGranularity")))
                     .frequencyQuantity(((Number) seed.get("frequencyQuantity")).intValue())
                     .anchorDates(anchorDates)
-                    .startDate(offsetDate((String) seed.get("startDate")))
+                    .startDate(LocalDate.now().minusDays(startDaysAgo).atStartOfDay())
                     .tagIds(tagIds)
                     .build();
 
@@ -295,11 +315,13 @@ public class SeedDataLoader implements CommandLineRunner {
             String recurringDesc = (String) seed.get("recurringDescription");
             Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
 
+            int daysAgo = ((Number) seed.get("daysAgo")).intValue();
+
             CreateTransactionDto dto = CreateTransactionDto.builder()
                     .accountId(accounts.get((String) seed.get("accountName")))
                     .merchantName((String) seed.get("merchantName"))
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
-                    .date(offsetDate((String) seed.get("date")))
+                    .date(LocalDate.now().minusDays(daysAgo).atStartOfDay())
                     .amount(new java.math.BigDecimal(seed.get("amount").toString()))
                     .notes((String) seed.get("notes"))
                     .recurringItemId(recurringDesc != null ? recurringByDesc.get(recurringDesc) : null)
@@ -362,11 +384,12 @@ public class SeedDataLoader implements CommandLineRunner {
             }
 
             String categoryName = (String) seed.get("categoryName");
+            int daysAgo = ((Number) seed.get("daysAgo")).intValue();
             CreateTransactionDto sourceDto = CreateTransactionDto.builder()
                     .accountId(accounts.get((String) seed.get("accountName")))
                     .merchantName((String) seed.get("merchantName"))
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
-                    .date(offsetDate((String) seed.get("date")))
+                    .date(LocalDate.now().minusDays(daysAgo).atStartOfDay())
                     .amount(new java.math.BigDecimal(seed.get("amount").toString()))
                     .notes((String) seed.get("notes"))
                     .build();
@@ -395,48 +418,93 @@ public class SeedDataLoader implements CommandLineRunner {
         }
     }
 
-    private Set<UUID> resolveTagIds(List<String> tagNames, Map<String, UUID> tagsByName) {
-        if (tagNames == null) return Set.of();
-        return tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet());
-    }
-
-    private LocalDateTime offsetDate(String dateStr) {
-        return LocalDate.parse(dateStr).plusDays(dateOffsetDays).atStartOfDay();
-    }
-
     @SuppressWarnings("unchecked")
-    private long computeDateOffset(List<Map<String, Object>> workspaces) throws Exception {
-        LocalDate maxDate = LocalDate.MIN;
-        for (Map<String, Object> ws : workspaces) {
-            maxDate = maxDateIn(resolveSeedData(ws, "transactions"), maxDate, "date");
-            maxDate = maxDateIn(resolveSeedData(ws, "transactionSplits"), maxDate, "date");
-            List<Map<String, Object>> recurring = resolveSeedData(ws, "recurringItems");
-            if (recurring != null) {
-                maxDate = maxDateIn(recurring, maxDate, "startDate");
-                for (Map<String, Object> ri : recurring) {
-                    List<String> anchors = (List<String>) ri.get("anchorDates");
-                    if (anchors != null) {
-                        for (String a : anchors) {
-                            LocalDate d = LocalDate.parse(a);
-                            if (d.isAfter(maxDate)) maxDate = d;
-                        }
-                    }
+    private void seedBudgetData(Map<String, Object> ws, UUID workspaceId,
+            Map<String, UUID> categoriesByName, List<UUID> accountIds) throws Exception {
+        // Workspace settings (timezone only now — budget period moves to Budget entity)
+        Map<String, Object> settingsSeed = (Map<String, Object>) ws.get("workspaceSettings");
+        if (settingsSeed != null) {
+            UpdateWorkspaceSettingsDto.UpdateWorkspaceSettingsDtoBuilder builder = UpdateWorkspaceSettingsDto.builder();
+            if (settingsSeed.get("timezone") != null) {
+                builder.timezone((String) settingsSeed.get("timezone"));
+            }
+            workspaceSettingsService.updateSettings(workspaceId, builder.build());
+        }
+
+        // Create a Budget entity from workspace settings period config
+        UUID budgetId = null;
+        if (settingsSeed != null) {
+            CreateBudgetDto.CreateBudgetDtoBuilder budgetBuilder = CreateBudgetDto.builder()
+                    .name("Default Budget")
+                    .accountIds(accountIds);
+
+            if (settingsSeed.get("budgetIntervalDays") != null) {
+                budgetBuilder.intervalDays(((Number) settingsSeed.get("budgetIntervalDays")).intValue());
+            }
+            if (settingsSeed.get("budgetAnchorDaysAgo") != null) {
+                int daysAgo = ((Number) settingsSeed.get("budgetAnchorDaysAgo")).intValue();
+                budgetBuilder.anchorDate(LocalDate.now().minusDays(daysAgo));
+            }
+            if (settingsSeed.get("budgetAnchorDay1") != null) {
+                budgetBuilder.anchorDay1(((Number) settingsSeed.get("budgetAnchorDay1")).intValue());
+            }
+            if (settingsSeed.get("budgetAnchorDay2") != null) {
+                budgetBuilder.anchorDay2(((Number) settingsSeed.get("budgetAnchorDay2")).intValue());
+            }
+
+            Budget budget = budgetService.createBudget(workspaceId, budgetBuilder.build());
+            budgetId = budget.getId();
+        }
+
+        if (budgetId == null) return;
+
+        // Budget category configs (rollover types)
+        List<Map<String, Object>> configs = resolveSeedData(ws, "budgetCategoryConfigs");
+        if (configs != null) {
+            for (Map<String, Object> config : configs) {
+                String categoryName = (String) config.get("categoryName");
+                UUID categoryId = categoriesByName.get(categoryName);
+                if (categoryId == null) {
+                    log.warn("Budget config: category '{}' not found, skipping", categoryName);
+                    continue;
+                }
+                budgetConfigService.updateConfig(workspaceId, budgetId, categoryId,
+                        UpdateBudgetCategoryConfigDto.builder()
+                                .rolloverType(RolloverType.valueOf((String) config.get("rolloverType")))
+                                .build());
+            }
+        }
+
+        // Budget period entries (expected amounts)
+        List<Map<String, Object>> periodEntries = resolveSeedData(ws, "budgetPeriodEntries");
+        if (periodEntries != null) {
+            Budget budgetEntity = budgetService.findBudget(workspaceId, budgetId);
+            PeriodRange currentPeriod = BudgetPeriodCalculator.computePeriod(budgetEntity, LocalDate.now());
+
+            for (Map<String, Object> periodSeed : periodEntries) {
+                int offset = ((Number) periodSeed.get("periodOffset")).intValue();
+                PeriodRange targetPeriod = currentPeriod;
+                for (int i = 0; i < Math.abs(offset); i++) {
+                    targetPeriod = BudgetPeriodCalculator.computePreviousPeriod(budgetEntity, targetPeriod);
+                }
+
+                List<Map<String, Object>> entries = (List<Map<String, Object>>) periodSeed.get("entries");
+                for (Map<String, Object> entry : entries) {
+                    String categoryName = (String) entry.get("categoryName");
+                    UUID categoryId = categoriesByName.get(categoryName);
+                    if (categoryId == null) continue;
+                    budgetConfigService.setExpectedAmount(workspaceId, budgetId, categoryId, targetPeriod.start(),
+                            SetExpectedAmountDto.builder()
+                                    .expectedAmount(new java.math.BigDecimal(entry.get("expectedAmount").toString()))
+                                    .build());
                 }
             }
         }
-        return ChronoUnit.DAYS.between(maxDate, LocalDate.now());
     }
 
-    private LocalDate maxDateIn(List<Map<String, Object>> items, LocalDate current, String field) {
-        if (items == null) return current;
-        for (Map<String, Object> item : items) {
-            String val = (String) item.get(field);
-            if (val != null) {
-                LocalDate d = LocalDate.parse(val);
-                if (d.isAfter(current)) current = d;
-            }
-        }
-        return current;
+    private Set<UUID> resolveTagIds(List<String> tagNames, Map<String, UUID> tagsByName) {
+        if (tagNames == null) return Set.of();
+        return tagNames.stream().map(tagsByName::get).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     private List<Map<String, Object>> readJson(String path) throws Exception {
@@ -455,6 +523,7 @@ public class SeedDataLoader implements CommandLineRunner {
     }
 
     private void wipeDatabase() {
+        log.info("Resetting local database");
         jdbcTemplate.execute("DELETE FROM workspaces");
         jdbcTemplate.execute("DELETE FROM users");
     }

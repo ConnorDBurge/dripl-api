@@ -10,6 +10,7 @@ import com.dripl.merchant.service.MerchantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,7 +47,7 @@ public class MerchantController {
     public ResponseEntity<MerchantDto> createMerchant(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateMerchantDto dto) {
         Merchant merchant = merchantService.createMerchant(workspaceId, dto);
-        return ResponseEntity.status(201).body(merchantMapper.toDto(merchant));
+        return ResponseEntity.status(HttpStatus.CREATED).body(merchantMapper.toDto(merchant));
     }
 
     @PreAuthorize("hasAuthority('READ')")

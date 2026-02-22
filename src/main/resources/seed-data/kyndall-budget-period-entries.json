@@ -1,0 +1,68 @@
+[
+  {
+    "periodOffset": 0,
+    "entries": [
+      {
+        "categoryName": "Salary",
+        "expectedAmount": 2800.0
+      },
+      {
+        "categoryName": "Groceries",
+        "expectedAmount": 300.0
+      },
+      {
+        "categoryName": "Dining Out",
+        "expectedAmount": 120.0
+      },
+      {
+        "categoryName": "Beauty",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Wellness",
+        "expectedAmount": 75.0
+      },
+      {
+        "categoryName": "Clothing",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Home D\u00e9cor",
+        "expectedAmount": 80.0
+      }
+    ]
+  },
+  {
+    "periodOffset": -1,
+    "entries": [
+      {
+        "categoryName": "Salary",
+        "expectedAmount": 2800.0
+      },
+      {
+        "categoryName": "Groceries",
+        "expectedAmount": 280.0
+      },
+      {
+        "categoryName": "Dining Out",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Beauty",
+        "expectedAmount": 80.0
+      },
+      {
+        "categoryName": "Wellness",
+        "expectedAmount": 75.0
+      },
+      {
+        "categoryName": "Clothing",
+        "expectedAmount": 120.0
+      },
+      {
+        "categoryName": "Home D\u00e9cor",
+        "expectedAmount": 60.0
+      }
+    ]
+  }
+]

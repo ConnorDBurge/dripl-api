@@ -36,5 +36,4 @@ public class AccountDto extends BaseDto {
     private LocalDateTime balanceLastUpdated;
     private LocalDateTime closedAt;
     private String externalId;
-    private Boolean excludeFromTransactions;
 }

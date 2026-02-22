@@ -10,6 +10,7 @@ import com.dripl.tag.service.TagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,7 +47,7 @@ public class TagController {
     public ResponseEntity<TagDto> createTag(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateTagDto dto) {
         Tag tag = tagService.createTag(workspaceId, dto);
-        return ResponseEntity.status(201).body(tagMapper.toDto(tag));
+        return ResponseEntity.status(HttpStatus.CREATED).body(tagMapper.toDto(tag));
     }
 
     @PreAuthorize("hasAuthority('READ')")

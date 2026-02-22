@@ -1,5 +1,7 @@
 package com.dripl.transaction.repository;
 
+import com.dripl.account.entity.Account;
+import com.dripl.budget.entity.BudgetAccount;
 import com.dripl.transaction.entity.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -7,6 +9,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,4 +47,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE Transaction t SET t.splitId = NULL WHERE t.splitId = :splitId")
     int clearSplitId(UUID splitId);
+
+    // Sum transaction amounts for a category scoped to a budget's included accounts
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "JOIN BudgetAccount ba ON t.accountId = ba.accountId " +
+           "WHERE ba.budgetId = :budgetId AND t.categoryId = :categoryId " +
+           "AND t.date >= :startDate AND t.date <= :endDate")
+    BigDecimal sumAmountByBudgetIdAndCategoryIdAndDateBetween(
+            UUID budgetId, UUID categoryId, LocalDateTime startDate, LocalDateTime endDate);
 }

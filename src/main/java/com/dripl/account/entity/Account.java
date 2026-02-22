@@ -82,10 +82,6 @@ public class Account extends BaseEntity {
     @Column(name = "external_id")
     private String externalId;
 
-    @Builder.Default
-    @Column(name = "exclude_from_transactions", nullable = false)
-    private Boolean excludeFromTransactions = false;
-
     @PrePersist
     private void validateOnCreate() {
         validateTypeAndSubType();

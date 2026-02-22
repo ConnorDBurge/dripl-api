@@ -60,7 +60,6 @@ class AccountServiceTest {
                 .currency(CurrencyCode.USD)
                 .source(AccountSource.MANUAL)
                 .status(Status.ACTIVE)
-                .excludeFromTransactions(false)
                 .build();
     }
 

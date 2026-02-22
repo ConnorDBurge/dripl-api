@@ -9,6 +9,7 @@ import com.dripl.transaction.split.mapper.TransactionSplitMapper;
 import com.dripl.transaction.split.service.TransactionSplitService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,7 +52,7 @@ public class TransactionSplitController {
     public ResponseEntity<TransactionSplitDto> createTransactionSplit(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateTransactionSplitDto dto) {
         TransactionSplit split = transactionSplitService.createTransactionSplit(workspaceId, dto);
-        return ResponseEntity.status(201).body(transactionSplitMapper.toDto(
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionSplitMapper.toDto(
                 split, transactionSplitService.getSplitTransactions(split.getId(), workspaceId)));
     }
 

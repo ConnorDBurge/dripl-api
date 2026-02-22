@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -127,7 +128,7 @@ public class TransactionController {
     public ResponseEntity<TransactionDto> createTransaction(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateTransactionDto dto) {
         Transaction transaction = transactionService.createTransaction(workspaceId, dto);
-        return ResponseEntity.status(201).body(transactionMapper.toDto(transaction));
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionMapper.toDto(transaction));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

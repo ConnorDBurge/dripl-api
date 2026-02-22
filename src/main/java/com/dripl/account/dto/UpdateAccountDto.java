@@ -33,6 +33,4 @@ public class UpdateAccountDto {
     private String institutionName;
 
     private Status status;
-
-    private Boolean excludeFromTransactions;
 }

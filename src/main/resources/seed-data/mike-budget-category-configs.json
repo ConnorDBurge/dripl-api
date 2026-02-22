@@ -1,0 +1,38 @@
+[
+  {
+    "categoryName": "Food & Drink",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Restaurants",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Fast Food",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Entertainment",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Gaming",
+    "rolloverType": "SAME_CATEGORY"
+  },
+  {
+    "categoryName": "Streaming",
+    "rolloverType": "NONE"
+  },
+  {
+    "categoryName": "Health & Fitness",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Transportation",
+    "rolloverType": "AVAILABLE_POOL"
+  },
+  {
+    "categoryName": "Education",
+    "rolloverType": "NONE"
+  }
+]

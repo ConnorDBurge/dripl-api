@@ -1,5 +1,6 @@
 package com.dripl.category;
 
+import com.dripl.budget.repository.BudgetPeriodEntryRepository;
 import com.dripl.category.dto.CreateCategoryDto;
 import com.dripl.category.dto.UpdateCategoryDto;
 import com.dripl.category.entity.Category;
@@ -34,6 +35,9 @@ class CategoryServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private BudgetPeriodEntryRepository budgetPeriodEntryRepository;
 
     @Spy
     private CategoryMapper categoryMapper = Mappers.getMapper(CategoryMapper.class);
@@ -114,6 +118,7 @@ class CategoryServiceTest {
         assertThat(result.isIncome()).isFalse();
         assertThat(result.isExcludeFromBudget()).isFalse();
         assertThat(result.isExcludeFromTotals()).isFalse();
+        verify(budgetPeriodEntryRepository, never()).deleteByCategoryId(any());
     }
 
     @Test
@@ -161,6 +166,7 @@ class CategoryServiceTest {
         assertThat(result.getName()).isEqualTo("Groceries");
         assertThat(result.getParentId()).isEqualTo(parentId);
         assertThat(result.isIncome()).isFalse();
+        verify(budgetPeriodEntryRepository).deleteByCategoryId(parentId);
     }
 
     @Test
@@ -294,6 +300,7 @@ class CategoryServiceTest {
 
         assertThat(result.getParentId()).isEqualTo(parentId);
         assertThat(result.isIncome()).isFalse();
+        verify(budgetPeriodEntryRepository).deleteByCategoryId(parentId);
     }
 
     @Test
@@ -649,5 +656,27 @@ class CategoryServiceTest {
     @Test
     void validateCategoryPolarity_nullAmount_doesNothing() {
         categoryService.validateCategoryPolarity(categoryId, null, workspaceId);
+    }
+
+    // --- validateNotGroup ---
+
+    @Test
+    void validateNotGroup_leafCategory_succeeds() {
+        when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        categoryService.validateNotGroup(categoryId);
+    }
+
+    @Test
+    void validateNotGroup_groupCategory_throws() {
+        when(categoryRepository.existsByParentId(categoryId)).thenReturn(true);
+        assertThatThrownBy(() -> categoryService.validateNotGroup(categoryId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("parent category group");
+    }
+
+    @Test
+    void validateNotGroup_nullCategoryId_doesNothing() {
+        categoryService.validateNotGroup(null);
+        verify(categoryRepository, never()).existsByParentId(any());
     }
 }

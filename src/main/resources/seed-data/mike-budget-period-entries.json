@@ -1,0 +1,92 @@
+[
+  {
+    "periodOffset": 0,
+    "entries": [
+      {
+        "categoryName": "Salary",
+        "expectedAmount": 4200.0
+      },
+      {
+        "categoryName": "Freelance",
+        "expectedAmount": 1000.0
+      },
+      {
+        "categoryName": "Restaurants",
+        "expectedAmount": 300.0
+      },
+      {
+        "categoryName": "Fast Food",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Gaming",
+        "expectedAmount": 100.0
+      },
+      {
+        "categoryName": "Streaming",
+        "expectedAmount": 50.0
+      },
+      {
+        "categoryName": "Gym",
+        "expectedAmount": 60.0
+      },
+      {
+        "categoryName": "Supplements",
+        "expectedAmount": 50.0
+      },
+      {
+        "categoryName": "Rideshare",
+        "expectedAmount": 120.0
+      },
+      {
+        "categoryName": "Gas",
+        "expectedAmount": 150.0
+      },
+      {
+        "categoryName": "Books & Courses",
+        "expectedAmount": 75.0
+      }
+    ]
+  },
+  {
+    "periodOffset": -1,
+    "entries": [
+      {
+        "categoryName": "Salary",
+        "expectedAmount": 4200.0
+      },
+      {
+        "categoryName": "Freelance",
+        "expectedAmount": 600.0
+      },
+      {
+        "categoryName": "Restaurants",
+        "expectedAmount": 280.0
+      },
+      {
+        "categoryName": "Fast Food",
+        "expectedAmount": 120.0
+      },
+      {
+        "categoryName": "Gaming",
+        "expectedAmount": 80.0
+      },
+      {
+        "categoryName": "Streaming",
+        "expectedAmount": 50.0
+      },
+      {
+        "categoryName": "Gym",
+        "expectedAmount": 60.0
+      },
+      {
+        "categoryName": "Gas",
+        "expectedAmount": 130.0
+      },
+      {
+        "categoryName": "Books & Courses",
+        "expectedAmount": 50.0
+      }
+    ]
+  }
+]

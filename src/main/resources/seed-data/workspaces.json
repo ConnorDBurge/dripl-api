@@ -19,7 +19,14 @@
     "transactions": "$ref:transactions.json",
     "recurringItems": "$ref:recurring-items.json",
     "transactionGroups": "$ref:transaction-groups.json",
-    "transactionSplits": "$ref:transaction-splits.json"
+    "transactionSplits": "$ref:transaction-splits.json",
+    "workspaceSettings": {
+      "budgetIntervalDays": 14,
+      "timezone": "America/New_York",
+      "budgetAnchorDaysAgo": 183
+    },
+    "budgetCategoryConfigs": "$ref:budget-category-configs.json",
+    "budgetPeriodEntries": "$ref:budget-period-entries.json"
   },
   {
     "ownerEmail": "kyndall@dripl.dev",
@@ -125,59 +132,284 @@
     ],
     "transactions": [
       {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 1,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 15,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 29,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 43,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 57,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 71,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 85,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 99,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 113,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 127,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 141,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Personal Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 155,
+        "amount": 3200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "daysAgo": 2,
+        "amount": -87.32,
+        "notes": null
+      },
+      {
         "accountName": "Discover Card",
         "merchantName": "Trader Joe's",
         "categoryName": "Groceries",
-        "date": "2025-07-01",
-        "amount": -67.8,
-        "status": "POSTED",
-        "tagNames": [
-          "groceries"
-        ]
+        "daysAgo": 9,
+        "amount": -62.15,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "daysAgo": 16,
+        "amount": -94.5,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Whole Foods",
+        "categoryName": "Groceries",
+        "daysAgo": 23,
+        "amount": -78.2,
+        "notes": "Weekly haul"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "daysAgo": 30,
+        "amount": -105.43,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Trader Joe's",
+        "categoryName": "Groceries",
+        "daysAgo": 37,
+        "amount": -55.8,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "H-E-B",
+        "categoryName": "Groceries",
+        "daysAgo": 44,
+        "amount": -91.67,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Whole Foods",
+        "categoryName": "Groceries",
+        "daysAgo": 51,
+        "amount": -68.99,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Torchy's Tacos",
+        "categoryName": "Dining Out",
+        "daysAgo": 5,
+        "amount": -32.5,
+        "notes": "Lunch date"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Olive Garden",
+        "categoryName": "Dining Out",
+        "daysAgo": 18,
+        "amount": -58.75,
+        "notes": "Anniversary dinner"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Chick-fil-A",
+        "categoryName": "Dining Out",
+        "daysAgo": 28,
+        "amount": -14.25,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Torchy's Tacos",
+        "categoryName": "Dining Out",
+        "daysAgo": 40,
+        "amount": -27.8,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Panera Bread",
+        "categoryName": "Dining Out",
+        "daysAgo": 55,
+        "amount": -19.5,
+        "notes": "Lunch with friend"
       },
       {
         "accountName": "Discover Card",
         "merchantName": "Sephora",
         "categoryName": "Beauty",
-        "date": "2025-07-03",
+        "daysAgo": 7,
         "amount": -42.5,
-        "notes": "Skincare restock",
-        "status": "POSTED",
-        "tagNames": [
-          "self-care"
-        ]
+        "notes": "Skincare restock"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Ulta",
+        "categoryName": "Beauty",
+        "daysAgo": 35,
+        "amount": -67.0,
+        "notes": "Hair products"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Sephora",
+        "categoryName": "Beauty",
+        "daysAgo": 65,
+        "amount": -38.25,
+        "notes": null
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "CorePower Yoga",
+        "categoryName": "Wellness",
+        "daysAgo": 3,
+        "amount": -25.0,
+        "notes": "Drop-in class"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Massage Envy",
+        "categoryName": "Wellness",
+        "daysAgo": 20,
+        "amount": -75.0,
+        "notes": "Monthly massage"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "CorePower Yoga",
+        "categoryName": "Wellness",
+        "daysAgo": 48,
+        "amount": -25.0,
+        "notes": "Drop-in class"
       },
       {
         "accountName": "Discover Card",
         "merchantName": "Target",
         "categoryName": "Clothing",
-        "date": "2025-07-05",
-        "amount": -55.0,
-        "status": "POSTED",
-        "tagNames": [
-          "shopping"
-        ]
-      },
-      {
-        "accountName": "Personal Checking",
-        "merchantName": "Employer",
-        "categoryName": "Salary",
-        "date": "2025-07-15",
-        "amount": 3200.0,
-        "notes": "Bi-weekly paycheck",
-        "status": "POSTED"
+        "daysAgo": 12,
+        "amount": -85.0,
+        "notes": "New jeans"
       },
       {
         "accountName": "Discover Card",
-        "merchantName": "Etsy",
+        "merchantName": "Nordstrom",
+        "categoryName": "Clothing",
+        "daysAgo": 42,
+        "amount": -120.0,
+        "notes": "Winter coat"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "HomeGoods",
         "categoryName": "Home D\u00e9cor",
-        "date": "2025-07-08",
+        "daysAgo": 25,
+        "amount": -45.99,
+        "notes": "Throw pillows"
+      },
+      {
+        "accountName": "Discover Card",
+        "merchantName": "Target",
+        "categoryName": "Home D\u00e9cor",
+        "daysAgo": 60,
         "amount": -28.99,
-        "notes": "Wall art",
-        "status": "PENDING",
-        "tagNames": [
-          "shopping"
-        ]
+        "notes": "Wall art"
       }
     ],
     "recurringItems": [
@@ -188,12 +420,19 @@
         "amount": -1200.0,
         "frequencyGranularity": "MONTH",
         "frequencyQuantity": 1,
-        "anchorDates": [
-          "2025-01-01"
-        ],
-        "startDate": "2025-01-01"
+        "startDaysAgo": 180,
+        "anchorDaysOfMonth": [
+          1
+        ]
       }
-    ]
+    ],
+    "workspaceSettings": {
+      "budgetAnchorDay1": 1,
+      "budgetAnchorDay2": 15,
+      "timezone": "America/Chicago"
+    },
+    "budgetCategoryConfigs": "$ref:kyndall-budget-category-configs.json",
+    "budgetPeriodEntries": "$ref:kyndall-budget-period-entries.json"
   },
   {
     "ownerEmail": "mike@dripl.dev",
@@ -349,82 +588,314 @@
     "transactions": [
       {
         "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 1,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 15,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 29,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 43,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 57,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 71,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 85,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Employer Direct Deposit",
+        "categoryName": "Salary",
+        "daysAgo": 99,
+        "amount": 4200.0,
+        "notes": "Bi-weekly paycheck"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Freelance Client",
+        "categoryName": "Freelance",
+        "daysAgo": 20,
+        "amount": 800.0,
+        "notes": "Web dev project"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Freelance Client",
+        "categoryName": "Freelance",
+        "daysAgo": 50,
+        "amount": 1200.0,
+        "notes": "Logo design"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Freelance Client",
+        "categoryName": "Freelance",
+        "daysAgo": 80,
+        "amount": 600.0,
+        "notes": "Consulting"
+      },
+      {
+        "accountName": "BoA Checking",
         "merchantName": "Chipotle",
+        "categoryName": "Restaurants",
+        "daysAgo": 3,
+        "amount": -15.75,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Olive Garden",
+        "categoryName": "Restaurants",
+        "daysAgo": 14,
+        "amount": -42.0,
+        "notes": "Date night"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Buffalo Wild Wings",
+        "categoryName": "Restaurants",
+        "daysAgo": 25,
+        "amount": -38.5,
+        "notes": "Game night"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Chipotle",
+        "categoryName": "Restaurants",
+        "daysAgo": 38,
+        "amount": -16.25,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Texas Roadhouse",
+        "categoryName": "Restaurants",
+        "daysAgo": 52,
+        "amount": -55.0,
+        "notes": "Birthday dinner"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Chick-fil-A",
         "categoryName": "Fast Food",
-        "date": "2025-07-01",
+        "daysAgo": 2,
+        "amount": -12.5,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Whataburger",
+        "categoryName": "Fast Food",
+        "daysAgo": 8,
+        "amount": -9.75,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Taco Bell",
+        "categoryName": "Fast Food",
+        "daysAgo": 17,
+        "amount": -8.99,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Chick-fil-A",
+        "categoryName": "Fast Food",
+        "daysAgo": 24,
         "amount": -14.25,
-        "status": "POSTED",
-        "tagNames": [
-          "food"
-        ]
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Whataburger",
+        "categoryName": "Fast Food",
+        "daysAgo": 33,
+        "amount": -11.5,
+        "notes": null
       },
       {
         "accountName": "BoA Checking",
         "merchantName": "Steam",
         "categoryName": "Gaming",
-        "date": "2025-07-03",
+        "daysAgo": 10,
+        "amount": -59.99,
+        "notes": "New controller"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "PlayStation Store",
+        "categoryName": "Gaming",
+        "daysAgo": 45,
         "amount": -29.99,
-        "notes": "Summer sale",
-        "status": "POSTED",
-        "tagNames": [
-          "gaming"
-        ]
+        "notes": "Summer sale"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Netflix",
+        "categoryName": "Streaming",
+        "daysAgo": 5,
+        "amount": -15.99,
+        "notes": "Monthly subscription"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Spotify",
+        "categoryName": "Streaming",
+        "daysAgo": 5,
+        "amount": -10.99,
+        "notes": "Monthly subscription"
       },
       {
         "accountName": "BoA Checking",
         "merchantName": "Planet Fitness",
         "categoryName": "Gym",
-        "date": "2025-07-01",
+        "daysAgo": 1,
         "amount": -24.99,
-        "notes": "Monthly membership",
-        "status": "POSTED",
-        "tagNames": [
-          "fitness"
-        ]
+        "notes": "Monthly membership"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Planet Fitness",
+        "categoryName": "Gym",
+        "daysAgo": 31,
+        "amount": -24.99,
+        "notes": "Monthly membership"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "GNC",
+        "categoryName": "Supplements",
+        "daysAgo": 12,
+        "amount": -45.0,
+        "notes": "Protein powder"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Shell",
+        "categoryName": "Gas",
+        "daysAgo": 4,
+        "amount": -42.5,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Buc-ee's",
+        "categoryName": "Gas",
+        "daysAgo": 11,
+        "amount": -55.0,
+        "notes": "Road trip fill-up"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Shell",
+        "categoryName": "Gas",
+        "daysAgo": 18,
+        "amount": -38.75,
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Shell",
+        "categoryName": "Gas",
+        "daysAgo": 32,
+        "amount": -40.25,
+        "notes": null
       },
       {
         "accountName": "BoA Checking",
         "merchantName": "Uber",
         "categoryName": "Rideshare",
-        "date": "2025-07-05",
+        "daysAgo": 6,
         "amount": -18.5,
-        "status": "POSTED",
-        "tagNames": [
-          "transport"
-        ]
+        "notes": null
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Lyft",
+        "categoryName": "Rideshare",
+        "daysAgo": 22,
+        "amount": -24.75,
+        "notes": "Airport run"
+      },
+      {
+        "accountName": "BoA Checking",
+        "merchantName": "Udemy",
+        "categoryName": "Books & Courses",
+        "daysAgo": 15,
+        "amount": -12.99,
+        "notes": "React course"
       },
       {
         "accountName": "BoA Checking",
         "merchantName": "Amazon",
-        "categoryName": "Gaming",
-        "date": "2025-07-07",
-        "amount": -59.99,
-        "notes": "New controller",
-        "status": "POSTED",
-        "tagNames": [
-          "gaming"
-        ]
+        "categoryName": "Books & Courses",
+        "daysAgo": 40,
+        "amount": -35.0,
+        "notes": "Textbook"
       },
       {
         "accountName": "BoA Checking",
-        "merchantName": "Employer",
-        "categoryName": "Salary",
-        "date": "2025-07-15",
-        "amount": 3800.0,
-        "notes": "Bi-weekly paycheck",
-        "status": "POSTED"
+        "merchantName": "Great Lakes",
+        "categoryName": "Student Loan",
+        "daysAgo": 1,
+        "amount": -350.0,
+        "notes": "Monthly payment"
       },
       {
         "accountName": "BoA Checking",
-        "merchantName": "Chipotle",
-        "categoryName": "Fast Food",
-        "date": "2025-07-10",
-        "amount": -12.75,
-        "status": "PENDING",
-        "tagNames": [
-          "food"
-        ]
+        "merchantName": "Great Lakes",
+        "categoryName": "Student Loan",
+        "daysAgo": 31,
+        "amount": -350.0,
+        "notes": "Monthly payment"
       }
-    ]
+    ],
+    "workspaceSettings": {
+      "budgetAnchorDay1": 1,
+      "timezone": "America/Los_Angeles"
+    },
+    "budgetCategoryConfigs": "$ref:mike-budget-category-configs.json",
+    "budgetPeriodEntries": "$ref:mike-budget-period-entries.json"
   }
 ]

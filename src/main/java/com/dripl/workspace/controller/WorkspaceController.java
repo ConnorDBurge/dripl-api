@@ -12,6 +12,7 @@ import com.dripl.workspace.mapper.WorkspaceMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,7 +46,7 @@ public class WorkspaceController {
         Workspace workspace = workspaceService.provisionWorkspace(userId, dto);
         Workspace switched = workspaceService.switchWorkspace(userId, workspace.getId());
         String token = tokenService.mintToken(userId, switched.getId());
-        return ResponseEntity.status(201).body(workspaceMapper.toResponse(switched, token));
+        return ResponseEntity.status(HttpStatus.CREATED).body(workspaceMapper.toResponse(switched, token));
     }
 
     @PostMapping(value = "/switch", produces = MediaType.APPLICATION_JSON_VALUE)
