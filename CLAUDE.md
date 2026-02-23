@@ -81,4 +81,4 @@ This is a Spring Boot 3 / Java 21 monolith. Full architectural detail is in `.gi
 
 ## Database Migrations
 
-Flyway migrations live in `src/main/resources/db/migration/`. Current schema spans V1–V16 (one file per entity). When adding a new entity, create the next `V{N}__create_table_*.sql`.
+Flyway migrations live in `src/main/resources/db/migration/`. Current schema spans V1–V17 (one file per entity). When adding a new entity, create the next `V{N}__create_table_*.sql`.

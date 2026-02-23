@@ -56,6 +56,10 @@ public class CategoryService {
             budgetPeriodEntryRepository.deleteByCategoryId(dto.getParentId());
         }
 
+        int nextOrder = dto.getParentId() != null
+                ? getSiblings(dto.getParentId()).size()
+                : getRoots(workspaceId).size();
+
         Category category = Category.builder()
                 .workspaceId(workspaceId)
                 .parentId(dto.getParentId())
@@ -65,6 +69,7 @@ public class CategoryService {
                 .income(income)
                 .excludeFromBudget(dto.getExcludeFromBudget() != null && dto.getExcludeFromBudget())
                 .excludeFromTotals(dto.getExcludeFromTotals() != null && dto.getExcludeFromTotals())
+                .displayOrder(nextOrder)
                 .build();
 
         log.info("Created category '{}'", dto.getName());
@@ -78,7 +83,14 @@ public class CategoryService {
         categoryMapper.updateEntity(dto, category);
 
         if (dto.isChildrenSpecified()) {
-            categoryRepository.detachChildren(categoryId);
+            List<Category> children = categoryRepository.findAllByParentId(categoryId);
+            List<Category> currentRoots = getRoots(workspaceId);
+            int nextRootOrder = currentRoots.size();
+            for (Category child : children) {
+                child.setParentId(null);
+                child.setDisplayOrder(nextRootOrder++);
+            }
+            categoryRepository.saveAll(children);
         }
 
         if (dto.isParentIdSpecified()) {
@@ -94,12 +106,48 @@ public class CategoryService {
                 }
                 category.setIncome(parent.isIncome());
                 budgetPeriodEntryRepository.deleteByCategoryId(parentId);
+                category.setDisplayOrder(getSiblings(parentId).size());
+            } else {
+                category.setDisplayOrder(getRoots(workspaceId).size());
             }
             category.setParentId(parentId);
         }
 
         log.info("Updating category '{}' ({})", category.getName(), categoryId);
         return categoryRepository.save(category);
+    }
+
+    @Transactional
+    public void moveCategory(UUID categoryId, UUID workspaceId, int newPosition) {
+        Category category = getCategory(categoryId, workspaceId);
+
+        List<Category> siblings = category.getParentId() != null
+                ? getSiblings(category.getParentId())
+                : getRoots(workspaceId);
+
+        // Remove the moved category from the list
+        siblings.removeIf(c -> c.getId().equals(categoryId));
+
+        // Clamp position
+        int position = Math.max(0, Math.min(newPosition, siblings.size()));
+
+        // Insert at new position
+        siblings.add(position, category);
+
+        // Re-number all siblings sequentially
+        for (int i = 0; i < siblings.size(); i++) {
+            siblings.get(i).setDisplayOrder(i);
+        }
+        categoryRepository.saveAll(siblings);
+        log.info("Moved category '{}' to position {}", category.getName(), position);
+    }
+
+    private List<Category> getRoots(UUID workspaceId) {
+        return new java.util.ArrayList<>(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId));
+    }
+
+    private List<Category> getSiblings(UUID parentId) {
+        return new java.util.ArrayList<>(categoryRepository.findByParentIdOrderByDisplayOrder(parentId));
     }
 
     @Transactional

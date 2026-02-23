@@ -57,6 +57,13 @@ class CategoryServiceTest {
                 .build();
     }
 
+    private List<Category> dummyList(int size) {
+        return java.util.stream.IntStream.range(0, size)
+                .mapToObj(i -> Category.builder().id(UUID.randomUUID()).workspaceId(workspaceId)
+                        .name("dummy-" + i).status(Status.ACTIVE).displayOrder(i).build())
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     // --- listAll ---
 
     @Test
@@ -108,6 +115,7 @@ class CategoryServiceTest {
                 .name("Food")
                 .build();
 
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Category result = categoryService.createCategory(workspaceId, dto);
@@ -118,6 +126,7 @@ class CategoryServiceTest {
         assertThat(result.isIncome()).isFalse();
         assertThat(result.isExcludeFromBudget()).isFalse();
         assertThat(result.isExcludeFromTotals()).isFalse();
+        assertThat(result.getDisplayOrder()).isEqualTo(0);
         verify(budgetPeriodEntryRepository, never()).deleteByCategoryId(any());
     }
 
@@ -131,6 +140,7 @@ class CategoryServiceTest {
                 .excludeFromTotals(false)
                 .build();
 
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(dummyList(3));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Category result = categoryService.createCategory(workspaceId, dto);
@@ -140,6 +150,7 @@ class CategoryServiceTest {
         assertThat(result.isIncome()).isTrue();
         assertThat(result.isExcludeFromBudget()).isTrue();
         assertThat(result.isExcludeFromTotals()).isFalse();
+        assertThat(result.getDisplayOrder()).isEqualTo(3);
     }
 
     @Test
@@ -159,6 +170,7 @@ class CategoryServiceTest {
                 .build();
 
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Category result = categoryService.createCategory(workspaceId, dto);
@@ -166,6 +178,7 @@ class CategoryServiceTest {
         assertThat(result.getName()).isEqualTo("Groceries");
         assertThat(result.getParentId()).isEqualTo(parentId);
         assertThat(result.isIncome()).isFalse();
+        assertThat(result.getDisplayOrder()).isEqualTo(0);
         verify(budgetPeriodEntryRepository).deleteByCategoryId(parentId);
     }
 
@@ -188,6 +201,7 @@ class CategoryServiceTest {
                 .build();
 
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Category result = categoryService.createCategory(workspaceId, dto);
@@ -214,6 +228,7 @@ class CategoryServiceTest {
                 .build();
 
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Category result = categoryService.createCategory(workspaceId, dto);
@@ -292,6 +307,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
         when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
         when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
@@ -300,6 +316,7 @@ class CategoryServiceTest {
 
         assertThat(result.getParentId()).isEqualTo(parentId);
         assertThat(result.isIncome()).isFalse();
+        assertThat(result.getDisplayOrder()).isEqualTo(0);
         verify(budgetPeriodEntryRepository).deleteByCategoryId(parentId);
     }
 
@@ -322,6 +339,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
         when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
         when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
@@ -351,6 +369,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
         when(categoryRepository.findById(parentId)).thenReturn(Optional.of(parent));
         when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
@@ -368,6 +387,7 @@ class CategoryServiceTest {
         category.setParentId(parentId);
 
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(dummyList(4));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
@@ -375,6 +395,7 @@ class CategoryServiceTest {
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
         assertThat(result.getParentId()).isNull();
+        assertThat(result.getDisplayOrder()).isEqualTo(4);
     }
 
     @Test
@@ -536,13 +557,16 @@ class CategoryServiceTest {
         Category category = buildCategory("Food");
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(categoryRepository.findAllByParentId(categoryId)).thenReturn(List.of());
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(List.of());
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
         dto.assignChildren(List.of());
 
         categoryService.updateCategory(categoryId, workspaceId, dto);
 
-        verify(categoryRepository).detachChildren(categoryId);
+        verify(categoryRepository).findAllByParentId(categoryId);
+        verify(categoryRepository).saveAll(any());
     }
 
     @Test
@@ -575,6 +599,9 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(transportId, workspaceId)).thenReturn(Optional.of(transport));
         when(categoryRepository.findById(transportId)).thenReturn(Optional.of(transport));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(categoryRepository.findAllByParentId(categoryId)).thenReturn(List.of());
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(List.of());
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(transportId)).thenReturn(List.of());
 
         UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
         dto.assignChildren(List.of());
@@ -582,8 +609,9 @@ class CategoryServiceTest {
 
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
-        verify(categoryRepository).detachChildren(categoryId);
+        verify(categoryRepository).findAllByParentId(categoryId);
         assertThat(result.getParentId()).isEqualTo(transportId);
+        assertThat(result.getDisplayOrder()).isEqualTo(0);
     }
 
     // --- deleteCategory ---
@@ -678,5 +706,104 @@ class CategoryServiceTest {
     void validateNotGroup_nullCategoryId_doesNothing() {
         categoryService.validateNotGroup(null);
         verify(categoryRepository, never()).existsByParentId(any());
+    }
+
+    // --- moveCategory ---
+
+    @Test
+    void moveCategory_rootToNewPosition_success() {
+        UUID cat1Id = UUID.randomUUID();
+        UUID cat2Id = UUID.randomUUID();
+        UUID cat3Id = UUID.randomUUID();
+        Category cat1 = Category.builder().id(cat1Id).workspaceId(workspaceId).name("A").status(Status.ACTIVE).displayOrder(0).build();
+        Category cat2 = Category.builder().id(cat2Id).workspaceId(workspaceId).name("B").status(Status.ACTIVE).displayOrder(1).build();
+        Category cat3 = Category.builder().id(cat3Id).workspaceId(workspaceId).name("C").status(Status.ACTIVE).displayOrder(2).build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(cat3Id, workspaceId)).thenReturn(Optional.of(cat3));
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId))
+                .thenReturn(new java.util.ArrayList<>(List.of(cat1, cat2, cat3)));
+
+        categoryService.moveCategory(cat3Id, workspaceId, 0);
+
+        // C moved to front: C=0, A=1, B=2
+        assertThat(cat3.getDisplayOrder()).isEqualTo(0);
+        assertThat(cat1.getDisplayOrder()).isEqualTo(1);
+        assertThat(cat2.getDisplayOrder()).isEqualTo(2);
+        verify(categoryRepository).saveAll(any());
+    }
+
+    @Test
+    void moveCategory_childWithinParent_success() {
+        UUID parentId = UUID.randomUUID();
+        UUID child1Id = UUID.randomUUID();
+        UUID child2Id = UUID.randomUUID();
+        UUID child3Id = UUID.randomUUID();
+        Category child1 = Category.builder().id(child1Id).workspaceId(workspaceId).parentId(parentId).name("X").status(Status.ACTIVE).displayOrder(0).build();
+        Category child2 = Category.builder().id(child2Id).workspaceId(workspaceId).parentId(parentId).name("Y").status(Status.ACTIVE).displayOrder(1).build();
+        Category child3 = Category.builder().id(child3Id).workspaceId(workspaceId).parentId(parentId).name("Z").status(Status.ACTIVE).displayOrder(2).build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(child1Id, workspaceId)).thenReturn(Optional.of(child1));
+        when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId))
+                .thenReturn(new java.util.ArrayList<>(List.of(child1, child2, child3)));
+
+        categoryService.moveCategory(child1Id, workspaceId, 2);
+
+        // X moved to end: Y=0, Z=1, X=2
+        assertThat(child2.getDisplayOrder()).isEqualTo(0);
+        assertThat(child3.getDisplayOrder()).isEqualTo(1);
+        assertThat(child1.getDisplayOrder()).isEqualTo(2);
+        verify(categoryRepository).saveAll(any());
+    }
+
+    @Test
+    void moveCategory_clampsPosition() {
+        UUID cat1Id = UUID.randomUUID();
+        Category cat1 = Category.builder().id(cat1Id).workspaceId(workspaceId).name("A").status(Status.ACTIVE).displayOrder(0).build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(cat1Id, workspaceId)).thenReturn(Optional.of(cat1));
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId))
+                .thenReturn(new java.util.ArrayList<>(List.of(cat1)));
+
+        categoryService.moveCategory(cat1Id, workspaceId, 99);
+
+        assertThat(cat1.getDisplayOrder()).isEqualTo(0);
+        verify(categoryRepository).saveAll(any());
+    }
+
+    @Test
+    void moveCategory_notFound_throws() {
+        UUID missingId = UUID.randomUUID();
+        when(categoryRepository.findByIdAndWorkspaceId(missingId, workspaceId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> categoryService.moveCategory(missingId, workspaceId, 0))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // --- detachChildren ordering ---
+
+    @Test
+    void updateCategory_clearChildren_childrenBecomeRootsWithOrder() {
+        UUID child1Id = UUID.randomUUID();
+        UUID child2Id = UUID.randomUUID();
+        Category parent = buildCategory("Food");
+        Category child1 = Category.builder().id(child1Id).workspaceId(workspaceId).name("Groceries")
+                .parentId(categoryId).status(Status.ACTIVE).displayOrder(0).build();
+        Category child2 = Category.builder().id(child2Id).workspaceId(workspaceId).name("Dining")
+                .parentId(categoryId).status(Status.ACTIVE).displayOrder(1).build();
+
+        when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(parent));
+        when(categoryRepository.findAllByParentId(categoryId)).thenReturn(List.of(child1, child2));
+        when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(dummyList(6));
+        when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        dto.assignChildren(List.of());
+
+        categoryService.updateCategory(categoryId, workspaceId, dto);
+
+        assertThat(child1.getParentId()).isNull();
+        assertThat(child1.getDisplayOrder()).isEqualTo(6);
+        assertThat(child2.getParentId()).isNull();
+        assertThat(child2.getDisplayOrder()).isEqualTo(7);
     }
 }

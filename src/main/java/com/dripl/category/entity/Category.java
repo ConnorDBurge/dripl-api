@@ -46,4 +46,7 @@ public class Category extends BaseEntity {
 
     @Column(name = "exclude_from_totals", nullable = false)
     private boolean excludeFromTotals;
+
+    @Column(name = "display_order", nullable = false)
+    private int displayOrder;
 }

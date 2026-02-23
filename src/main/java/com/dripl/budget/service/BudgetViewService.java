@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +116,7 @@ public class BudgetViewService {
                     .categoryId(cat.getId())
                     .name(cat.getName())
                     .parentId(cat.getParentId())
+                    .displayOrder(cat.getDisplayOrder())
                     .expected(expected)
                     .recurringExpected(recurringExpected)
                     .activity(activity)
@@ -143,8 +145,10 @@ public class BudgetViewService {
                 view.setActivity(BigDecimal.ZERO);
                 view.setAvailable(BigDecimal.ZERO);
                 view.setRolledOver(BigDecimal.ZERO);
+                view.getChildren().sort(Comparator.comparingInt(BudgetCategoryViewDto::getDisplayOrder));
             }
         }
+        roots.sort(Comparator.comparingInt(BudgetCategoryViewDto::getDisplayOrder));
 
         // Accumulate parent totals from children
         for (BudgetCategoryViewDto root : roots) {

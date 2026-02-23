@@ -25,4 +25,10 @@ public interface CategoryRepository extends JpaRepository<Category, UUID>, JpaSp
     @Modifying
     @Query("UPDATE Category c SET c.parentId = null WHERE c.parentId = :parentId")
     void detachChildren(UUID parentId);
+
+    @Query("SELECT c FROM Category c WHERE c.workspaceId = :workspaceId AND c.parentId IS NULL ORDER BY c.displayOrder")
+    List<Category> findRootsByWorkspaceIdOrderByDisplayOrder(UUID workspaceId);
+
+    @Query("SELECT c FROM Category c WHERE c.parentId = :parentId ORDER BY c.displayOrder")
+    List<Category> findByParentIdOrderByDisplayOrder(UUID parentId);
 }

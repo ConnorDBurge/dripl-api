@@ -24,5 +24,6 @@ public interface CategoryMapper {
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "workspaceId", ignore = true)
     @Mapping(target = "parentId", ignore = true)
+    @Mapping(target = "displayOrder", ignore = true)
     void updateEntity(UpdateCategoryDto dto, @MappingTarget Category category);
 }

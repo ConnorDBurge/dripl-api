@@ -202,7 +202,7 @@ Roles:
 | WorkspaceSettings     | `workspace_settings`        | workspaceId, defaultCurrencyCode, timezone |
 | Account               | `accounts`                  | workspaceId, name, balance, type, subType, currency, source, status |
 | Merchant              | `merchants`                 | workspaceId, name, status |
-| Category              | `categories`                | workspaceId, name, parentId, income, excludeFromBudget, excludeFromTotals |
+| Category              | `categories`                | workspaceId, name, parentId, income, excludeFromBudget, excludeFromTotals, displayOrder |
 | Tag                   | `tags`                      | workspaceId, name, description, status |
 | Transaction           | `transactions`              | workspaceId, accountId, merchantId, categoryId, amount, date, status, source, recurringItemId, groupId, splitId |
 | TransactionEvent      | `transaction_events`        | transactionId, workspaceId, eventType, changes (JSONB), performedBy, performedAt |
@@ -313,12 +313,14 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 | GET    | `/api/v1/categories/{id}`     | Get category             | READ  |
 | POST   | `/api/v1/categories`          | Create category          | WRITE |
 | PATCH  | `/api/v1/categories/{id}`     | Update category          | WRITE |
+| PUT    | `/api/v1/categories/{id}/order` | Move category to position | WRITE |
 | DELETE | `/api/v1/categories/{id}`     | Delete category          | DELETE |
 
 **Category Features:**
 - Spec-based filtering via `CategorySpecifications` + `optionally()` helper — query param: `income` (true/false)
 - Both list and tree endpoints support the `income` filter
 - Category polarity validation: `CategoryService.validateCategoryPolarity()` ensures income categories (`income=true`) are only assigned to positive amounts and expense categories (`income=false`) to negative/zero amounts. Called from TransactionService, TransactionSplitService, TransactionGroupService, and RecurringItemService on create and update
+- **Display ordering:** Each category has a `displayOrder` integer. Roots are ordered among each other; children are ordered within their parent. Auto-assigned sequentially on create (appended to end of siblings). Re-parenting or ungrouping appends to end of new group. `PUT /{id}/order` with `{"displayOrder": N}` moves a single category to position N and shifts siblings around it. Tree, list, and budget views all sort by `displayOrder`.
 
 ### Tags
 | Method | Path                          | Description              | Auth  |
@@ -469,14 +471,14 @@ When a transaction is linked to a recurring item, in a group, or in a split, cer
 
 ## Testing
 
-### Unit Tests (459)
-- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (36), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6)
+### Unit Tests (590)
+- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (44), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6)
 - **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (6), TransactionGroupController (5), TransactionSplitController (5)
 - **Utilities**: JwtUtil (7), GlobalExceptionHandler (12), WorkspaceCleanupListener (3)
-- **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5)
+- **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5), BudgetPeriodCalculatorTest (20), BudgetCrudServiceTest (18), BudgetServiceTest (9), BudgetViewServiceTest (17), BudgetCrudControllerTest (5), BudgetControllerTest (6), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
 - **Context**: DriplApplicationTests (1)
 
-### Integration Tests (216)
+### Integration Tests (256)
 All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton container pattern.
 
 - **BootstrapAndAuthIT** (7): New user bootstrap, idempotent re-bootstrap, validation, auth/unauth access
@@ -489,12 +491,13 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 - **AccountCrudIT** (12): Create with defaults, create with all fields, list accounts, get by ID, update partial, update balance, update status, delete account, workspace isolation, duplicate name prevention, invalid type-subtype combo
 - **MerchantCrudIT** (11): Create merchant, list merchants, get by ID, update name, update status, archive merchant, delete merchant, workspace isolation, duplicate name prevention, create without name, get nonexistent
 - **TagCrudIT** (13): Create with name only, create with description, list tags, get by ID, update name, update description, update status, delete tag, workspace isolation, duplicate name, case-insensitive duplicate, update to duplicate name, get nonexistent
-- **CategoryCrudIT** (22): Create root category, create with all fields, create child, child depth limit, parent not found, list categories, get by ID, get with children, get tree, update name, set parent, remove parent, parentId omitted preserves parent, self-parent, parent too deep via update, category with children cannot be nested, parent not found via update, clear children, delete category, delete parent cascades SET NULL, workspace isolation, get nonexistent
+- **CategoryCrudIT** (27): Create root category, create with all fields, create child, child depth limit, parent not found, list categories, get by ID, get with children, get tree, update name, set parent, remove parent, parentId omitted preserves parent, self-parent, parent too deep via update, category with children cannot be nested, parent not found via update, clear children, delete category, delete parent cascades SET NULL, workspace isolation, get nonexistent, auto-assign display order, child display order, move category shifts siblings, reparent appends to end, ungroup appends to end
 - **TransactionCrudIT** (51): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects), pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range filters (start, end, both), amount range filters (min, max), search (notes, merchant, category, no match), combined filters + pagination
 - **RecurringItemCrudIT** (16): Full CRUD, workspace isolation, merchant auto-resolution, tag management, validation
 - **TransactionGroupCrudIT** (17): Create group, list groups, get group, update metadata, add/remove transactions via transactionIds, remove below minimum, dissolve group, already-grouped, transaction shows groupId, min 2, create override, update override, add inherits overrides, remove clears groupId, add RI-linked rejects, delete clears all groupIds
 - **TransactionSplitCrudIT** (20): Create split, list splits, get split, update children, add/remove children, dissolve split, amount mismatch on create/update, locked field rejection (accountId, amount, date), allow category change, split child can't be grouped, grouped txn can't be split, split child RI-linked, RI account mismatch, unlinkSplitChild rejects, assign splitId rejects, child shows splitId, filter by splitId
 - **TransactionEventIT** (10): Create event verification, update change diff, grouped/ungrouped events, split/unsplit events, event ordering, BigDecimal normalization, GET endpoint
+- **BudgetIT** (30): CRUD (create, list, get, update, delete), category config, period views with offset/date navigation, rollover behavior (SAME_CATEGORY, AVAILABLE_POOL, NONE), fixed interval periods, workspace settings, expected amount validation (parent categories, period alignment), available pool rollover flow across 2 periods, net total available
 
 ### Test Infrastructure
 - **Testcontainers**: Singleton PostgreSQL container shared across all IT tests
@@ -595,7 +598,7 @@ The period view splits categories into **inflow** (income=true) and **outflow** 
 
 Parent categories show rollup totals (sum of all children). `excludeFromBudget` categories are omitted. Group children already have the effective `categoryId` cascaded onto them, so activity queries need no special JOIN.
 
-Top-level summary fields: `toBeBudgeted` (inflow expected - outflow expected + available pool), `recurringExpected`, `availablePool`, `totalRolledOver`.
+Top-level summary fields: `budgetable` (inflow expected + available pool), `totalBudgeted` (outflow expected), `leftToBudget` (budgetable − totalBudgeted), `netTotalAvailable` (sum of linked account balances), `recurringExpected`, `availablePool`, `totalRolledOver`.
 
 ### Service Pattern
 
@@ -607,7 +610,7 @@ Services return **entities**, controllers handle DTO mapping:
 - `Budget.toDto(List<UUID> accountIds)` and `BudgetCategoryConfig.toDto()` — entity-level DTO mapping.
 - `setExpectedAmount` with `expectedAmount: null` clears the entry (no separate delete endpoint).
 
-### Data Model (V4, V14–V16)
+### Data Model (V4, V14–V17)
 
 | Table | Purpose |
 |-------|---------|
@@ -616,6 +619,7 @@ Services return **entities**, controllers handle DTO mapping:
 | `budget_accounts` (V14) | Join table: which accounts are included in a budget |
 | `budget_category_configs` (V15) | Rollover type per (budget, category); UNIQUE on (budget_id, category_id) |
 | `budget_period_entries` (V16) | Expected amount per (budget, category, period_start); UNIQUE on all three |
+| `categories.display_order` (V17) | Display ordering for categories in budget views and tree endpoints |
 
 ### API Endpoints
 
@@ -653,7 +657,7 @@ The budget view includes `recurringExpected` per category — the sum of recurri
 ### Test Coverage
 
 - **Unit tests**: BudgetPeriodCalculatorTest (20), BudgetCrudServiceTest (18), BudgetServiceTest (9), BudgetViewServiceTest (17), BudgetCrudControllerTest (5), BudgetControllerTest (6), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
-- **Integration tests**: BudgetIT covering CRUD (10), category config (3), period views (6), rollover behavior (4), fixed interval periods (3), workspace settings (2)
+- **Integration tests**: BudgetIT (30) covering CRUD, category config, period views with offset/date navigation, rollover behavior (SAME_CATEGORY, AVAILABLE_POOL, NONE), fixed interval periods, workspace settings, expected amount validation (parent categories, period alignment), available pool rollover flow, net total available
 
 ---
 

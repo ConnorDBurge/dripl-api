@@ -3,6 +3,7 @@ package com.dripl.category.controller;
 import com.dripl.category.dto.CategoryDto;
 import com.dripl.category.dto.CategoryTreeDto;
 import com.dripl.category.dto.CreateCategoryDto;
+import com.dripl.category.dto.MoveCategoryDto;
 import com.dripl.category.dto.UpdateCategoryDto;
 import com.dripl.category.entity.Category;
 import com.dripl.category.mapper.CategoryMapper;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -42,7 +44,6 @@ public class CategoryController {
     private final CategoryService categoryService;
     private final CategoryMapper categoryMapper;
 
-    // TODO: Add some kind of sort order to have these come back in an expected order in budgets/view
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(value = "/tree", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<CategoryTreeDto>> getCategoryTree(@WorkspaceId UUID workspaceId) {
@@ -94,6 +95,16 @@ public class CategoryController {
             @Valid @RequestBody UpdateCategoryDto dto) {
         Category category = categoryService.updateCategory(categoryId, workspaceId, dto);
         return ResponseEntity.ok(categoryMapper.toDto(category));
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PutMapping(value = "/{categoryId}/order", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> moveCategory(
+            @WorkspaceId UUID workspaceId,
+            @PathVariable UUID categoryId,
+            @Valid @RequestBody MoveCategoryDto dto) {
+        categoryService.moveCategory(categoryId, workspaceId, dto.getDisplayOrder());
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasAuthority('DELETE')")

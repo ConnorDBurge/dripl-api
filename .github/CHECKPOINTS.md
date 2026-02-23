@@ -337,6 +337,47 @@ Multiple budgets per workspace. Each budget is a standalone entity with its own 
 
 ---
 
+## Checkpoint 15: Budget View Refinements & Category Ordering ✅
+
+Budget view adopts Lunch Money's summary naming. Category display ordering enables drag-and-drop UI.
+
+**Budget view summary fields** — Replaced `toBeBudgeted` with Lunch Money's model:
+- `budgetable` = inflow expected + available pool (money available to assign)
+- `totalBudgeted` = outflow expected (money assigned to expense categories)
+- `leftToBudget` = budgetable − totalBudgeted (unassigned money)
+- `netTotalAvailable` = sum of linked account balances (actual money in bank)
+- `availablePool` now flows into `budgetable` (AVAILABLE_POOL rollover is assignable money)
+
+**Expected amount validation** — `setExpectedAmount` rejects: (1) parent categories (expected rolls up from children), (2) period start dates that don't align with budget config (returns 400).
+
+**Category display ordering** — New `displayOrder` integer column (V17 migration):
+- Auto-assigned sequentially on create (max + 1 among siblings)
+- Roots ordered among each other; children ordered within their parent
+- Re-parenting or ungrouping appends to end of new sibling group
+- `PUT /api/v1/categories/order` accepts `[{id, displayOrder}]` for bulk reorder
+- Tree, list, and budget views all sort by `displayOrder`
+- `CategoryMapper` ignores `displayOrder` on PATCH (prevents accidental overwrite)
+
+**Completed work:**
+- [x] Rename `toBeBudgeted` → `budgetable`, `totalBudgeted`, `leftToBudget` in DTOs and services
+- [x] Fix `leftToBudget` formula to include `availablePool`
+- [x] Add `netTotalAvailable` (sum of linked account balances)
+- [x] Validate expected amount: reject parent categories and misaligned period starts
+- [x] V17 migration: `ALTER TABLE categories ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0`
+- [x] Auto-assign `displayOrder` on create (root and child scoped separately)
+- [x] Handle re-parent/ungroup: append to end of new group
+- [x] `PUT /api/v1/categories/{id}/order` single-item move endpoint (shifts siblings automatically)
+- [x] Sort by `displayOrder` in tree, list, and budget views
+- [x] Add `displayOrder` to all DTOs (CategoryDto, CategoryTreeDto, BudgetCategoryViewDto)
+- [x] Unit tests: CategoryServiceTest (44), CategoryTreeDtoTest (5), BudgetViewServiceTest (17)
+- [x] Integration tests: CategoryCrudIT (27), BudgetIT (30) including available pool 2-period flow
+- [x] Orphaned expected amount cleanup when category becomes parent
+- [x] Documentation update (ARCHITECTURE.md + CHECKPOINTS.md)
+
+**Test totals: 590 unit + 256 integration = 846 tests, all passing**
+
+---
+
 ## Future Roadmap
 
 Ideas captured for future consideration:

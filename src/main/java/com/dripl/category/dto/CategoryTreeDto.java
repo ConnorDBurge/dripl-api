@@ -31,6 +31,7 @@ public class CategoryTreeDto extends BaseDto {
     private boolean income;
     private boolean excludeFromBudget;
     private boolean excludeFromTotals;
+    private int displayOrder;
     private boolean group;
     private List<CategoryTreeDto> children;
 
@@ -44,7 +45,7 @@ public class CategoryTreeDto extends BaseDto {
 
     private static List<CategoryTreeDto> buildBranch(UUID parentId, Map<UUID, List<Category>> byParent) {
         return byParent.getOrDefault(parentId, List.of()).stream()
-                .sorted(Comparator.comparing(Category::getName))
+                .sorted(Comparator.comparingInt(Category::getDisplayOrder))
                 .map(category -> {
                     List<CategoryTreeDto> children = buildBranch(category.getId(), byParent);
                     return fromEntity(category, children);
@@ -67,6 +68,7 @@ public class CategoryTreeDto extends BaseDto {
                 .income(category.isIncome())
                 .excludeFromBudget(category.isExcludeFromBudget())
                 .excludeFromTotals(category.isExcludeFromTotals())
+                .displayOrder(category.getDisplayOrder())
                 .group(!children.isEmpty())
                 .children(children)
                 .build();

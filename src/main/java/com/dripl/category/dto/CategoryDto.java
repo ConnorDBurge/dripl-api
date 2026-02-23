@@ -27,6 +27,7 @@ public class CategoryDto extends BaseDto {
     private boolean income;
     private boolean excludeFromBudget;
     private boolean excludeFromTotals;
+    private int displayOrder;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<CategoryDto> children;

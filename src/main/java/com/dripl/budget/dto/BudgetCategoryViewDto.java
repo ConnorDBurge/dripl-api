@@ -20,6 +20,7 @@ public class BudgetCategoryViewDto {
     private UUID categoryId;
     private String name;
     private UUID parentId;
+    private int displayOrder;
     private BigDecimal expected;
     private BigDecimal recurringExpected;
     private BigDecimal activity;

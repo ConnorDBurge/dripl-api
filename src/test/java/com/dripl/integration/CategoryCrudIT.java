@@ -647,4 +647,110 @@ class CategoryCrudIT extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody().get("detail")).isEqualTo("Category not found");
     }
+
+    // ── Display Order Tests ─────────────────────────────────
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createCategories_autoAssignsDisplayOrder() {
+        var r1 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"First\"}", authHeaders(token)), Map.class);
+        var r2 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Second\"}", authHeaders(token)), Map.class);
+        var r3 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Third\"}", authHeaders(token)), Map.class);
+
+        assertThat(((Number) r1.getBody().get("displayOrder")).intValue()).isEqualTo(0);
+        assertThat(((Number) r2.getBody().get("displayOrder")).intValue()).isEqualTo(1);
+        assertThat(((Number) r3.getBody().get("displayOrder")).intValue()).isEqualTo(2);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createChildCategories_autoAssignsOrderWithinParent() {
+        var parent = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Food\"}", authHeaders(token)), Map.class);
+        String parentId = (String) parent.getBody().get("id");
+
+        var c1 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Groceries\",\"parentId\":\"%s\"}".formatted(parentId), authHeaders(token)), Map.class);
+        var c2 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Dining\",\"parentId\":\"%s\"}".formatted(parentId), authHeaders(token)), Map.class);
+
+        assertThat(((Number) c1.getBody().get("displayOrder")).intValue()).isEqualTo(0);
+        assertThat(((Number) c2.getBody().get("displayOrder")).intValue()).isEqualTo(1);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void moveCategory_updatesOrderAndShiftsSiblings() {
+        var r1 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Alpha\"}", authHeaders(token)), Map.class);
+        var r2 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Beta\"}", authHeaders(token)), Map.class);
+        var r3 = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Gamma\"}", authHeaders(token)), Map.class);
+
+        String id3 = (String) r3.getBody().get("id");
+
+        // Move Gamma (position 2) to position 0
+        var move = restTemplate.exchange("/api/v1/categories/" + id3 + "/order", HttpMethod.PUT,
+                new HttpEntity<>("{\"displayOrder\":0}", authHeaders(token)), Void.class);
+        assertThat(move.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // Verify via tree: Gamma=0, Alpha=1, Beta=2
+        var tree = restTemplate.exchange("/api/v1/categories/tree", HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)), List.class);
+        List<Map<String, Object>> roots = tree.getBody();
+
+        assertThat(roots.get(0).get("name")).isEqualTo("Gamma");
+        assertThat(roots.get(1).get("name")).isEqualTo("Alpha");
+        assertThat(roots.get(2).get("name")).isEqualTo("Beta");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void reparentCategory_appendsToEndOfNewGroup() {
+        var parent = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Food\"}", authHeaders(token)), Map.class);
+        String parentId = (String) parent.getBody().get("id");
+
+        restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Groceries\",\"parentId\":\"%s\"}".formatted(parentId), authHeaders(token)), Map.class);
+
+        // Create standalone then move under parent
+        var standalone = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Snacks\"}", authHeaders(token)), Map.class);
+        String snacksId = (String) standalone.getBody().get("id");
+
+        var updated = restTemplate.exchange("/api/v1/categories/" + snacksId, HttpMethod.PATCH,
+                new HttpEntity<>("{\"parentId\":\"%s\"}".formatted(parentId), authHeaders(token)), Map.class);
+
+        // Snacks should be displayOrder 1 (after Groceries at 0)
+        assertThat(((Number) updated.getBody().get("displayOrder")).intValue()).isEqualTo(1);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ungroupCategory_appendsToEndOfRoots() {
+        var parent = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Food\"}", authHeaders(token)), Map.class);
+        String parentId = (String) parent.getBody().get("id");
+
+        var child = restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Groceries\",\"parentId\":\"%s\"}".formatted(parentId), authHeaders(token)), Map.class);
+        String childId = (String) child.getBody().get("id");
+
+        // Create another root
+        restTemplate.exchange("/api/v1/categories", HttpMethod.POST,
+                new HttpEntity<>("{\"name\":\"Bills\"}", authHeaders(token)), Map.class);
+
+        // Remove parent (ungroup)
+        var updated = restTemplate.exchange("/api/v1/categories/" + childId, HttpMethod.PATCH,
+                new HttpEntity<>("{\"parentId\":null}", authHeaders(token)), Map.class);
+
+        // Groceries should be at end of roots (Food=0, Bills=1, Groceries=2)
+        assertThat(((Number) updated.getBody().get("displayOrder")).intValue()).isEqualTo(2);
+        assertThat(updated.getBody().get("parentId")).isNull();
+    }
 }

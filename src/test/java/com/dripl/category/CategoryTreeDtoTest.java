@@ -24,6 +24,17 @@ class CategoryTreeDtoTest {
                 .build();
     }
 
+    private Category buildCategory(UUID id, String name, UUID parentId, int displayOrder) {
+        return Category.builder()
+                .id(id)
+                .workspaceId(workspaceId)
+                .parentId(parentId)
+                .name(name)
+                .status(Status.ACTIVE)
+                .displayOrder(displayOrder)
+                .build();
+    }
+
     @Test
     void buildTree_emptyList() {
         List<CategoryTreeDto> tree = CategoryTreeDto.buildTree(List.of());
@@ -36,8 +47,8 @@ class CategoryTreeDtoTest {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         List<CategoryTreeDto> tree = CategoryTreeDto.buildTree(List.of(
-                buildCategory(id1, "Food", null),
-                buildCategory(id2, "Bills", null)
+                buildCategory(id1, "Food", null, 1),
+                buildCategory(id2, "Bills", null, 0)
         ));
 
         assertThat(tree).hasSize(2);
@@ -54,8 +65,8 @@ class CategoryTreeDtoTest {
         UUID child2Id = UUID.randomUUID();
         List<CategoryTreeDto> tree = CategoryTreeDto.buildTree(List.of(
                 buildCategory(parentId, "Food", null),
-                buildCategory(child1Id, "Groceries", parentId),
-                buildCategory(child2Id, "Dining Out", parentId)
+                buildCategory(child1Id, "Groceries", parentId, 1),
+                buildCategory(child2Id, "Dining Out", parentId, 0)
         ));
 
         assertThat(tree).hasSize(1);
@@ -73,9 +84,9 @@ class CategoryTreeDtoTest {
         UUID groceriesId = UUID.randomUUID();
         UUID billsId = UUID.randomUUID();
         List<CategoryTreeDto> tree = CategoryTreeDto.buildTree(List.of(
-                buildCategory(foodId, "Food", null),
+                buildCategory(foodId, "Food", null, 1),
                 buildCategory(groceriesId, "Groceries", foodId),
-                buildCategory(billsId, "Bills", null)
+                buildCategory(billsId, "Bills", null, 0)
         ));
 
         assertThat(tree).hasSize(2);
