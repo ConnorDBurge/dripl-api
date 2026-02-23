@@ -122,7 +122,7 @@ public class SeedDataLoader implements CommandLineRunner {
     }
 
     private Map<String, User> seedUsers() throws Exception {
-        List<Map<String, Object>> seedUsers = readJson("seed-data/users.json");
+        List<Map<String, Object>> seedUsers = readJson("seed-data/local/users.json");
         Map<String, User> usersByEmail = new LinkedHashMap<>();
 
         for (Map<String, Object> seedUser : seedUsers) {
@@ -138,7 +138,7 @@ public class SeedDataLoader implements CommandLineRunner {
     }
 
     private void seedWorkspaces(Map<String, User> usersByEmail) throws Exception {
-        List<Map<String, Object>> seedWorkspaces = readJson("seed-data/workspaces.json");
+        List<Map<String, Object>> seedWorkspaces = readJson("seed-data/local/workspaces.json");
         Set<String> defaultRenamed = new HashSet<>();
 
         for (Map<String, Object> seedWorkspace : seedWorkspaces) {
@@ -517,7 +517,7 @@ public class SeedDataLoader implements CommandLineRunner {
         Object value = workspace.get(key);
         if (value == null) return null;
         if (value instanceof String ref && ref.startsWith("$ref:")) {
-            return readJson("seed-data/" + ref.substring(5));
+            return readJson("seed-data/local/" + ref.substring(5));
         }
         return (List<Map<String, Object>>) value;
     }
