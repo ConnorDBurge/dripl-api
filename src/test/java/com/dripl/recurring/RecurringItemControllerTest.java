@@ -1,14 +1,17 @@
 package com.dripl.recurring;
 
 import com.dripl.account.enums.CurrencyCode;
+import com.dripl.common.exception.BadRequestException;
 import com.dripl.recurring.controller.RecurringItemController;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
+import com.dripl.recurring.dto.RecurringItemMonthViewDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.enums.FrequencyGranularity;
 import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.mapper.RecurringItemMapper;
 import com.dripl.recurring.service.RecurringItemService;
+import com.dripl.recurring.service.RecurringItemViewService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
@@ -19,10 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -33,6 +39,9 @@ class RecurringItemControllerTest {
 
     @Mock
     private RecurringItemService recurringItemService;
+
+    @Mock
+    private RecurringItemViewService recurringItemViewService;
 
     @Spy
     private RecurringItemMapper recurringItemMapper = Mappers.getMapper(RecurringItemMapper.class);
@@ -131,5 +140,72 @@ class RecurringItemControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(recurringItemService).deleteRecurringItem(recurringItemId, workspaceId);
+    }
+
+    @Test
+    void getMonthView_defaultMonth_returns200() {
+        RecurringItemMonthViewDto view = RecurringItemMonthViewDto.builder()
+                .monthStart(LocalDate.now().withDayOfMonth(1))
+                .monthEnd(YearMonth.now().atEndOfMonth())
+                .items(List.of())
+                .expectedExpenses(BigDecimal.ZERO)
+                .expectedIncome(BigDecimal.ZERO)
+                .itemCount(0)
+                .occurrenceCount(0)
+                .build();
+        when(recurringItemViewService.getMonthView(workspaceId, null, null)).thenReturn(view);
+
+        var response = recurringItemController.getMonthView(workspaceId, null, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void getMonthView_withMonth_returns200() {
+        YearMonth target = YearMonth.of(2026, 5);
+        RecurringItemMonthViewDto view = RecurringItemMonthViewDto.builder()
+                .monthStart(LocalDate.of(2026, 5, 1))
+                .monthEnd(LocalDate.of(2026, 5, 31))
+                .items(List.of())
+                .expectedExpenses(BigDecimal.ZERO)
+                .expectedIncome(BigDecimal.ZERO)
+                .itemCount(0)
+                .occurrenceCount(0)
+                .build();
+        when(recurringItemViewService.getMonthView(workspaceId, target, null)).thenReturn(view);
+
+        var response = recurringItemController.getMonthView(workspaceId, target, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void getMonthView_withPeriodOffset_returns200() {
+        RecurringItemMonthViewDto view = RecurringItemMonthViewDto.builder()
+                .monthStart(YearMonth.now().minusMonths(2).atDay(1))
+                .monthEnd(YearMonth.now().minusMonths(2).atEndOfMonth())
+                .items(List.of())
+                .expectedExpenses(BigDecimal.ZERO)
+                .expectedIncome(BigDecimal.ZERO)
+                .itemCount(0)
+                .occurrenceCount(0)
+                .build();
+        when(recurringItemViewService.getMonthView(workspaceId, null, -2)).thenReturn(view);
+
+        var response = recurringItemController.getMonthView(workspaceId, null, -2);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void getMonthView_bothParams_delegatesToService() {
+        when(recurringItemViewService.getMonthView(workspaceId, YearMonth.of(2026, 3), 1))
+                .thenThrow(new BadRequestException("Cannot specify both 'month' and 'periodOffset'"));
+
+        assertThatThrownBy(() ->
+                recurringItemController.getMonthView(workspaceId, YearMonth.of(2026, 3), 1))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("both");
     }
 }

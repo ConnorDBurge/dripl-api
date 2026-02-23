@@ -378,6 +378,25 @@ Budget view adopts Lunch Money's summary naming. Category display ordering enabl
 
 ---
 
+### Checkpoint 16: Recurring Items Monthly View
+
+**Phase 16 — Recurring item occurrence view by calendar month**
+
+- [x] Extract `RecurringOccurrenceCalculator` utility from `BudgetViewService` — returns `List<LocalDate>` instead of just count
+- [x] `BudgetViewService` refactored to use extracted calculator (`.countOccurrences()` convenience method)
+- [x] 11 unit tests for calculator (monthly, biweekly, weekly, yearly, daily, end date, start date, count, multiple anchors, sorting)
+- [x] `RecurringItemViewDto` and `RecurringItemMonthViewDto` DTOs
+- [x] `RecurringItemViewService.getMonthView(workspaceId, YearMonth)` — queries ACTIVE items, computes occurrences, filters, sorts by first occurrence
+- [x] `GET /api/v1/recurring-items/view` endpoint with `month` (YYYY-MM) and `periodOffset` params (mutually exclusive, defaults to current month)
+- [x] 8 view service unit tests (happy path, inactive excluded, empty month, total summing, sorted by occurrence, end date exclusion, multiple anchors, no items)
+- [x] 4 controller unit tests (default month, specific month, periodOffset, both-params-400)
+- [x] 8 integration tests (default month, month param, periodOffset, both-params-400, inactive excluded, empty month, biweekly occurrences, item fields)
+- [x] Documentation update (ARCHITECTURE.md + CHECKPOINTS.md)
+
+**Test totals: 613 unit + 264 integration = 877 tests, all passing**
+
+---
+
 ## Future Roadmap
 
 Ideas captured for future consideration:

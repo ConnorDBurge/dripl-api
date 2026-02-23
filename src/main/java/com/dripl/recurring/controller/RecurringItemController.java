@@ -3,10 +3,12 @@ package com.dripl.recurring.controller;
 import com.dripl.common.annotation.WorkspaceId;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemDto;
+import com.dripl.recurring.dto.RecurringItemMonthViewDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.mapper.RecurringItemMapper;
 import com.dripl.recurring.service.RecurringItemService;
+import com.dripl.recurring.service.RecurringItemViewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +29,18 @@ import java.util.UUID;
 public class RecurringItemController {
 
     private final RecurringItemService recurringItemService;
+    private final RecurringItemViewService recurringItemViewService;
     private final RecurringItemMapper recurringItemMapper;
+
+    @PreAuthorize("hasAuthority('READ')")
+    @GetMapping(value = "/view", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RecurringItemMonthViewDto> getMonthView(
+            @WorkspaceId UUID workspaceId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month,
+            @RequestParam(required = false) Integer periodOffset) {
+
+        return ResponseEntity.ok(recurringItemViewService.getMonthView(workspaceId, month, periodOffset));
+    }
 
     @PreAuthorize("hasAuthority('READ')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)

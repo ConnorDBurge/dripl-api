@@ -20,6 +20,7 @@ import com.dripl.common.exception.BadRequestException;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.repository.RecurringItemRepository;
+import com.dripl.recurring.util.RecurringOccurrenceCalculator;
 import com.dripl.transaction.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -321,67 +321,13 @@ public class BudgetViewService {
             if (ri.getCategoryId() == null) continue;
             if (!includedAccountIds.contains(ri.getAccountId())) continue;
 
-            int occurrences = countOccurrences(ri, period);
+            int occurrences = RecurringOccurrenceCalculator.countOccurrences(ri, period.start(), period.end());
             if (occurrences > 0) {
                 BigDecimal total = ri.getAmount().multiply(BigDecimal.valueOf(occurrences));
                 result.merge(ri.getCategoryId(), total, BigDecimal::add);
             }
         }
         return result;
-    }
-
-    int countOccurrences(RecurringItem ri, PeriodRange period) {
-        int count = 0;
-        LocalDate periodStart = period.start();
-        LocalDate periodEnd = period.end();
-        LocalDate riStart = ri.getStartDate().toLocalDate();
-        LocalDate riEnd = ri.getEndDate() != null ? ri.getEndDate().toLocalDate() : null;
-
-        for (LocalDateTime anchorDt : ri.getAnchorDates()) {
-            LocalDate anchor = anchorDt.toLocalDate();
-            LocalDate current = anchor;
-
-            while (!current.isAfter(periodEnd)) {
-                if (!current.isBefore(periodStart) && !current.isBefore(riStart)
-                        && (riEnd == null || !current.isAfter(riEnd))) {
-                    count++;
-                }
-                current = advanceByFrequency(current, ri);
-            }
-
-            if (anchor.isAfter(periodEnd)) {
-                current = anchor;
-                while (current.isAfter(periodStart)) {
-                    current = retreatByFrequency(current, ri);
-                    if (!current.isBefore(periodStart) && !current.isAfter(periodEnd)
-                            && !current.isBefore(riStart)
-                            && (riEnd == null || !current.isAfter(riEnd))) {
-                        count++;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    private LocalDate advanceByFrequency(LocalDate date, RecurringItem ri) {
-        int qty = ri.getFrequencyQuantity();
-        return switch (ri.getFrequencyGranularity()) {
-            case DAY -> date.plusDays(qty);
-            case WEEK -> date.plusWeeks(qty);
-            case MONTH -> date.plusMonths(qty);
-            case YEAR -> date.plusYears(qty);
-        };
-    }
-
-    private LocalDate retreatByFrequency(LocalDate date, RecurringItem ri) {
-        int qty = ri.getFrequencyQuantity();
-        return switch (ri.getFrequencyGranularity()) {
-            case DAY -> date.minusDays(qty);
-            case WEEK -> date.minusWeeks(qty);
-            case MONTH -> date.minusMonths(qty);
-            case YEAR -> date.minusYears(qty);
-        };
     }
 
     private void requireBudgetConfigured(Budget budget) {
