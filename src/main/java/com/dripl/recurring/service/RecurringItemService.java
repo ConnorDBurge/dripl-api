@@ -3,14 +3,20 @@ package com.dripl.recurring.service;
 import com.dripl.account.enums.CurrencyCode;
 import com.dripl.account.service.AccountService;
 import com.dripl.category.service.CategoryService;
+import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
+import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
+import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.mapper.RecurringItemMapper;
+import com.dripl.recurring.repository.RecurringItemOverrideRepository;
 import com.dripl.recurring.repository.RecurringItemRepository;
+import com.dripl.recurring.util.RecurringOccurrenceCalculator;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.repository.TransactionRepository;
@@ -19,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +38,7 @@ import java.util.UUID;
 public class RecurringItemService {
 
     private final RecurringItemRepository recurringItemRepository;
+    private final RecurringItemOverrideRepository overrideRepository;
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final MerchantService merchantService;
@@ -133,6 +142,13 @@ public class RecurringItemService {
         log.info("Updating recurring item {}", recurringItemId);
         RecurringItem saved = recurringItemRepository.save(recurringItem);
 
+        // Clear all overrides if schedule-defining fields changed
+        if (dto.getFrequencyGranularity() != null || dto.getFrequencyQuantity() != null
+                || dto.getAnchorDates() != null || dto.getStartDate() != null || dto.isEndDateSpecified()) {
+            overrideRepository.deleteByRecurringItemId(recurringItemId);
+            log.info("Cleared all overrides for recurring item {} due to schedule change", recurringItemId);
+        }
+
         // Cascade locked fields to all linked transactions
         List<Transaction> linked = transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId);
         for (Transaction txn : linked) {
@@ -156,5 +172,63 @@ public class RecurringItemService {
         RecurringItem recurringItem = getRecurringItem(recurringItemId, workspaceId);
         log.info("Deleting recurring item {}", recurringItemId);
         recurringItemRepository.delete(recurringItem);
+    }
+
+    @Transactional
+    public RecurringItemOverride createOverride(UUID recurringItemId, UUID workspaceId,
+                                                SetOccurrenceOverrideDto dto) {
+        RecurringItem ri = getRecurringItem(recurringItemId, workspaceId);
+        LocalDate occurrenceDate = dto.getOccurrenceDate();
+
+        // Validate the date is an actual occurrence
+        List<LocalDate> occurrences = RecurringOccurrenceCalculator.computeOccurrences(
+                ri, occurrenceDate, occurrenceDate);
+        if (!occurrences.contains(occurrenceDate)) {
+            throw new BadRequestException("Date %s is not a valid occurrence of this recurring item".formatted(occurrenceDate));
+        }
+
+        // Check for existing override on this occurrence
+        overrideRepository.findByRecurringItemIdAndOccurrenceDate(recurringItemId, occurrenceDate)
+                .ifPresent(existing -> {
+                    throw new BadRequestException("Override already exists for occurrence %s. Use PUT to update.".formatted(occurrenceDate));
+                });
+
+        RecurringItemOverride override = RecurringItemOverride.builder()
+                .workspaceId(workspaceId)
+                .recurringItemId(recurringItemId)
+                .occurrenceDate(occurrenceDate)
+                .amount(dto.getAmount())
+                .notes(dto.getNotes())
+                .build();
+
+        log.info("Created override for recurring item {} on {}: amount={}",
+                recurringItemId, occurrenceDate, dto.getAmount());
+        return overrideRepository.save(override);
+    }
+
+    @Transactional
+    public RecurringItemOverride updateOverride(UUID overrideId, UUID workspaceId,
+                                                UpdateOccurrenceOverrideDto dto) {
+        RecurringItemOverride override = overrideRepository.findById(overrideId)
+                .filter(o -> o.getWorkspaceId().equals(workspaceId))
+                .orElseThrow(() -> new ResourceNotFoundException("Override not found"));
+
+        override.setAmount(dto.getAmount());
+        override.setNotes(dto.getNotes());
+
+        log.info("Updated override {} for recurring item {} on {}: amount={}",
+                overrideId, override.getRecurringItemId(), override.getOccurrenceDate(), dto.getAmount());
+        return overrideRepository.save(override);
+    }
+
+    @Transactional
+    public void deleteOverride(UUID overrideId, UUID workspaceId) {
+        RecurringItemOverride override = overrideRepository.findById(overrideId)
+                .filter(o -> o.getWorkspaceId().equals(workspaceId))
+                .orElseThrow(() -> new ResourceNotFoundException("Override not found"));
+
+        overrideRepository.delete(override);
+        log.info("Deleted override {} for recurring item {} on {}",
+                overrideId, override.getRecurringItemId(), override.getOccurrenceDate());
     }
 }

@@ -3,7 +3,7 @@ WORKDIR /app
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
-RUN chmod +x mvnw && ./mvnw dependency:resolve -q
+RUN chmod +x mvnw && ./mvnw dependency:resolve dependency:resolve-plugins -q
 COPY src src
 RUN ./mvnw package -DskipTests -q
 

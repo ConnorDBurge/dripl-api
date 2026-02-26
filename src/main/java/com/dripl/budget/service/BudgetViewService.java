@@ -18,7 +18,9 @@ import com.dripl.category.entity.Category;
 import com.dripl.category.repository.CategoryRepository;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.recurring.entity.RecurringItem;
+import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.RecurringItemStatus;
+import com.dripl.recurring.repository.RecurringItemOverrideRepository;
 import com.dripl.recurring.repository.RecurringItemRepository;
 import com.dripl.recurring.util.RecurringOccurrenceCalculator;
 import com.dripl.transaction.repository.TransactionRepository;
@@ -49,6 +51,7 @@ public class BudgetViewService {
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
     private final RecurringItemRepository recurringItemRepository;
+    private final RecurringItemOverrideRepository recurringItemOverrideRepository;
     private final AccountRepository accountRepository;
     private final BudgetAccountRepository budgetAccountRepository;
     private final BudgetCategoryConfigRepository configRepository;
@@ -316,14 +319,36 @@ public class BudgetViewService {
         Map<UUID, BigDecimal> result = new HashMap<>();
         List<RecurringItem> items = recurringItemRepository.findAllByWorkspaceId(workspaceId);
 
+        // Batch-load overrides for this period
+        Map<String, RecurringItemOverride> overrideMap = recurringItemOverrideRepository
+                .findByWorkspaceIdAndOccurrenceDateBetween(workspaceId, period.start(), period.end())
+                .stream()
+                .collect(Collectors.toMap(
+                        o -> o.getRecurringItemId() + ":" + o.getOccurrenceDate(),
+                        o -> o));
+
         for (RecurringItem ri : items) {
             if (ri.getStatus() != RecurringItemStatus.ACTIVE) continue;
             if (ri.getCategoryId() == null) continue;
             if (!includedAccountIds.contains(ri.getAccountId())) continue;
 
-            int occurrences = RecurringOccurrenceCalculator.countOccurrences(ri, period.start(), period.end());
-            if (occurrences > 0) {
-                BigDecimal total = ri.getAmount().multiply(BigDecimal.valueOf(occurrences));
+            List<LocalDate> dates = RecurringOccurrenceCalculator.computeOccurrences(ri, period.start(), period.end());
+
+            BigDecimal total = BigDecimal.ZERO;
+            for (LocalDate date : dates) {
+                String key = ri.getId() + ":" + date;
+                RecurringItemOverride override = overrideMap.get(key);
+
+                // recurringExpected always uses expected amount (override ?? default),
+                // never the transaction amount — that's captured in activity
+                if (override != null && override.getAmount() != null) {
+                    total = total.add(override.getAmount());
+                } else {
+                    total = total.add(ri.getAmount());
+                }
+            }
+
+            if (total.signum() != 0) {
                 result.merge(ri.getCategoryId(), total, BigDecimal::add);
             }
         }

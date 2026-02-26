@@ -119,11 +119,11 @@ com.dripl
 │       └── service/        # TransactionEventService (persists events asynchronously via @TransactionalEventListener)
 ├── recurring/
 │   ├── controller/         # RecurringItemController (/api/v1/recurring-items, /view)
-│   ├── dto/                # RecurringItemDto, CreateRecurringItemDto, UpdateRecurringItemDto, RecurringItemViewDto, RecurringItemMonthViewDto
-│   ├── entity/             # RecurringItem (JPA entity, @ElementCollection for anchorDates and tagIds)
+│   ├── dto/                # RecurringItemDto, CreateRecurringItemDto, UpdateRecurringItemDto, RecurringItemViewDto, RecurringItemMonthViewDto, RecurringOccurrenceDto, OccurrenceTransactionDto, SetOccurrenceOverrideDto
+│   ├── entity/             # RecurringItem (JPA entity, @ElementCollection for anchorDates and tagIds), RecurringItemOverride (per-occurrence amount/notes override)
 │   ├── enums/              # RecurringItemStatus (ACTIVE/PAUSED/CANCELLED), FrequencyGranularity (DAY/WEEK/MONTH/YEAR)
 │   ├── mapper/             # RecurringItemMapper (MapStruct)
-│   ├── repository/         # RecurringItemRepository
+│   ├── repository/         # RecurringItemRepository, RecurringItemOverrideRepository
 │   ├── service/            # RecurringItemService, RecurringItemViewService (monthly occurrence view)
 │   └── util/               # RecurringOccurrenceCalculator (shared by BudgetViewService and RecurringItemViewService)
 ├── budget/
@@ -364,6 +364,9 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 | POST   | `/api/v1/recurring-items`         | Create recurring item    | WRITE |
 | PATCH  | `/api/v1/recurring-items/{id}`    | Update recurring item    | WRITE |
 | DELETE | `/api/v1/recurring-items/{id}`    | Delete recurring item    | DELETE |
+| POST   | `/api/v1/recurring-items/{id}/overrides`             | Create occurrence override  | WRITE |
+| PUT    | `/api/v1/recurring-items/{id}/overrides/{overrideId}` | Update occurrence override  | WRITE |
+| DELETE | `/api/v1/recurring-items/{id}/overrides/{overrideId}` | Delete occurrence override  | DELETE |
 
 **Recurring Item Design:**
 - A recurring item is a transaction template with scheduling metadata — no auto-generation of transactions
@@ -378,10 +381,25 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 **Recurring Item Monthly View:**
 - `GET /api/v1/recurring-items/view` — read-only view of all ACTIVE recurring items' occurrences for a calendar month
 - Params: `?month=2026-03` (specific) or `?periodOffset=-1` (relative to current month) — mutually exclusive, defaults to current month
-- Response: `monthStart`, `monthEnd`, `items[]` (each with `occurrences: List<LocalDate>`, `totalExpected`), plus aggregate `totalExpected`, `itemCount`, `occurrenceCount`
+- Response: `monthStart`, `monthEnd`, `items[]` (each with `occurrences[]` containing `date`, `expectedAmount`, `overrideId`, `notes`, `transaction` (nested object with `id`, `date`, `amount` or null)), plus `expectedExpenses`, `expectedIncome`, `itemCount`, `occurrenceCount`
 - Items sorted by first occurrence date; only ACTIVE items with ≥1 occurrence in the month included
 - Uses shared `RecurringOccurrenceCalculator` utility (also used by `BudgetViewService`)
-- Per-period amount overrides not yet implemented — uses item's default `amount` × occurrence count
+
+**Transaction-to-Occurrence Matching:**
+- Transactions linked to recurring items are matched to occurrences by **nearest date**, not exact date match
+- Each transaction is assigned to the closest unmatched occurrence for that recurring item (greedy 1:1 by ascending distance)
+- Implemented in `RecurringItemViewService.matchTransactionsToOccurrences()` (public static, reusable)
+- `transaction` object in `RecurringOccurrenceDto` will show even if the transaction date differs from the occurrence date
+- `POST /api/v1/recurring-items/{id}/overrides` — create an override; body: `{ "occurrenceDate": "2026-03-05", "amount": -100.00, "notes": "..." }` → returns 201
+- `PUT /api/v1/recurring-items/{id}/overrides/{overrideId}` — update an override; body: `{ "amount": -100.00, "notes": "..." }` (`occurrenceDate` not needed — identified by UUID) → returns 200
+- `DELETE /api/v1/recurring-items/{id}/overrides/{overrideId}` — delete an override → returns 204
+- Create validates that `occurrenceDate` is an actual computed occurrence of the recurring item, and checks for duplicate overrides on the same date
+- Stored in `recurring_item_overrides` table with UNIQUE(recurring_item_id, occurrence_date) and CASCADE DELETE
+- `amount` is nullable — override can store just notes without changing the amount
+- Applied in both `RecurringItemViewService` (monthly view) and `BudgetViewService` (budget math)
+- `expectedAmount` = override amount ?? default amount. Transaction details are separate (nested `transaction` object in occurrence DTO)
+- `overrideId` is non-null when an override exists; `transaction` object is non-null when a transaction is linked
+- Orphaned overrides (after schedule change) are automatically deleted — updating `frequencyGranularity`, `frequencyQuantity`, `anchorDates`, `startDate`, or `endDate` clears all overrides for the item
 
 **Transaction ↔ Recurring Item Inheritance:**
 - When `recurringItemId` is provided on create or update, **locked fields always come from the recurring item** — DTO values for locked fields are ignored
@@ -481,14 +499,14 @@ When a transaction is linked to a recurring item, in a group, or in a split, cer
 
 ## Testing
 
-### Unit Tests (613)
-- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (44), TransactionService (74), RecurringItemService (33), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6), RecurringItemViewService (8)
-- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (10), TransactionGroupController (5), TransactionSplitController (5)
+### Unit Tests (639)
+- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (44), TransactionService (74), RecurringItemService (47), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6), RecurringItemViewService (20)
+- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (13), TransactionGroupController (5), TransactionSplitController (5)
 - **Utilities**: JwtUtil (7), GlobalExceptionHandler (12), WorkspaceCleanupListener (3), RecurringOccurrenceCalculator (11)
 - **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5), BudgetPeriodCalculatorTest (20), BudgetCrudServiceTest (18), BudgetServiceTest (9), BudgetViewServiceTest (17), BudgetCrudControllerTest (5), BudgetControllerTest (6), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
 - **Context**: DriplApplicationTests (1)
 
-### Integration Tests (264)
+### Integration Tests (274)
 All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton container pattern.
 
 - **BootstrapAndAuthIT** (7): New user bootstrap, idempotent re-bootstrap, validation, auth/unauth access
@@ -504,7 +522,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 - **CategoryCrudIT** (27): Create root category, create with all fields, create child, child depth limit, parent not found, list categories, get by ID, get with children, get tree, update name, set parent, remove parent, parentId omitted preserves parent, self-parent, parent too deep via update, category with children cannot be nested, parent not found via update, clear children, delete category, delete parent cascades SET NULL, workspace isolation, get nonexistent, auto-assign display order, child display order, move category shifts siblings, reparent appends to end, ungroup appends to end
 - **TransactionCrudIT** (51): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects), pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range filters (start, end, both), amount range filters (min, max), search (notes, merchant, category, no match), combined filters + pagination
 - **RecurringItemCrudIT** (16): Full CRUD, workspace isolation, merchant auto-resolution, tag management, validation
-- **RecurringItemViewIT** (8): Default month, specific month param, periodOffset, both-params-400, inactive items excluded, empty month, biweekly multiple occurrences, item fields populated
+- **RecurringItemViewIT** (18): Default month, specific month param, periodOffset, both-params-400, inactive items excluded, empty month, biweekly multiple occurrences, item fields populated, create override (201), create override invalid date (400), delete override (204), month view shows override expectedAmount/overrideId/notes, cleared override reverts to default, override affects totals, delete recurring item cascades overrides, paid occurrence with transaction details, paid occurrence with override shows override as expectedAmount, unpaid occurrence has null transaction
 - **TransactionGroupCrudIT** (17): Create group, list groups, get group, update metadata, add/remove transactions via transactionIds, remove below minimum, dissolve group, already-grouped, transaction shows groupId, min 2, create override, update override, add inherits overrides, remove clears groupId, add RI-linked rejects, delete clears all groupIds
 - **TransactionSplitCrudIT** (20): Create split, list splits, get split, update children, add/remove children, dissolve split, amount mismatch on create/update, locked field rejection (accountId, amount, date), allow category change, split child can't be grouped, grouped txn can't be split, split child RI-linked, RI account mismatch, unlinkSplitChild rejects, assign splitId rejects, child shows splitId, filter by splitId
 - **TransactionEventIT** (10): Create event verification, update change diff, grouped/ungrouped events, split/unsplit events, event ordering, BigDecimal normalization, GET endpoint
@@ -621,7 +639,7 @@ Services return **entities**, controllers handle DTO mapping:
 - `Budget.toDto(List<UUID> accountIds)` and `BudgetCategoryConfig.toDto()` — entity-level DTO mapping.
 - `setExpectedAmount` with `expectedAmount: null` clears the entry (no separate delete endpoint).
 
-### Data Model (V4, V14–V17)
+### Data Model (V4, V14–V19)
 
 | Table | Purpose |
 |-------|---------|
@@ -631,6 +649,7 @@ Services return **entities**, controllers handle DTO mapping:
 | `budget_category_configs` (V15) | Rollover type per (budget, category); UNIQUE on (budget_id, category_id) |
 | `budget_period_entries` (V16) | Expected amount per (budget, category, period_start); UNIQUE on all three |
 | `categories.display_order` (V17) | Display ordering for categories in budget views and tree endpoints |
+| `recurring_item_overrides` (V18) | Per-occurrence amount (nullable) + notes overrides; UNIQUE on (recurring_item_id, occurrence_date) |
 
 ### API Endpoints
 
@@ -661,9 +680,14 @@ Services return **entities**, controllers handle DTO mapping:
 
 ### Recurring Items Expected
 
-The budget view includes `recurringExpected` per category — the sum of recurring item amounts that fall within the period. Only recurring items with `status=ACTIVE`, a non-null `categoryId`, and an `accountId` included in the budget are counted. Occurrence counting iterates from each anchor date using frequency granularity/quantity.
+The budget view includes `recurringExpected` per category — the sum of recurring item **expected** amounts that fall within the period. Always uses `override amount ?? default amount` — never the linked transaction's actual amount (that's captured in `activity`). Only recurring items with `status=ACTIVE`, a non-null `categoryId`, and an `accountId` included in the budget are counted. Occurrence counting uses the same `RecurringOccurrenceCalculator` as the monthly view.
 
-**Planned**: Per-period amount overrides for recurring items (`PUT /api/v1/recurring-items/{id}/expected?periodStart=...`), allowing the default `amount` to be overridden for specific periods. The budget view would check for overrides first, falling back to the default amount.
+**Anchor date / frequency patterns:**
+- "Semi-monthly" (twice per month) = `frequencyGranularity: MONTH, frequencyQuantity: 1` with 2 anchor dates (e.g., 15th and 28th)
+- "Biweekly on Fridays" = `frequencyGranularity: WEEK, frequencyQuantity: 2` with 1 anchor on a Friday
+- Anchors can be any date — the calculator projects forward and backward, clipping to `startDate`/`endDate`
+
+**Implemented**: Per-occurrence overrides for recurring items (UUID-keyed POST/PUT/DELETE endpoints). Supports nullable amount overrides and notes. Both the monthly view and budget view use overrides when present (`expectedAmount` = override amount ?? default amount).
 
 ### Test Coverage
 
@@ -676,7 +700,7 @@ The budget view includes `recurringExpected` per category — the sum of recurri
 
 Ideas for future work, captured as we think of them.
 
-- **Recurring item period overrides** — Per-period amount overrides for recurring items (scaffolded at `PUT /recurring-items/{id}/expected?periodStart=...`). Budget view would check for overrides before falling back to the default amount.
+- **Recurring item frequency changes** — Linked-list node splitting (end old item, create new with `previousRecurringItemId`) to track frequency history. Deferred — schedule changes currently delete all overrides (clean slate).
 - **Bulk transaction operations** — Delete/update multiple transactions at once (useful for UI multi-select)
 - **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
 - **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)

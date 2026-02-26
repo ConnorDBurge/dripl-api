@@ -5,6 +5,8 @@ import com.dripl.common.exception.BadRequestException;
 import com.dripl.recurring.controller.RecurringItemController;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemMonthViewDto;
+import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.enums.FrequencyGranularity;
@@ -207,5 +209,45 @@ class RecurringItemControllerTest {
                 recurringItemController.getMonthView(workspaceId, YearMonth.of(2026, 3), 1))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("both");
+    }
+
+    // --- Override endpoint tests ---
+
+    @Test
+    void createOverride_returns201() {
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(LocalDate.of(2026, 3, 15))
+                .amount(new BigDecimal("250.00"))
+                .notes("Higher this month")
+                .build();
+
+        var response = recurringItemController.createOverride(workspaceId, recurringItemId, dto);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        verify(recurringItemService).createOverride(recurringItemId, workspaceId, dto);
+    }
+
+    @Test
+    void updateOverride_returns200() {
+        UUID overrideId = UUID.randomUUID();
+        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+                .amount(new BigDecimal("300.00"))
+                .notes("Updated amount")
+                .build();
+
+        var response = recurringItemController.updateOverride(workspaceId, recurringItemId, overrideId, dto);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(recurringItemService).updateOverride(overrideId, workspaceId, dto);
+    }
+
+    @Test
+    void deleteOverride_returns204() {
+        UUID overrideId = UUID.randomUUID();
+
+        var response = recurringItemController.deleteOverride(workspaceId, recurringItemId, overrideId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(recurringItemService).deleteOverride(overrideId, workspaceId);
     }
 }

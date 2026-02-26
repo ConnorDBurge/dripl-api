@@ -13,11 +13,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RecurringOccurrenceDto {
+public class OccurrenceTransactionDto {
 
+    private UUID id;
     private LocalDate date;
-    private BigDecimal expectedAmount;
-    private UUID overrideId;
-    private String notes;
-    private OccurrenceTransactionDto transaction;
+    private BigDecimal amount;
 }

@@ -4,6 +4,8 @@ import com.dripl.common.annotation.WorkspaceId;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemMonthViewDto;
+import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.mapper.RecurringItemMapper;
@@ -16,9 +18,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -49,20 +59,20 @@ public class RecurringItemController {
         return ResponseEntity.ok(recurringItemMapper.toDtos(items));
     }
 
-    @PreAuthorize("hasAuthority('READ')")
-    @GetMapping(value = "/{recurringItemId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RecurringItemDto> getRecurringItem(
-            @WorkspaceId UUID workspaceId, @PathVariable UUID recurringItemId) {
-        RecurringItem item = recurringItemService.getRecurringItem(recurringItemId, workspaceId);
-        return ResponseEntity.ok(recurringItemMapper.toDto(item));
-    }
-
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RecurringItemDto> createRecurringItem(
             @WorkspaceId UUID workspaceId, @Valid @RequestBody CreateRecurringItemDto dto) {
         RecurringItem item = recurringItemService.createRecurringItem(workspaceId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(recurringItemMapper.toDto(item));
+    }
+
+    @PreAuthorize("hasAuthority('READ')")
+    @GetMapping(value = "/{recurringItemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RecurringItemDto> getRecurringItem(
+            @WorkspaceId UUID workspaceId, @PathVariable UUID recurringItemId) {
+        RecurringItem item = recurringItemService.getRecurringItem(recurringItemId, workspaceId);
+        return ResponseEntity.ok(recurringItemMapper.toDto(item));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -82,19 +92,38 @@ public class RecurringItemController {
         return ResponseEntity.noContent().build();
     }
 
-    // TODO: Implement per-period amount overrides for recurring items.
-    //  - Create RecurringItemPeriodEntry entity + repository + migration
-    //  - Create SetRecurringItemExpectedDto (nullable BigDecimal expectedAmount; null = clear)
-    //  - Implement service methods in RecurringItemService
-    //  - Update BudgetViewService.recurringItemsExpected to check for period overrides
-    //  - Add unit tests, controller tests, and integration tests
-
     @PreAuthorize("hasAuthority('WRITE')")
-    @PutMapping(value = "/{recurringItemId}/expected", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> setExpectedAmount(
+    @PostMapping(value = "/{recurringItemId}/overrides", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> createOverride(
             @WorkspaceId UUID workspaceId,
             @PathVariable UUID recurringItemId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodStart) {
-        throw new UnsupportedOperationException("Not yet implemented");
+            @Valid @RequestBody SetOccurrenceOverrideDto dto) {
+
+        recurringItemService.createOverride(recurringItemId, workspaceId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PutMapping(value = "/{recurringItemId}/overrides/{overrideId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> updateOverride(
+            @WorkspaceId UUID workspaceId,
+            @PathVariable UUID recurringItemId,
+            @PathVariable UUID overrideId,
+            @Valid @RequestBody UpdateOccurrenceOverrideDto dto) {
+
+        recurringItemService.updateOverride(overrideId, workspaceId, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @DeleteMapping("/{recurringItemId}/overrides/{overrideId}")
+    public ResponseEntity<Void> deleteOverride(
+            @WorkspaceId UUID workspaceId,
+            @PathVariable UUID recurringItemId,
+            @PathVariable UUID overrideId) {
+
+        recurringItemService.deleteOverride(overrideId, workspaceId);
+        return ResponseEntity.noContent().build();
     }
 }

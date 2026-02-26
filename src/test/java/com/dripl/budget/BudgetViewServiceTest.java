@@ -52,6 +52,7 @@ class BudgetViewServiceTest {
     @Mock private CategoryRepository categoryRepository;
     @Mock private TransactionRepository transactionRepository;
     @Mock private RecurringItemRepository recurringItemRepository;
+    @Mock private com.dripl.recurring.repository.RecurringItemOverrideRepository recurringItemOverrideRepository;
     @Mock private AccountRepository accountRepository;
     @Mock private BudgetAccountRepository budgetAccountRepository;
     @Mock private BudgetCategoryConfigRepository configRepository;
@@ -74,6 +75,11 @@ class BudgetViewServiceTest {
                 .name("Default")
                 .anchorDay1(1)
                 .build();
+
+        when(recurringItemOverrideRepository.findByWorkspaceIdAndOccurrenceDateBetween(any(), any(), any()))
+                .thenReturn(java.util.List.of());
+        when(transactionRepository.findLinkedToRecurringItemsInDateRange(any(), any(), any()))
+                .thenReturn(java.util.List.of());
     }
 
     @Test

@@ -397,11 +397,109 @@ Budget view adopts Lunch Money's summary naming. Category display ordering enabl
 
 ---
 
-## Future Roadmap
+### Checkpoint 17: Per-Occurrence Amount Overrides
+
+**Problem**: Recurring items have a fixed `amount`, but actual amounts vary (e.g., utility bills). Users need per-occurrence overrides visible in both the monthly view and budget calculations.
+
+**What was done:**
+- [x] V18 migration: `recurring_item_overrides` table with UNIQUE(recurring_item_id, occurrence_date), CASCADE DELETE, indexes
+- [x] `RecurringItemOverride` entity + `RecurringItemOverrideRepository` (single lookup, date range, workspace+range queries)
+- [x] `SetOccurrenceOverrideDto` — nullable amount (null = clear) + notes
+- [x] `RecurringItemService.setOccurrenceOverride()` — validates occurrence date via calculator, upserts override
+- [x] `RecurringItemService.clearOccurrenceOverride()` — deletes override if present
+- [x] `PUT /api/v1/recurring-items/{id}/overrides/{date}` controller endpoint
+- [x] Updated `RecurringOccurrenceDto` with `overridden` flag and `notes`
+- [x] Updated `RecurringItemViewService` — batch-loads overrides for month range, applies to each occurrence DTO, affects expense/income totals
+- [x] Updated `BudgetViewService.computeRecurringExpected()` — per-occurrence amounts using overrides instead of `amount × count`
+- [x] 6 new service unit tests (set create, set update, invalid date, not found, clear existing, clear no-op)
+- [x] 4 new view service unit tests (override applied, override affects totals, non-overridden false flag, overridden income/expense split)
+- [x] 2 new controller unit tests (set with amount, clear with null amount)
+- [x] 7 new integration tests (set valid, invalid date 400, clear, view shows override, cleared reverts to default, override affects totals, cascade delete)
+- [x] Documentation update (ARCHITECTURE.md + CHECKPOINTS.md)
+
+**Test totals: 628 unit + 271 integration = 899 tests, all passing**
+
+---
+
+### Checkpoint 18: Per-Occurrence Paid Flag, Date Overrides & Cleanup
+
+**Phase 18 — Enhance recurring item overrides with paid flag, date shifting, and cleanup fixes**
+
+**Paid flag + transaction linking (from prior session):**
+- [x] Added `paid` (boolean) and `transactionId` (UUID) to `RecurringOccurrenceDto`
+- [x] `TransactionRepository.findLinkedToRecurringItemsInDateRange()` — batch-loads linked transactions
+- [x] Amount priority chain: **transaction amount > override amount > default amount** in both view and budget services
+- [x] SeedDataLoader FK fix: `DELETE FROM recurring_item_overrides` before `DELETE FROM workspaces`
+- [x] V18 migration amended: `ON DELETE CASCADE` on workspace_id FK
+
+**Date override feature:**
+- [x] V19 migration: `ALTER TABLE recurring_item_overrides ADD COLUMN date_override DATE`
+- [x] `dateOverride` field added to `RecurringItemOverride` entity and `SetOccurrenceOverrideDto`
+- [x] `originalDate` field added to `RecurringOccurrenceDto` (non-null only when shifted)
+- [x] `RecurringItemOverrideRepository.findByWorkspaceIdAndDateOverrideBetween()` — loads overrides shifted INTO a month
+- [x] `RecurringItemViewService` — cross-month shift logic: shifted-out occurrences removed, shifted-in added, sorted by effective date
+- [x] `BudgetViewService.computeRecurringExpected()` — same cross-month shift logic for period bucketing
+- [x] `RecurringItemService.setOccurrenceOverride()` — passes through dateOverride to entity
+- [x] 2 new service unit tests (date override persists, cross-month persists)
+- [x] 6 new view service unit tests (same-month shift, cross-month removes from original, cross-month appears in target, no shift keeps originalDate null, date override affects totals)
+- [x] 1 new controller unit test (date override dispatches to set)
+- [x] 5 new integration tests (same-month date override, cross-month removes from original, cross-month appears in target, no date override originalDate null, clear removes date override)
+- [x] Documentation update (ARCHITECTURE.md + CHECKPOINTS.md)
+
+**Override cleanup on schedule changes:**
+- [x] `RecurringItemService.updateRecurringItem()` — deletes all overrides when schedule-defining fields change (frequencyGranularity, frequencyQuantity, anchorDates, startDate, endDate)
+- [x] `RecurringItemOverrideRepository.deleteByRecurringItemId()` — bulk delete
+- [x] 3 new service unit tests (frequency change clears, anchor change clears, non-schedule change doesn't clear)
+- [x] 1 new integration test (anchor change clears overrides, new occurrence date reflected)
+
+**Test totals: 642 unit + 280 integration = 922 tests, all passing**
+
+---
+
+### Checkpoint 19: Override Simplification & UUID-keyed API
+
+**Problem**: The date override feature (shifting occurrences to different dates/months) added significant complexity to both the view service and budget service (cross-month shift logic). After reflection, the user decided: transaction linking provides the actual date/amount naturally — no need for `dateOverride`. The override table should only store per-occurrence amount + notes.
+
+**Changes:**
+- [x] Removed `dateOverride` from entity, DTOs, repository, service, view service, and budget service
+- [x] Merged V19 (dateOverride column) and V20 (nullable amount) into V18 — amount is nullable from the start
+- [x] UUID-keyed override API: `POST /{id}/overrides` (201), `PUT /{id}/overrides/{overrideId}` (200), `DELETE /{id}/overrides/{overrideId}` (204)
+- [x] New `OccurrenceTransactionDto` — nested DTO with `id`, `date`, `amount` for linked transactions
+- [x] Simplified `RecurringOccurrenceDto`: `date`, `expectedAmount`, `overrideId`, `notes`, `transaction` (nested or null)
+- [x] Removed ALL cross-month shift logic from `RecurringItemViewService` (~80 lines deleted)
+- [x] Removed shift logic from `BudgetViewService.computeRecurringExpected()`
+- [x] Service: `createOverride` (validates date + dup check), `updateOverride` (by UUID), `deleteOverride` (by UUID)
+- [x] Updated unit tests: 11 new override service tests, updated view/controller/budget tests
+- [x] Updated integration tests: 6 dateOverride ITs deleted, 18 remaining updated for new API + DTO shape
+- [x] Updated ARCHITECTURE.md: new API endpoints, occurrence DTO shape, test counts
+
+**Test totals: 639 unit + 274 integration = 913 tests, all passing**
+
+---
+
+### Checkpoint 20: Nearest-Occurrence Transaction Matching & recurringExpected Fix
+
+**Problem 1**: Transaction-to-occurrence linking used exact date matching (`riId:txnDate`). A paycheck due on the 15th but received on the 22nd would show `transaction: null` in the occurrence view — not linked even though `recurringItemId` was set.
+
+**Problem 2**: `BudgetViewService.computeRecurringExpected()` was using the linked transaction's actual amount (e.g., 3378.74) for `recurringExpected`, instead of the planned amount (3392.53). `recurringExpected` should always reflect what you *expect* to pay, not what was actually paid — that's already captured in `activity`.
+
+**Changes:**
+- [x] `RecurringItemViewService` — replaced exact-date map with grouped-by-recurringItemId + nearest-occurrence matching via new `matchTransactionsToOccurrences()` static helper
+- [x] `matchTransactionsToOccurrences()` — greedy 1:1 assignment: computes all (transaction, occurrence, distance) pairs, sorts by date distance, assigns closest unmatched pairs; each occurrence gets at most one transaction
+- [x] `BudgetViewService.computeRecurringExpected()` — removed transaction matching entirely; `recurringExpected` is now always `override amount ?? default amount`, never transaction amount. Removed unused `txnsByRecurringItem` query from this method.
+- [x] Seed data: added `recurringDescription` to 66 transactions (Netflix, Spotify, Verizon, Xfinity, GitHub, OpenAI, USAA, OneLife Fitness, Disney Plus, Liberty Mutual salary) to link them to recurring items on startup
+
+**Anchor date / frequency clarification documented:**
+- Anchor dates define the recurring pattern, not the first occurrence. They can be set to any date — the calculator projects forward and backward from each anchor, clipping to `startDate`/`endDate`.
+- "Semi-monthly" (twice per month) = `frequencyGranularity: MONTH, frequencyQuantity: 1` with **2 anchor dates** (e.g., 15th and 28th). Each anchor projects independently on a monthly cycle.
+- "Biweekly on Fridays" = `frequencyGranularity: WEEK, frequencyQuantity: 2` with **1 anchor** on a Friday.
+- Changing frequency/anchors deletes all overrides (clean slate) but does not affect `activity` or `netTotalAvailable` — those are always transaction-driven.
+
+**Test totals: 639 unit + 274 integration = 913 tests, all passing**
 
 Ideas captured for future consideration:
 
-- **Recurring item period overrides** — Per-period amount overrides for recurring items (scaffolded at `PUT /recurring-items/{id}/expected?periodStart=...`). Budget view would check for overrides before falling back to the default amount.
+- **Recurring item frequency changes** — Linked-list node splitting to track frequency history (schedule changes now clear all overrides)
 - **Bulk transaction operations** — Delete/update multiple transactions at once (UI multi-select)
 - **Duplicate detection** — Flag or prevent transactions with same amount/date/merchant
 - **Transaction attachments/receipts** — File uploads on transactions (images, PDFs)
@@ -410,6 +508,19 @@ Ideas captured for future consideration:
 - **Account-to-account transfers** — Single API call creates linked expense/income pair with shared `transferId`
 - **Spring AI MCP server** — AI-powered transaction categorization and insights
 - **Cloud deployment** — Production infrastructure, CI/CD pipeline
+
+### Checkpoint 21: Separate Update DTO for Override PUT Endpoint
+
+**Changes:**
+- [x] Created `UpdateOccurrenceOverrideDto` — contains only `amount` and `notes` (no `occurrenceDate` required)
+- [x] Updated `RecurringItemController.updateOverride()` to accept `UpdateOccurrenceOverrideDto`
+- [x] Updated `RecurringItemService.updateOverride()` to accept `UpdateOccurrenceOverrideDto`
+- [x] Updated controller and service unit tests to use the new DTO
+- [x] Updated ARCHITECTURE.md override API docs to reflect PUT body shape
+
+**Rationale:** The PUT endpoint identifies the override by its UUID path parameter — requiring `occurrenceDate` in the body was redundant and caused validation errors when omitted.
+
+**Test totals: 639 unit + 274 integration = 913 tests, all passing**
 
 ## Nice to Have
 

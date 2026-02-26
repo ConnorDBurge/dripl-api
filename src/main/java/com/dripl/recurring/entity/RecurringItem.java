@@ -55,10 +55,13 @@ public class RecurringItem extends BaseEntity {
     @Column(name = "frequency_granularity", nullable = false)
     private FrequencyGranularity frequencyGranularity;
 
+    // How often the frequencyGranularity should repeat. Ex. MONTH, 1 == Once every month
     @Builder.Default
     @Column(name = "frequency_quantity", nullable = false)
     private Integer frequencyQuantity = 1;
 
+    // Anchor dates are used to determine the first occurrence of the recurring item.
+    // Occurrences will repeat, according to the frequencyGranularity and frequencyQuantity.
     @Builder.Default
     @ElementCollection
     @CollectionTable(name = "recurring_item_anchor_dates", joinColumns = @JoinColumn(name = "recurring_item_id"))

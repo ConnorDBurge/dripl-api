@@ -1,23 +1,24 @@
 package com.dripl.recurring.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RecurringOccurrenceDto {
+public class SetOccurrenceOverrideDto {
 
-    private LocalDate date;
-    private BigDecimal expectedAmount;
-    private UUID overrideId;
+    @NotNull
+    private LocalDate occurrenceDate;
+    private BigDecimal amount;
     private String notes;
-    private OccurrenceTransactionDto transaction;
 }

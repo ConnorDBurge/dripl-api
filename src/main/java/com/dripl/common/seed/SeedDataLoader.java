@@ -524,6 +524,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
     private void wipeDatabase() {
         log.info("Resetting local database");
+        jdbcTemplate.execute("DELETE FROM recurring_item_overrides");
         jdbcTemplate.execute("DELETE FROM workspaces");
         jdbcTemplate.execute("DELETE FROM users");
     }

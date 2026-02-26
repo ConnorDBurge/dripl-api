@@ -13,7 +13,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 183
+    "daysAgo": 183,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -21,7 +22,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 183
+    "daysAgo": 183,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -219,7 +221,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 179
+    "daysAgo": 179,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -419,7 +422,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 176
+    "daysAgo": 176,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Primary Checking",
@@ -619,7 +623,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 172
+    "daysAgo": 172,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -742,7 +747,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 169
+    "daysAgo": 169,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -750,7 +756,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 169
+    "daysAgo": 169,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -893,7 +900,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 166
+    "daysAgo": 166,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Primary Checking",
@@ -1016,7 +1024,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 164
+    "daysAgo": 164,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -1073,7 +1082,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 162
+    "daysAgo": 162,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Primary Checking",
@@ -1461,7 +1471,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 153
+    "daysAgo": 153,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -1523,7 +1534,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 152
+    "daysAgo": 152,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -1531,7 +1543,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 152
+    "daysAgo": 152,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Primary Checking",
@@ -1746,7 +1759,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 148
+    "daysAgo": 148,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Primary Checking",
@@ -1879,7 +1893,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 145
+    "daysAgo": 145,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Primary Checking",
@@ -2047,7 +2062,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 141
+    "daysAgo": 141,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -2286,7 +2302,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 138
+    "daysAgo": 138,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -2294,7 +2311,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 138
+    "daysAgo": 138,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -2445,7 +2463,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 135
+    "daysAgo": 135,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -2528,7 +2547,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 133
+    "daysAgo": 133,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Primary Checking",
@@ -2640,7 +2660,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 131
+    "daysAgo": 131,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -3009,7 +3030,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 122
+    "daysAgo": 122,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -3088,7 +3110,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 121
+    "daysAgo": 121,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -3096,7 +3119,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 121
+    "daysAgo": 121,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Primary Checking",
@@ -3307,7 +3331,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 117
+    "daysAgo": 117,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Primary Checking",
@@ -3459,7 +3484,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 114
+    "daysAgo": 114,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Primary Checking",
@@ -3710,7 +3736,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 110
+    "daysAgo": 110,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -3901,7 +3928,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 107
+    "daysAgo": 107,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -3909,7 +3937,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 107
+    "daysAgo": 107,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Primary Checking",
@@ -4098,7 +4127,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 104
+    "daysAgo": 104,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Primary Checking",
@@ -4204,7 +4234,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 102
+    "daysAgo": 102,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -4329,7 +4360,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 100
+    "daysAgo": 100,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Primary Checking",
@@ -4686,7 +4718,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 92
+    "daysAgo": 92,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -4758,7 +4791,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 91
+    "daysAgo": 91,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -4766,7 +4800,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 91
+    "daysAgo": 91,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -4911,7 +4946,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 87
+    "daysAgo": 87,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -5084,7 +5120,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 84
+    "daysAgo": 84,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -5365,7 +5402,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 80
+    "daysAgo": 80,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -5553,7 +5591,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 77
+    "daysAgo": 77,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -5561,7 +5600,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 77
+    "daysAgo": 77,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Primary Checking",
@@ -5686,7 +5726,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 74
+    "daysAgo": 74,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Primary Checking",
@@ -5772,7 +5813,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 72
+    "daysAgo": 72,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -5883,7 +5925,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 70
+    "daysAgo": 70,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -6363,7 +6406,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 61
+    "daysAgo": 61,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -6427,7 +6471,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 60
+    "daysAgo": 60,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -6435,7 +6480,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 60
+    "daysAgo": 60,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Primary Checking",
@@ -6694,7 +6740,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 56
+    "daysAgo": 56,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Primary Checking",
@@ -6843,7 +6890,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 53
+    "daysAgo": 53,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Primary Checking",
@@ -7044,7 +7092,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 49
+    "daysAgo": 49,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -7169,7 +7218,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 46
+    "daysAgo": 46,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -7177,7 +7227,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 46
+    "daysAgo": 46,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Primary Checking",
@@ -7377,7 +7428,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 43
+    "daysAgo": 43,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -7478,7 +7530,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 41
+    "daysAgo": 41,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Primary Checking",
@@ -7604,7 +7657,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 39
+    "daysAgo": 39,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Primary Checking",
@@ -8000,7 +8054,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 31
+    "daysAgo": 31,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -8033,7 +8088,8 @@
     "categoryName": "Auto Insurance",
     "amount": -285.0,
     "status": "POSTED",
-    "daysAgo": 30
+    "daysAgo": 30,
+    "recurringDescription": "Auto Insurance"
   },
   {
     "accountName": "Primary Checking",
@@ -8041,7 +8097,8 @@
     "categoryName": "Gym Membership",
     "amount": -129.98,
     "status": "POSTED",
-    "daysAgo": 30
+    "daysAgo": 30,
+    "recurringDescription": "Gym Memberships"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -8256,7 +8313,8 @@
     "categoryName": "Music Subscription",
     "amount": -10.99,
     "status": "POSTED",
-    "daysAgo": 26
+    "daysAgo": 26,
+    "recurringDescription": "Spotify Premium"
   },
   {
     "accountName": "Primary Checking",
@@ -8439,7 +8497,8 @@
     "categoryName": "Developer Tools",
     "amount": -19.0,
     "status": "POSTED",
-    "daysAgo": 23
+    "daysAgo": 23,
+    "recurringDescription": "GitHub Copilot"
   },
   {
     "accountName": "Rewards Credit Card",
@@ -8587,7 +8646,8 @@
     "categoryName": "Internet",
     "amount": -89.99,
     "status": "POSTED",
-    "daysAgo": 19
+    "daysAgo": 19,
+    "recurringDescription": "Internet Service"
   },
   {
     "accountName": "Cashback Credit Card",
@@ -8676,7 +8736,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 16
+    "daysAgo": 16,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",
@@ -8684,7 +8745,8 @@
     "categoryName": "Streaming Services",
     "amount": -22.99,
     "status": "POSTED",
-    "daysAgo": 16
+    "daysAgo": 16,
+    "recurringDescription": "Netflix Subscription"
   },
   {
     "accountName": "Primary Checking",
@@ -8878,7 +8940,8 @@
     "categoryName": "Streaming Services",
     "amount": -13.99,
     "status": "POSTED",
-    "daysAgo": 13
+    "daysAgo": 13,
+    "recurringDescription": "Disney Plus"
   },
   {
     "accountName": "Primary Checking",
@@ -8977,7 +9040,8 @@
     "categoryName": "Phone Bill",
     "amount": -181.0,
     "status": "POSTED",
-    "daysAgo": 11
+    "daysAgo": 11,
+    "recurringDescription": "Phone Bill"
   },
   {
     "accountName": "Primary Checking",
@@ -9098,7 +9162,8 @@
     "categoryName": "AI Tools",
     "amount": -20.0,
     "status": "POSTED",
-    "daysAgo": 9
+    "daysAgo": 9,
+    "recurringDescription": "AI Assistant"
   },
   {
     "accountName": "Primary Checking",
@@ -9487,7 +9552,8 @@
       "income"
     ],
     "notes": "Bi-monthly paycheck",
-    "daysAgo": 0
+    "daysAgo": 0,
+    "recurringDescription": "Bi-Monthly Paycheck"
   },
   {
     "accountName": "Primary Checking",

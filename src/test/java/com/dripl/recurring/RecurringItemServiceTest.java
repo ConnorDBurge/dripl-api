@@ -11,11 +11,15 @@ import com.dripl.common.enums.Status;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
+import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
+import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.FrequencyGranularity;
 import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.mapper.RecurringItemMapper;
+import com.dripl.recurring.repository.RecurringItemOverrideRepository;
 import com.dripl.recurring.repository.RecurringItemRepository;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.entity.Tag;
@@ -31,6 +35,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -44,6 +49,8 @@ class RecurringItemServiceTest {
 
     @Mock
     private RecurringItemRepository recurringItemRepository;
+    @Mock
+    private RecurringItemOverrideRepository overrideRepository;
     @Mock
     private TransactionRepository transactionRepository;
     @Mock
@@ -779,5 +786,249 @@ class RecurringItemServiceTest {
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRecurringItem_frequencyChange_clearsOverrides() {
+        RecurringItem ri = buildRecurringItem();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of());
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+                .frequencyGranularity(FrequencyGranularity.WEEK)
+                .build();
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        verify(overrideRepository).deleteByRecurringItemId(recurringItemId);
+    }
+
+    @Test
+    void updateRecurringItem_anchorDateChange_clearsOverrides() {
+        RecurringItem ri = buildRecurringItem();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of());
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+                .anchorDates(List.of(LocalDateTime.of(2025, 1, 20, 0, 0)))
+                .build();
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        verify(overrideRepository).deleteByRecurringItemId(recurringItemId);
+    }
+
+    @Test
+    void updateRecurringItem_nonScheduleChange_doesNotClearOverrides() {
+        RecurringItem ri = buildRecurringItem();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of());
+
+        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+                .description("Updated name")
+                .build();
+        recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
+
+        verify(overrideRepository, never()).deleteByRecurringItemId(any());
+    }
+
+    // --- Override tests ---
+
+    @Test
+    void createOverride_createsNewOverride() {
+        RecurringItem ri = buildRecurringItem();
+        LocalDate occurrenceDate = LocalDate.of(2025, 2, 15);
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(overrideRepository.findByRecurringItemIdAndOccurrenceDate(recurringItemId, occurrenceDate))
+                .thenReturn(Optional.empty());
+        when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(occurrenceDate)
+                .amount(new BigDecimal("250.00"))
+                .notes("Higher this month")
+                .build();
+
+        RecurringItemOverride result = recurringItemService.createOverride(
+                recurringItemId, workspaceId, dto);
+
+        assertThat(result.getAmount()).isEqualByComparingTo("250.00");
+        assertThat(result.getNotes()).isEqualTo("Higher this month");
+        assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
+        assertThat(result.getOccurrenceDate()).isEqualTo(occurrenceDate);
+        verify(overrideRepository).save(any());
+    }
+
+    @Test
+    void createOverride_duplicateOccurrence_throws() {
+        RecurringItem ri = buildRecurringItem();
+        LocalDate occurrenceDate = LocalDate.of(2025, 2, 15);
+
+        RecurringItemOverride existing = RecurringItemOverride.builder()
+                .workspaceId(workspaceId)
+                .recurringItemId(recurringItemId)
+                .occurrenceDate(occurrenceDate)
+                .amount(new BigDecimal("200.00"))
+                .build();
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(overrideRepository.findByRecurringItemIdAndOccurrenceDate(recurringItemId, occurrenceDate))
+                .thenReturn(Optional.of(existing));
+
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(occurrenceDate)
+                .amount(new BigDecimal("300.00"))
+                .build();
+
+        assertThatThrownBy(() -> recurringItemService.createOverride(recurringItemId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void createOverride_invalidDate_throws() {
+        RecurringItem ri = buildRecurringItem(); // anchors on 15th monthly
+        LocalDate invalidDate = LocalDate.of(2025, 2, 20); // not the 15th
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(invalidDate)
+                .amount(new BigDecimal("100.00"))
+                .build();
+
+        assertThatThrownBy(() -> recurringItemService.createOverride(recurringItemId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("not a valid occurrence");
+    }
+
+    @Test
+    void createOverride_itemNotFound_throws() {
+        LocalDate date = LocalDate.of(2025, 2, 15);
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.empty());
+
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(date)
+                .amount(new BigDecimal("100.00"))
+                .build();
+
+        assertThatThrownBy(() -> recurringItemService.createOverride(recurringItemId, workspaceId, dto))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void createOverride_nullAmount_onlyNotes() {
+        RecurringItem ri = buildRecurringItem();
+        LocalDate occurrenceDate = LocalDate.of(2025, 2, 15);
+
+        when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
+        when(overrideRepository.findByRecurringItemIdAndOccurrenceDate(recurringItemId, occurrenceDate))
+                .thenReturn(Optional.empty());
+        when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+                .occurrenceDate(occurrenceDate)
+                .notes("Reminder note")
+                .build();
+
+        RecurringItemOverride result = recurringItemService.createOverride(
+                recurringItemId, workspaceId, dto);
+
+        assertThat(result.getAmount()).isNull();
+        assertThat(result.getNotes()).isEqualTo("Reminder note");
+    }
+
+    @Test
+    void updateOverride_updatesFields() {
+        UUID overrideId = UUID.randomUUID();
+        RecurringItemOverride existing = RecurringItemOverride.builder()
+                .workspaceId(workspaceId)
+                .recurringItemId(recurringItemId)
+                .occurrenceDate(LocalDate.of(2025, 2, 15))
+                .amount(new BigDecimal("200.00"))
+                .build();
+        existing.setId(overrideId);
+
+        when(overrideRepository.findById(overrideId)).thenReturn(Optional.of(existing));
+        when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+                .amount(new BigDecimal("300.00"))
+                .notes("Updated")
+                .build();
+
+        RecurringItemOverride result = recurringItemService.updateOverride(overrideId, workspaceId, dto);
+
+        assertThat(result.getAmount()).isEqualByComparingTo("300.00");
+        assertThat(result.getNotes()).isEqualTo("Updated");
+    }
+
+    @Test
+    void updateOverride_notFound_throws() {
+        UUID overrideId = UUID.randomUUID();
+        when(overrideRepository.findById(overrideId)).thenReturn(Optional.empty());
+
+        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+                .amount(new BigDecimal("100.00"))
+                .build();
+
+        assertThatThrownBy(() -> recurringItemService.updateOverride(overrideId, workspaceId, dto))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateOverride_wrongWorkspace_throws() {
+        UUID overrideId = UUID.randomUUID();
+        RecurringItemOverride existing = RecurringItemOverride.builder()
+                .workspaceId(UUID.randomUUID()) // different workspace
+                .recurringItemId(recurringItemId)
+                .occurrenceDate(LocalDate.of(2025, 2, 15))
+                .amount(new BigDecimal("200.00"))
+                .build();
+        existing.setId(overrideId);
+
+        when(overrideRepository.findById(overrideId)).thenReturn(Optional.of(existing));
+
+        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+                .amount(new BigDecimal("100.00"))
+                .build();
+
+        assertThatThrownBy(() -> recurringItemService.updateOverride(overrideId, workspaceId, dto))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteOverride_deletesExisting() {
+        UUID overrideId = UUID.randomUUID();
+        RecurringItemOverride existing = RecurringItemOverride.builder()
+                .workspaceId(workspaceId)
+                .recurringItemId(recurringItemId)
+                .occurrenceDate(LocalDate.of(2025, 2, 15))
+                .amount(new BigDecimal("100.00"))
+                .build();
+        existing.setId(overrideId);
+
+        when(overrideRepository.findById(overrideId)).thenReturn(Optional.of(existing));
+
+        recurringItemService.deleteOverride(overrideId, workspaceId);
+
+        verify(overrideRepository).delete(existing);
+    }
+
+    @Test
+    void deleteOverride_notFound_throws() {
+        UUID overrideId = UUID.randomUUID();
+        when(overrideRepository.findById(overrideId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> recurringItemService.deleteOverride(overrideId, workspaceId))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }
