@@ -82,7 +82,7 @@ public class RecurringItemViewService {
 
             List<LocalDate> dates = RecurringOccurrenceCalculator.computeOccurrences(ri, monthStart, monthEnd);
 
-            // Match transactions to nearest occurrence
+            // Match transactions to the nearest occurrence
             Map<LocalDate, Transaction> matchedTxns = matchTransactionsToOccurrences(
                     dates, txnsByRecurringItem.getOrDefault(ri.getId(), List.of()));
 
@@ -175,7 +175,7 @@ public class RecurringItemViewService {
                 .toList();
 
         // For each transaction, compute distance to each occurrence
-        // Then greedily assign closest pairs, ensuring 1:1 mapping
+        // Then greedily assign the closest pairs, ensuring 1:1 mapping
         Map<LocalDate, Transaction> result = new HashMap<>();
         Set<UUID> assignedTxnIds = new HashSet<>();
 

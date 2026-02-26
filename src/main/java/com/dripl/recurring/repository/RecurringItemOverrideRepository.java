@@ -14,7 +14,6 @@ public interface RecurringItemOverrideRepository extends JpaRepository<Recurring
 
     Optional<RecurringItemOverride> findByRecurringItemIdAndOccurrenceDate(UUID recurringItemId, LocalDate occurrenceDate);
 
-    List<RecurringItemOverride> findByRecurringItemIdAndOccurrenceDateBetween(UUID recurringItemId, LocalDate start, LocalDate end);
 
     List<RecurringItemOverride> findByWorkspaceIdAndOccurrenceDateBetween(UUID workspaceId, LocalDate start, LocalDate end);
 

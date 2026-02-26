@@ -35,8 +35,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     long countByGroupId(UUID groupId);
 
-    long countBySplitId(UUID splitId);
-
     // Set group ID for multiple transactions at once
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE Transaction t SET t.groupId = :groupId WHERE t.id IN :transactionIds AND t.workspaceId = :workspaceId")
@@ -52,7 +50,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     @Query("UPDATE Transaction t SET t.splitId = NULL WHERE t.splitId = :splitId")
     int clearSplitId(UUID splitId);
 
-    // Sum transaction amounts for a category scoped to a budget's included accounts
+    // Sum transaction amounts to a category scoped to a budget's included accounts
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
            "JOIN BudgetAccount ba ON t.accountId = ba.accountId " +
            "WHERE ba.budgetId = :budgetId AND t.categoryId = :categoryId " +
