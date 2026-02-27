@@ -316,15 +316,17 @@ public class SeedDataLoader implements CommandLineRunner {
             Set<UUID> tagIds = resolveTagIds((List<String>) seed.get("tagNames"), tags);
 
             int daysAgo = ((Number) seed.get("daysAgo")).intValue();
+            LocalDate txnDate = LocalDate.now().minusDays(daysAgo);
 
             CreateTransactionDto dto = CreateTransactionDto.builder()
                     .accountId(accounts.get((String) seed.get("accountName")))
                     .merchantName((String) seed.get("merchantName"))
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
-                    .date(LocalDate.now().minusDays(daysAgo).atStartOfDay())
+                    .date(txnDate.atStartOfDay())
                     .amount(new java.math.BigDecimal(seed.get("amount").toString()))
                     .notes((String) seed.get("notes"))
                     .recurringItemId(recurringDesc != null ? recurringByDesc.get(recurringDesc) : null)
+                    .occurrenceDate(recurringDesc != null ? txnDate : null)
                     .tagIds(tagIds)
                     .build();
 

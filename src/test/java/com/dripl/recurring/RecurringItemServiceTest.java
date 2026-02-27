@@ -625,10 +625,20 @@ class RecurringItemServiceTest {
     @Test
     void deleteRecurringItem_success() {
         RecurringItem item = buildRecurringItem();
+        Transaction txn = Transaction.builder().id(UUID.randomUUID()).workspaceId(workspaceId)
+                .accountId(accountId).merchantId(merchantId).amount(new BigDecimal("-15.99"))
+                .recurringItemId(recurringItemId).occurrenceDate(LocalDate.of(2025, 7, 15))
+                .tagIds(new HashSet<>()).build();
+
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
+        when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
+                .thenReturn(List.of(txn));
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         recurringItemService.deleteRecurringItem(recurringItemId, workspaceId);
 
+        assertThat(txn.getOccurrenceDate()).isNull();
+        verify(transactionRepository).save(txn);
         verify(recurringItemRepository).delete(item);
     }
 

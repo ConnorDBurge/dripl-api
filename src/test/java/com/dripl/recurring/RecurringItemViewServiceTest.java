@@ -99,13 +99,24 @@ class RecurringItemViewServiceTest {
         assertThat(result.getItemCount()).isEqualTo(2);
         assertThat(result.getItems()).hasSize(2);
 
-        // Sorted by first occurrence: biweekly first (Mar ~early), then rent (Mar 15)
-        RecurringItemViewDto first = result.getItems().get(0);
-        assertThat(first.getOccurrences().get(0).getDate().getMonthValue()).isEqualTo(3);
-        assertThat(first.getOccurrences().get(0).getExpectedAmount()).isNotNull();
-        assertThat(first.getFrequencyGranularity()).isNotNull();
-        assertThat(first.getFrequencyQuantity()).isNotNull();
-        assertThat(first.getTotalExpected()).isNotNull();
+        // Sorted by first occurrence: biweekly first (Mar 14), then rent (Mar 15)
+        RecurringItemViewDto groceries = result.getItems().get(0);
+        assertThat(groceries.getDescription()).isEqualTo("Groceries");
+        assertThat(groceries.getFrequencyGranularity()).isEqualTo(FrequencyGranularity.WEEK);
+        assertThat(groceries.getFrequencyQuantity()).isEqualTo(2);
+        assertThat(groceries.getOccurrences()).hasSize(2);
+        assertThat(groceries.getOccurrences().get(0).getDate()).isEqualTo(LocalDate.of(2026, 3, 14));
+        assertThat(groceries.getOccurrences().get(0).getExpectedAmount()).isEqualByComparingTo("200.00");
+        assertThat(groceries.getTotalExpected()).isEqualByComparingTo("400.00");
+
+        RecurringItemViewDto rent = result.getItems().get(1);
+        assertThat(rent.getDescription()).isEqualTo("Rent");
+        assertThat(rent.getFrequencyGranularity()).isEqualTo(FrequencyGranularity.MONTH);
+        assertThat(rent.getFrequencyQuantity()).isEqualTo(1);
+        assertThat(rent.getOccurrences()).hasSize(1);
+        assertThat(rent.getOccurrences().get(0).getDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(rent.getOccurrences().get(0).getExpectedAmount()).isEqualByComparingTo("1500.00");
+        assertThat(rent.getTotalExpected()).isEqualByComparingTo("1500.00");
     }
 
     @Test
@@ -382,6 +393,7 @@ class RecurringItemViewServiceTest {
                 .workspaceId(WS)
                 .recurringItemId(rent.getId())
                 .date(LocalDate.of(2026, 3, 10).atStartOfDay())
+                .occurrenceDate(LocalDate.of(2026, 3, 10))
                 .amount(new BigDecimal("-1550.00"))
                 .build();
 
@@ -419,6 +431,7 @@ class RecurringItemViewServiceTest {
                 .workspaceId(WS)
                 .recurringItemId(item.getId())
                 .date(LocalDate.of(2026, 3, 5).atStartOfDay())
+                .occurrenceDate(LocalDate.of(2026, 3, 5))
                 .amount(new BigDecimal("-145.00"))
                 .build();
 

@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class TransactionDto extends BaseDto {
     private LocalDateTime pendingAt;
     private LocalDateTime postedAt;
     private UUID recurringItemId;
+    private LocalDate occurrenceDate;
     private UUID groupId;
     private UUID splitId;
     private Set<UUID> tagIds;

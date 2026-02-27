@@ -487,7 +487,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
 
@@ -500,6 +500,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         assertThat(body.get("amount")).isEqualTo(-15.99);
         assertThat(body.get("currencyCode")).isEqualTo("EUR");
         assertThat((List<String>) body.get("tagIds")).hasSize(1).contains(tagId);
+        assertThat(body.get("occurrenceDate")).isEqualTo("2025-07-15");
     }
 
     @Test
@@ -508,7 +509,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","accountId":"%s","merchantName":"OverrideStore","categoryId":null,"tagIds":[],"currencyCode":"USD","date":"2025-07-01T00:00:00","amount":-99.99}
+                        {"recurringItemId":"%s","accountId":"%s","merchantName":"OverrideStore","categoryId":null,"tagIds":[],"currencyCode":"USD","date":"2025-07-01T00:00:00","amount":-99.99,"occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId, accountId), authHeaders(token)),
                 Map.class);
 
@@ -552,13 +553,14 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s"}
+                        {"recurringItemId":"%s","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var body = response.getBody();
         assertThat(body.get("recurringItemId")).isEqualTo(recurringItemId);
+        assertThat(body.get("occurrenceDate")).isEqualTo("2025-07-15");
         assertThat(body.get("accountId")).isEqualTo(accountId);
         assertThat(body.get("merchantId")).isEqualTo(recurringMerchantId);
         assertThat(body.get("categoryId")).isEqualTo(categoryId);
@@ -573,7 +575,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var createResp = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
         String txnId = (String) createResp.getBody().get("id");
@@ -589,6 +591,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().get("recurringItemId")).isNull();
+        assertThat(response.getBody().get("occurrenceDate")).isNull();
     }
 
     // --- Field locking ---
@@ -620,7 +623,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var createResp = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
         String txnId = (String) createResp.getBody().get("id");
@@ -643,7 +646,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var createResp = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00"}
+                        {"recurringItemId":"%s","date":"2025-07-01T00:00:00","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
         String txnId = (String) createResp.getBody().get("id");
@@ -924,7 +927,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s"}
+                        {"recurringItemId":"%s","occurrenceDate":"2025-07-15"}
                         """.formatted(recurringItemId), authHeaders(token)),
                 Map.class);
 

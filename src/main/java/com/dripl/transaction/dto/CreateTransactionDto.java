@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
@@ -40,6 +41,8 @@ public class CreateTransactionDto {
     private String notes;
 
     private UUID recurringItemId;
+
+    private LocalDate occurrenceDate;
 
     private Set<UUID> tagIds;
 }

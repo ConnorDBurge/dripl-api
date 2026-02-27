@@ -526,3 +526,46 @@ Ideas captured for future consideration:
 
 - **Rules Engine** - Rule-based automation
 - **Zapier Integration** - Add zaps for Zapier automation (not Dripl-specific)
+
+### Checkpoint 22: Override Response DTOs and Test Assertion Improvements
+
+**Changes:**
+- [x] Override endpoints now return `RecurringItemOverrideDto` response bodies (POST→201+body, PUT→200+body, DELETE→204)
+- [x] Strengthened 17 RecurringItemControllerTest assertions to verify response body fields (not just status codes)
+- [x] Strengthened RecurringItemViewServiceTest `happyPath` to assert specific field values instead of `isNotNull()`
+
+**Test totals: 647 unit + 274 integration = 921 tests, all passing**
+
+### Checkpoint 23: Add `occurrenceDate` to Transaction, Remove Fuzzy Matching
+
+**Problem:** The recurring item month view used a greedy nearest-date algorithm (`matchTransactionsToOccurrences()`) to pair transactions to occurrences. This was fragile — especially for frequent items (biweekly) where a transaction dated a few days off could match the wrong occurrence.
+
+**Solution:** Added an explicit `occurrenceDate` (LocalDate) field to the Transaction entity. When linking a transaction to a recurring item, the caller must provide the `occurrenceDate` — identifying which specific occurrence is being paid. The month view now does a trivial exact lookup instead of fuzzy matching.
+
+**Changes:**
+- [x] Flyway migration `V19__add_occurrence_date_to_transactions.sql` — nullable `occurrence_date DATE` column + index
+- [x] Transaction entity — added `occurrenceDate` (LocalDate) field, included in `snapshot()`
+- [x] CreateTransactionDto — added `occurrenceDate`
+- [x] UpdateTransactionDto — added `occurrenceDate` with specified-flag pattern (`assignOccurrenceDate()` / `isOccurrenceDateSpecified()`)
+- [x] TransactionDto — added `occurrenceDate` to response
+- [x] TransactionMapper — added `occurrenceDate` to ignore list in `updateEntity()`
+- [x] TransactionService create — requires `occurrenceDate` when `recurringItemId` provided, rejects without RI
+- [x] TransactionService update — requires on link, auto-clears on unlink, rejects standalone modification, added to locked fields
+- [x] TransactionRepository — `findLinkedToRecurringItemsInDateRange` now filters by `occurrenceDate` (LocalDate) instead of transaction `date` (LocalDateTime)
+- [x] RecurringItemViewService — replaced `matchTransactionsToOccurrences()` with simple `Map<String, Transaction>` keyed by `recurringItemId:occurrenceDate`, deleted entire fuzzy matching method (~40 lines)
+- [x] RecurringItemService — `deleteRecurringItem()` now clears `occurrenceDate` on linked transactions before deletion (DB FK only handles `recurringItemId` via `ON DELETE SET NULL`)
+- [x] SeedDataLoader — set `occurrenceDate` when seeding RI-linked transactions (derived from transaction date)
+- [x] TransactionServiceTest — added 4 new tests (occurrenceDate validation + locked field), updated 7 existing
+- [x] RecurringItemServiceTest — updated delete test to verify `occurrenceDate` clearing
+- [x] RecurringItemViewServiceTest — added `occurrenceDate` to transaction builders
+- [x] Integration tests — updated TransactionCrudIT (7 tests), TransactionSplitCrudIT (1), RecurringItemViewIT (2) with `occurrenceDate`
+- [x] ARCHITECTURE.md — updated entity table, specified-flag list, matching docs, inheritance section, field locking, test counts
+
+**Key design decisions:**
+- `occurrenceDate` is nullable — only set when linked to a recurring item
+- Required when setting `recurringItemId`, auto-cleared when unlinking
+- Locked while linked — cannot change independently; must unlink and re-link
+- No FK constraint — just a LocalDate; orphaned values are harmless
+- Repository query filters by `occurrenceDate` (not `date`), so a transaction dated Feb 28 paying a March 1 occurrence correctly appears in the March view
+
+**Test totals: 647 unit + 274 integration = 921 tests, all passing**

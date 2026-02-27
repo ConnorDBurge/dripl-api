@@ -205,7 +205,7 @@ Roles:
 | Merchant              | `merchants`                 | workspaceId, name, status |
 | Category              | `categories`                | workspaceId, name, parentId, income, excludeFromBudget, excludeFromTotals, displayOrder |
 | Tag                   | `tags`                      | workspaceId, name, description, status |
-| Transaction           | `transactions`              | workspaceId, accountId, merchantId, categoryId, amount, date, status, source, recurringItemId, groupId, splitId |
+| Transaction           | `transactions`              | workspaceId, accountId, merchantId, categoryId, amount, date, status, source, recurringItemId, occurrenceDate, groupId, splitId |
 | TransactionEvent      | `transaction_events`        | transactionId, workspaceId, eventType, changes (JSONB), performedBy, performedAt |
 | RecurringItem         | `recurring_items`           | workspaceId, merchantId, accountId, categoryId, amount, frequencyGranularity, frequencyQuantity, anchorDates, status |
 | TransactionGroup      | `transaction_groups`        | workspaceId, name, categoryId, notes, tagIds |
@@ -344,7 +344,7 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 **Transaction Features:**
 - Merchant auto-resolution: pass `merchantName` string → service does case-insensitive lookup, auto-creates if not found (shared `MerchantService.resolveMerchant()`)
 - Status lifecycle: PENDING → POSTED → ARCHIVED, with `pendingAt`/`postedAt` timestamps set on transition
-- Specified-flag pattern for nullable PATCH fields (`categoryId`, `notes`, `tagIds`, `recurringItemId`, `groupId`, `splitId`) — `@JsonSetter` methods flip `*Specified` flags to distinguish "not sent" from "sent as null"
+- Specified-flag pattern for nullable PATCH fields (`categoryId`, `notes`, `tagIds`, `recurringItemId`, `occurrenceDate`, `groupId`, `splitId`) — `@JsonSetter` methods flip `*Specified` flags to distinguish "not sent" from "sent as null"
 - Tags via `@ElementCollection` (Set<UUID>) with `transaction_tags` join table
 - `FlexibleLocalDateTimeDeserializer` accepts both `"2025-07-01"` and `"2025-07-01T00:00:00"`
 - Cross-entity validation delegates to AccountService/CategoryService/TagService (returns 404, not 400)
@@ -375,7 +375,7 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 - `startDate`/`endDate` define the active window; `description` is optional
 - Status: ACTIVE, PAUSED, CANCELLED
 - Carries defaults: merchantId, accountId, categoryId, amount, currencyCode, notes, tagIds
-- Transactions link to recurring items via nullable `recurringItemId` FK
+- Transactions link to recurring items via nullable `recurringItemId` FK and `occurrenceDate` (LocalDate) — identifies which specific occurrence the transaction pays for
 - Smart matching (which periods are covered) is UI-side logic, not backend
 
 **Recurring Item Monthly View:**
@@ -386,12 +386,12 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 - Uses shared `RecurringOccurrenceCalculator` utility (also used by `BudgetViewService`)
 
 **Transaction-to-Occurrence Matching:**
-- Transactions linked to recurring items are matched to occurrences by **nearest date**, not exact date match
-- Each transaction is assigned to the closest unmatched occurrence for that recurring item (greedy 1:1 by ascending distance)
-- Implemented in `RecurringItemViewService.matchTransactionsToOccurrences()` (public static, reusable)
-- `transaction` object in `RecurringOccurrenceDto` will show even if the transaction date differs from the occurrence date
-- `POST /api/v1/recurring-items/{id}/overrides` — create an override; body: `{ "occurrenceDate": "2026-03-05", "amount": -100.00, "notes": "..." }` → returns 201
-- `PUT /api/v1/recurring-items/{id}/overrides/{overrideId}` — update an override; body: `{ "amount": -100.00, "notes": "..." }` (`occurrenceDate` not needed — identified by UUID) → returns 200
+- Transactions are matched to occurrences by exact `occurrenceDate` lookup — no fuzzy/nearest-date matching
+- A `Map<String, Transaction>` keyed by `recurringItemId:occurrenceDate` provides O(n) lookup
+- The repository query filters by `occurrenceDate` (not transaction `date`), so a transaction dated Feb 28 paying a March 1 occurrence correctly appears in the March view
+- `occurrenceDate` is required when linking a transaction to a recurring item, and auto-cleared when unlinking
+- `POST /api/v1/recurring-items/{id}/overrides` — create an override; body: `{ "occurrenceDate": "2026-03-05", "amount": -100.00, "notes": "..." }` → returns 201 with `RecurringItemOverrideDto`
+- `PUT /api/v1/recurring-items/{id}/overrides/{overrideId}` — update an override; body: `{ "amount": -100.00, "notes": "..." }` (`occurrenceDate` not needed — identified by UUID) → returns 200 with `RecurringItemOverrideDto`
 - `DELETE /api/v1/recurring-items/{id}/overrides/{overrideId}` — delete an override → returns 204
 - Create validates that `occurrenceDate` is an actual computed occurrence of the recurring item, and checks for duplicate overrides on the same date
 - Stored in `recurring_item_overrides` table with UNIQUE(recurring_item_id, occurrence_date) and CASCADE DELETE
@@ -403,11 +403,13 @@ This keeps the delete endpoint fast while ensuring no orphaned workspaces accumu
 
 **Transaction ↔ Recurring Item Inheritance:**
 - When `recurringItemId` is provided on create or update, **locked fields always come from the recurring item** — DTO values for locked fields are ignored
-- Locked fields: `accountId`, `merchantId`, `categoryId`, `tagIds`, `currencyCode`, `notes`
+- `occurrenceDate` (LocalDate) is required when linking and identifies which specific occurrence the transaction covers
+- Locked fields: `accountId`, `merchantId`, `categoryId`, `tagIds`, `currencyCode`, `notes`, `occurrenceDate`
 - Non-locked fields: `amount` (DTO wins if provided, RI is fallback default via `resolveRequired()`)
-- On create: if `ri != null`, locked fields are set from RI; validation order ensures `accountId` is checked before merchant resolution
-- On update: setting `recurringItemId` overwrites existing locked field values with RI values; clearing it (`null`) removes the link; omitting it preserves the current value
+- On create: if `ri != null`, locked fields are set from RI; `occurrenceDate` must be provided; validation order ensures `accountId` is checked before merchant resolution
+- On update: setting `recurringItemId` overwrites existing locked field values with RI values and requires `occurrenceDate`; clearing it (`null`) removes the link and auto-clears `occurrenceDate`; omitting it preserves the current value
 - Required fields (`accountId`, `merchantName`, `amount`) throw `BadRequestException` if neither DTO nor recurring item provides them
+- Deleting a recurring item clears both `recurringItemId` (via DB FK `ON DELETE SET NULL`) and `occurrenceDate` (service-level cleanup before deletion)
 
 ### Transaction Groups
 | Method | Path                                   | Description                                        | Auth   |
@@ -499,11 +501,11 @@ When a transaction is linked to a recurring item, in a group, or in a split, cer
 
 ## Testing
 
-### Unit Tests (639)
-- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (44), TransactionService (74), RecurringItemService (47), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6), RecurringItemViewService (20)
-- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (13), TransactionGroupController (5), TransactionSplitController (5)
-- **Utilities**: JwtUtil (7), GlobalExceptionHandler (12), WorkspaceCleanupListener (3), RecurringOccurrenceCalculator (11)
-- **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5), BudgetPeriodCalculatorTest (20), BudgetCrudServiceTest (18), BudgetServiceTest (9), BudgetViewServiceTest (17), BudgetCrudControllerTest (5), BudgetControllerTest (6), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
+### Unit Tests (647)
+- **Services**: UserService (15), WorkspaceService (18), MembershipService (14), TokenService (4), AccountService (18), MerchantService (13), TagService (15), CategoryService (44), TransactionService (89), RecurringItemService (51), TransactionGroupService (19), TransactionSplitService (19), TransactionEventService (6), RecurringItemViewService (18)
+- **Controllers**: UserController (12), WorkspaceController (9), CurrentWorkspaceController (11), AccountController (6), MerchantController (6), TagController (6), CategoryController (8), TransactionController (8), RecurringItemController (17), TransactionGroupController (5), TransactionSplitController (5)
+- **Utilities**: JwtUtil (7), GlobalExceptionHandler (14), WorkspaceCleanupListener (3), RecurringOccurrenceCalculator (11), DomainEventPublisher (14)
+- **Domain**: AccountTypeSubTypeTest (58), CategoryTreeDtoTest (5), BudgetPeriodCalculatorTest (26), BudgetCrudServiceTest (19), BudgetServiceTest (9), BudgetViewServiceTest (21), BudgetCrudControllerTest (6), BudgetControllerTest (5), WorkspaceSettingsServiceTest (5), WorkspaceSettingsControllerTest (2)
 - **Context**: DriplApplicationTests (1)
 
 ### Integration Tests (274)
@@ -520,7 +522,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 - **MerchantCrudIT** (11): Create merchant, list merchants, get by ID, update name, update status, archive merchant, delete merchant, workspace isolation, duplicate name prevention, create without name, get nonexistent
 - **TagCrudIT** (13): Create with name only, create with description, list tags, get by ID, update name, update description, update status, delete tag, workspace isolation, duplicate name, case-insensitive duplicate, update to duplicate name, get nonexistent
 - **CategoryCrudIT** (27): Create root category, create with all fields, create child, child depth limit, parent not found, list categories, get by ID, get with children, get tree, update name, set parent, remove parent, parentId omitted preserves parent, self-parent, parent too deep via update, category with children cannot be nested, parent not found via update, clear children, delete category, delete parent cascades SET NULL, workspace isolation, get nonexistent, auto-assign display order, child display order, move category shifts siblings, reparent appends to end, ungroup appends to end
-- **TransactionCrudIT** (51): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects), pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range filters (start, end, both), amount range filters (min, max), search (notes, merchant, category, no match), combined filters + pagination
+- **TransactionCrudIT** (54): Create with existing/new merchant, case-insensitive merchant lookup, list, get, partial update, status transition, merchant change, clear category, set/clear tags, delete, 404, workspace isolation, validation errors, RI inheritance on create, RI locked fields on create, missing required fields, set/clear recurringItemId, RI overwrites existing locked fields, reject currencyCode while RI-linked, field locking (recurring + group), mutual exclusivity, groupId unlink (success, min-2 enforcement, unlink + modify locked fields, assign groupId rejects), pagination (default metadata, custom size, page 2, out-of-range, size clamping), sorting (date ASC, amount DESC, category name, merchant name), date range filters (start, end, both), amount range filters (min, max), search (notes, merchant, category, no match), combined filters + pagination
 - **RecurringItemCrudIT** (16): Full CRUD, workspace isolation, merchant auto-resolution, tag management, validation
 - **RecurringItemViewIT** (18): Default month, specific month param, periodOffset, both-params-400, inactive items excluded, empty month, biweekly multiple occurrences, item fields populated, create override (201), create override invalid date (400), delete override (204), month view shows override expectedAmount/overrideId/notes, cleared override reverts to default, override affects totals, delete recurring item cascades overrides, paid occurrence with transaction details, paid occurrence with override shows override as expectedAmount, unpaid occurrence has null transaction
 - **TransactionGroupCrudIT** (17): Create group, list groups, get group, update metadata, add/remove transactions via transactionIds, remove below minimum, dissolve group, already-grouped, transaction shows groupId, min 2, create override, update override, add inherits overrides, remove clears groupId, add RI-linked rejects, delete clears all groupIds
@@ -564,7 +566,7 @@ All IT tests use Testcontainers (PostgreSQL 17 Alpine) with a singleton containe
 
 14. **MDC-based observability** — User ID and workspace ID are set in MDC by the JWT filter and included in every log line via the log pattern (`[u:userId] [ws:workspaceId]`). Service-level log messages no longer repeat these IDs inline, keeping log statements concise.
 
-15. **Service-layer field locking** — When a transaction is linked to a recurring item, group, or split, locked fields are enforced purely in `TransactionService` — no DB triggers, no extra columns. The presence of `recurringItemId`, `groupId`, or `splitId` on the transaction implies which fields are locked. Locked fields always come from the source entity on link. Unlink requests for RI and group bypass locking checks via helper methods (`isUnlinkingRecurringItem()`, `isUnlinkingGroup()`), allowing unlink + modify in a single PATCH. `splitId` is fully locked — any attempt to set or null it via the transaction API is rejected; splits must be dissolved via the transaction-splits API to preserve the amount sum invariant.
+15. **Service-layer field locking** — When a transaction is linked to a recurring item, group, or split, locked fields are enforced purely in `TransactionService` — no DB triggers, no extra columns. The presence of `recurringItemId`, `groupId`, or `splitId` on the transaction implies which fields are locked. Locked fields always come from the source entity on link. `occurrenceDate` is a locked field when linked to a recurring item — cannot be changed independently; must unlink and re-link. Unlink requests for RI and group bypass locking checks via helper methods (`isUnlinkingRecurringItem()`, `isUnlinkingGroup()`), allowing unlink + modify in a single PATCH. `splitId` is fully locked — any attempt to set or null it via the transaction API is rejected; splits must be dissolved via the transaction-splits API to preserve the amount sum invariant.
 
 16. **Category polarity validation** — `CategoryService.validateCategoryPolarity()` ensures income categories (`income=true`) are only assigned to positive amounts and expense categories (`income=false`) to negative/zero amounts. This is a cross-cutting concern wired into all 4 domain services (TransactionService, TransactionSplitService, TransactionGroupService, RecurringItemService) on both create and update paths. For groups, the category is validated against every member transaction's amount. For splits, each child's category is validated against its own amount, and all children must match the sign of the split's `totalAmount`.
 

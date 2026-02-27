@@ -11,6 +11,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -86,6 +87,9 @@ public class Transaction extends BaseEntity implements WorkspaceScoped {
     @Column(name = "recurring_item_id")
     private UUID recurringItemId;
 
+    @Column(name = "occurrence_date")
+    private LocalDate occurrenceDate;
+
     @Audited(displayName = "tags")
     @Builder.Default
     @ElementCollection
@@ -108,6 +112,7 @@ public class Transaction extends BaseEntity implements WorkspaceScoped {
                 .notes(notes)
                 .status(status)
                 .recurringItemId(recurringItemId)
+                .occurrenceDate(occurrenceDate)
                 .tagIds(tagIds != null ? new HashSet<>(tagIds) : new HashSet<>())
                 .build();
     }

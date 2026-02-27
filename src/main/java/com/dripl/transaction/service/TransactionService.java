@@ -76,6 +76,9 @@ public class TransactionService {
         String notes;
 
         if (ri != null) {
+            if (dto.getOccurrenceDate() == null) {
+                throw new BadRequestException("Occurrence date must be provided when linking to a recurring item");
+            }
             // Locked fields always come from the recurring item
             accountId = ri.getAccountId();
             merchantId = ri.getMerchantId();
@@ -84,6 +87,9 @@ public class TransactionService {
             tagIds = new HashSet<>(ri.getTagIds());
             notes = ri.getNotes();
         } else {
+            if (dto.getOccurrenceDate() != null) {
+                throw new BadRequestException("Occurrence date can only be set when linking to a recurring item");
+            }
             accountId = dto.getAccountId();
             if (accountId == null) throw new BadRequestException("Account ID must be provided");
             accountService.getAccount(accountId, workspaceId);
@@ -122,6 +128,7 @@ public class TransactionService {
                 .source(TransactionSource.MANUAL)
                 .pendingAt(LocalDateTime.now())
                 .recurringItemId(ri != null ? ri.getId() : null)
+                .occurrenceDate(dto.getOccurrenceDate())
                 .tagIds(tagIds)
                 .build();
 
@@ -190,6 +197,9 @@ public class TransactionService {
 
         if (dto.isRecurringItemIdSpecified()) {
             if (dto.getRecurringItemId() != null) {
+                if (dto.getOccurrenceDate() == null) {
+                    throw new BadRequestException("Occurrence date must be provided when linking to a recurring item");
+                }
                 var ri = recurringItemService.getRecurringItem(dto.getRecurringItemId(), workspaceId);
 
                 // If in a split, validate RI's accountId and currencyCode match the split
@@ -205,6 +215,7 @@ public class TransactionService {
                 }
 
                 transaction.setRecurringItemId(ri.getId());
+                transaction.setOccurrenceDate(dto.getOccurrenceDate());
                 // Locked fields always come from the recurring item
                 transaction.setAccountId(ri.getAccountId());
                 transaction.setMerchantId(ri.getMerchantId());
@@ -216,7 +227,10 @@ public class TransactionService {
                 if (dto.getAmount() == null) transaction.setAmount(ri.getAmount());
             } else {
                 transaction.setRecurringItemId(null);
+                transaction.setOccurrenceDate(null);
             }
+        } else if (dto.isOccurrenceDateSpecified()) {
+            throw new BadRequestException("Cannot modify occurrenceDate independently. Unlink and re-link the recurring item.");
         }
 
         if (dto.getAccountId() != null) {
@@ -335,6 +349,7 @@ public class TransactionService {
         if (dto.isTagIdsSpecified()) locked.add("tagIds");
         if (dto.isNotesSpecified()) locked.add("notes");
         if (dto.getCurrencyCode() != null) locked.add("currencyCode");
+        if (dto.isOccurrenceDateSpecified()) locked.add("occurrenceDate");
         if (!locked.isEmpty()) {
             throw new BadRequestException(
                     "Cannot modify " + String.join(", ", locked) + " while linked to a recurring item. Unlink the recurring item first.");

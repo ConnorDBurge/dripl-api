@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
@@ -65,6 +66,10 @@ public class UpdateTransactionDto {
     @Getter
     private boolean recurringItemIdSpecified;
 
+    private LocalDate occurrenceDate;
+    @Getter
+    private boolean occurrenceDateSpecified;
+
     @JsonSetter("merchantId")
     public void assignMerchantId(UUID merchantId) {
         this.merchantId = merchantId;
@@ -93,6 +98,12 @@ public class UpdateTransactionDto {
     public void assignRecurringItemId(UUID recurringItemId) {
         this.recurringItemId = recurringItemId;
         this.recurringItemIdSpecified = true;
+    }
+
+    @JsonSetter("occurrenceDate")
+    public void assignOccurrenceDate(LocalDate occurrenceDate) {
+        this.occurrenceDate = occurrenceDate;
+        this.occurrenceDateSpecified = true;
     }
 
     @JsonSetter("groupId")

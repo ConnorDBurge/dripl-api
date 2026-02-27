@@ -4,10 +4,13 @@ import com.dripl.common.annotation.WorkspaceId;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemDto;
 import com.dripl.recurring.dto.RecurringItemMonthViewDto;
+import com.dripl.recurring.dto.RecurringItemOverrideDto;
 import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
 import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
+import com.dripl.recurring.dto.RecurringItemOverrideDto;
 import com.dripl.recurring.dto.UpdateRecurringItemDto;
 import com.dripl.recurring.entity.RecurringItem;
+import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.mapper.RecurringItemMapper;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.recurring.service.RecurringItemViewService;
@@ -94,26 +97,26 @@ public class RecurringItemController {
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = "/{recurringItemId}/overrides", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> createOverride(
+    public ResponseEntity<RecurringItemOverrideDto> createOverride(
             @WorkspaceId UUID workspaceId,
             @PathVariable UUID recurringItemId,
             @Valid @RequestBody SetOccurrenceOverrideDto dto) {
 
-        recurringItemService.createOverride(recurringItemId, workspaceId, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        RecurringItemOverride override = recurringItemService.createOverride(recurringItemId, workspaceId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toOverrideDto(override));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PutMapping(value = "/{recurringItemId}/overrides/{overrideId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> updateOverride(
+    public ResponseEntity<RecurringItemOverrideDto> updateOverride(
             @WorkspaceId UUID workspaceId,
             @PathVariable UUID recurringItemId,
             @PathVariable UUID overrideId,
             @Valid @RequestBody UpdateOccurrenceOverrideDto dto) {
 
-        recurringItemService.updateOverride(overrideId, workspaceId, dto);
-        return ResponseEntity.ok().build();
+        RecurringItemOverride override = recurringItemService.updateOverride(overrideId, workspaceId, dto);
+        return ResponseEntity.ok(toOverrideDto(override));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -125,5 +128,19 @@ public class RecurringItemController {
 
         recurringItemService.deleteOverride(overrideId, workspaceId);
         return ResponseEntity.noContent().build();
+    }
+
+    private RecurringItemOverrideDto toOverrideDto(RecurringItemOverride override) {
+        return RecurringItemOverrideDto.builder()
+                .id(override.getId())
+                .recurringItemId(override.getRecurringItemId())
+                .occurrenceDate(override.getOccurrenceDate())
+                .amount(override.getAmount())
+                .notes(override.getNotes())
+                .createdAt(override.getCreatedAt())
+                .createdBy(override.getCreatedBy())
+                .updatedAt(override.getUpdatedAt())
+                .updatedBy(override.getUpdatedBy())
+                .build();
     }
 }

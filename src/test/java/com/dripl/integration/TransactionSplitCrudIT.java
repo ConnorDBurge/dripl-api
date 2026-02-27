@@ -482,7 +482,7 @@ class TransactionSplitCrudIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/api/v1/transactions/" + childIds.get(0), HttpMethod.PATCH,
                 new HttpEntity<>("""
-                        {"recurringItemId":"%s"}
+                        {"recurringItemId":"%s","occurrenceDate":"2025-07-01"}
                         """.formatted(riId), authHeaders(token)),
                 Map.class);
 

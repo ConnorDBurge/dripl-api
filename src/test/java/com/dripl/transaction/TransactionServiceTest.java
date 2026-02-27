@@ -36,6 +36,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -763,6 +764,7 @@ class TransactionServiceTest {
     void createTransaction_withRecurringItem_inheritsDefaults() {
         CreateTransactionDto dto = CreateTransactionDto.builder()
                 .recurringItemId(recurringItemId)
+                .occurrenceDate(LocalDate.of(2025, 7, 15))
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
                 .build();
 
@@ -781,6 +783,7 @@ class TransactionServiceTest {
         assertThat(result.getCurrencyCode()).isEqualTo(CurrencyCode.EUR);
         assertThat(result.getTagIds()).containsExactly(tagId);
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
+        assertThat(result.getOccurrenceDate()).isEqualTo(LocalDate.of(2025, 7, 15));
     }
 
     @Test
@@ -789,6 +792,7 @@ class TransactionServiceTest {
 
         CreateTransactionDto dto = CreateTransactionDto.builder()
                 .recurringItemId(recurringItemId)
+                .occurrenceDate(LocalDate.of(2025, 7, 15))
                 .accountId(overrideAccountId)
                 .merchantName("Override Store")
                 .categoryId(UUID.randomUUID())
@@ -860,6 +864,35 @@ class TransactionServiceTest {
                 .hasMessageContaining("Amount must be provided");
     }
 
+    @Test
+    void createTransaction_withOccurrenceDateButNoRecurringItem_throws() {
+        CreateTransactionDto dto = CreateTransactionDto.builder()
+                .accountId(accountId)
+                .merchantName("Target")
+                .amount(new BigDecimal("-20.00"))
+                .date(LocalDateTime.of(2025, 7, 1, 0, 0))
+                .occurrenceDate(LocalDate.of(2025, 7, 15))
+                .build();
+
+        assertThatThrownBy(() -> transactionService.createTransaction(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Occurrence date can only be set when linking");
+    }
+
+    @Test
+    void createTransaction_withRecurringItemButNoOccurrenceDate_throws() {
+        CreateTransactionDto dto = CreateTransactionDto.builder()
+                .recurringItemId(recurringItemId)
+                .date(LocalDateTime.of(2025, 7, 1, 0, 0))
+                .build();
+
+        when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
+
+        assertThatThrownBy(() -> transactionService.createTransaction(workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Occurrence date must be provided");
+    }
+
     // --- updateTransaction with recurringItemId inheritance ---
 
     @Test
@@ -874,6 +907,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = new UpdateTransactionDto();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
@@ -883,6 +917,7 @@ class TransactionServiceTest {
         assertThat(result.getCurrencyCode()).isEqualTo(CurrencyCode.EUR);
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-15.99"));
         assertThat(result.getTagIds()).containsExactly(tagId);
+        assertThat(result.getOccurrenceDate()).isEqualTo(LocalDate.of(2025, 7, 15));
     }
 
     @Test
@@ -900,6 +935,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = new UpdateTransactionDto();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         // Locked fields come from RI, overwriting existing values
@@ -924,6 +960,20 @@ class TransactionServiceTest {
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getRecurringItemId()).isNull();
+        assertThat(result.getOccurrenceDate()).isNull();
+    }
+
+    @Test
+    void updateTransaction_occurrenceDateAlone_throws() {
+        Transaction txn = buildTransaction();
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = new UpdateTransactionDto();
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Cannot modify occurrenceDate independently");
     }
 
     @Test
@@ -1014,6 +1064,20 @@ class TransactionServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("merchantName")
                 .hasMessageContaining("recurring item");
+    }
+
+    @Test
+    void updateTransaction_recurringLinked_rejectsOccurrenceDate() {
+        Transaction txn = buildTransaction();
+        txn.setRecurringItemId(recurringItemId);
+        when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
+
+        UpdateTransactionDto dto = new UpdateTransactionDto();
+        dto.assignOccurrenceDate(LocalDate.of(2025, 8, 15));
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("occurrenceDate");
     }
 
     @Test
@@ -1154,6 +1218,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1239,6 +1304,7 @@ class TransactionServiceTest {
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         dto.assignGroupId(null);
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getGroupId()).isNull();
@@ -1446,6 +1512,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
@@ -1471,6 +1538,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1501,6 +1569,7 @@ class TransactionServiceTest {
 
         UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
         dto.assignRecurringItemId(recurringItemId);
+        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)

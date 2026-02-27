@@ -170,6 +170,14 @@ public class RecurringItemService {
     @Transactional
     public void deleteRecurringItem(UUID recurringItemId, UUID workspaceId) {
         RecurringItem recurringItem = getRecurringItem(recurringItemId, workspaceId);
+        // Clear occurrenceDate on linked transactions before delete
+        // (DB ON DELETE SET NULL handles recurringItemId, but not occurrenceDate)
+        List<Transaction> linkedTxns = transactionRepository
+                .findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId);
+        for (Transaction txn : linkedTxns) {
+            txn.setOccurrenceDate(null);
+            transactionRepository.save(txn);
+        }
         log.info("Deleting recurring item {}", recurringItemId);
         recurringItemRepository.delete(recurringItem);
     }
