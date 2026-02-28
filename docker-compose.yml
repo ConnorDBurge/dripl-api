@@ -1,0 +1,48 @@
+services:
+  dripl-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dripl-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=dripl-db
+      - DB_PORT=5432
+      - DB_NAME=dripl
+      - DB_USERNAME=dripl
+      - DB_PASSWORD=dripl
+    depends_on:
+      dripl-db:
+        condition: service_healthy
+    networks:
+      - dripl-network
+
+  dripl-db:
+    image: postgres:17-alpine
+    container_name: dripl-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=dripl
+      - POSTGRES_USER=dripl
+      - POSTGRES_PASSWORD=dripl
+    volumes:
+      - dripl-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dripl"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dripl-network
+
+networks:
+  dripl-network:
+    driver: bridge
+
+volumes:
+  dripl-db-data:

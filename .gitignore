@@ -14,3 +14,6 @@ target/
 
 ### Mac ###
 .DS_Store
+
+# Secrets
+.env
