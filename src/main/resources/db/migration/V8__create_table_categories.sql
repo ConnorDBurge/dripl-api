@@ -11,7 +11,8 @@ CREATE TABLE categories (
     status VARCHAR(20) NOT NULL,
     is_income BOOLEAN NOT NULL DEFAULT FALSE,
     exclude_from_budget BOOLEAN NOT NULL DEFAULT FALSE,
-    exclude_from_totals BOOLEAN NOT NULL DEFAULT FALSE
+    exclude_from_totals BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_categories_workspace_id ON categories(workspace_id);

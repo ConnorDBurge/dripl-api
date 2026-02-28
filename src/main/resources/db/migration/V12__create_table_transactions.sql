@@ -12,6 +12,7 @@ CREATE TABLE transactions (
     group_id UUID REFERENCES transaction_groups(id) ON DELETE SET NULL,
     split_id UUID REFERENCES transaction_splits(id) ON DELETE SET NULL,
     date TIMESTAMP NOT NULL,
+    occurrence_date DATE,
     amount NUMERIC(19, 4) NOT NULL,
     currency_code VARCHAR(10) NOT NULL DEFAULT 'USD',
     notes VARCHAR(500),
@@ -36,3 +37,4 @@ CREATE INDEX idx_transactions_status ON transactions(workspace_id, status);
 CREATE INDEX idx_transactions_recurring_item_id ON transactions(recurring_item_id);
 CREATE INDEX idx_transactions_group_id ON transactions(group_id);
 CREATE INDEX idx_transactions_split_id ON transactions(split_id);
+CREATE INDEX idx_transactions_occurrence_date ON transactions(occurrence_date);
