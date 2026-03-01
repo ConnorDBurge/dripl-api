@@ -18,6 +18,9 @@ import java.util.UUID;
 public class WorkspaceMembershipDto {
     private UUID userId;
     private UUID workspaceId;
+    private String givenName;
+    private String familyName;
+    private String email;
     private Set<Role> roles;
     private MembershipStatus status;
     private LocalDateTime joinedAt;

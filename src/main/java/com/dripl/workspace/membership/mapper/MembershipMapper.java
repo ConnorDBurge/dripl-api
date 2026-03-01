@@ -12,6 +12,9 @@ public interface MembershipMapper {
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "workspaceId", source = "workspace.id")
+    @Mapping(target = "givenName", source = "user.givenName")
+    @Mapping(target = "familyName", source = "user.familyName")
+    @Mapping(target = "email", source = "user.email")
     WorkspaceMembershipDto toDto(WorkspaceMembership membership);
 
     List<WorkspaceMembershipDto> toDtos(List<WorkspaceMembership> memberships);
