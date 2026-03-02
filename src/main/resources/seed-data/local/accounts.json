@@ -118,5 +118,125 @@
     "currency": "USD",
     "institutionName": "Venmo",
     "startingBalance": 0.0
+  },
+  {
+    "name": "Home Mortgage",
+    "type": "LOAN",
+    "subType": "MORTGAGE",
+    "currency": "USD",
+    "institutionName": "Homestead Lending",
+    "startingBalance": -245000.0
+  },
+  {
+    "name": "Auto Loan - SUV",
+    "type": "LOAN",
+    "subType": "AUTO_LOAN",
+    "currency": "USD",
+    "institutionName": "Summit Credit Union",
+    "startingBalance": -18500.0
+  },
+  {
+    "name": "Primary Residence",
+    "type": "REAL_ESTATE",
+    "subType": "PRIMARY_RESIDENCE",
+    "currency": "USD",
+    "institutionName": "Personal Property",
+    "startingBalance": 385000.0
+  },
+  {
+    "name": "Health Savings Account",
+    "type": "INVESTMENT",
+    "subType": "HEALTH_SAVINGS",
+    "currency": "USD",
+    "institutionName": "Keystone Financial",
+    "startingBalance": 4200.0
+  },
+  {
+    "name": "529 College Savings",
+    "type": "INVESTMENT",
+    "subType": "EDUCATION_SAVINGS",
+    "currency": "USD",
+    "institutionName": "Ridgeline Investments",
+    "startingBalance": 8500.0
+  },
+  {
+    "name": "Company RSUs",
+    "type": "EMPLOYEE_COMPENSATION",
+    "subType": "RESTRICTED_STOCK",
+    "currency": "USD",
+    "institutionName": "E*TRADE",
+    "startingBalance": 32000.0
+  },
+  {
+    "name": "ESPP Shares",
+    "type": "EMPLOYEE_COMPENSATION",
+    "subType": "ESPP",
+    "currency": "USD",
+    "institutionName": "E*TRADE",
+    "startingBalance": 6750.0
+  },
+  {
+    "name": "Apple Card",
+    "type": "CREDIT",
+    "subType": "CREDIT_CARD",
+    "currency": "USD",
+    "institutionName": "Goldman Sachs",
+    "startingBalance": -890.0
+  },
+  {
+    "name": "PayPal",
+    "type": "CASH",
+    "subType": "DIGITAL_WALLET",
+    "currency": "USD",
+    "institutionName": "PayPal",
+    "startingBalance": 142.50
+  },
+  {
+    "name": "Watch Collection",
+    "type": "OTHER_ASSET",
+    "subType": "COLLECTIBLE",
+    "currency": "USD",
+    "institutionName": "Personal Property",
+    "startingBalance": 4500.0
+  },
+  {
+    "name": "Ally Savings",
+    "type": "CASH",
+    "subType": "SAVINGS",
+    "currency": "USD",
+    "institutionName": "Ally Bank",
+    "startingBalance": 15200.0
+  },
+  {
+    "name": "Business Checking",
+    "type": "CASH",
+    "subType": "CHECKING",
+    "currency": "USD",
+    "institutionName": "Chase",
+    "startingBalance": 4800.0
+  },
+  {
+    "name": "Cash App",
+    "type": "CASH",
+    "subType": "DIGITAL_WALLET",
+    "currency": "USD",
+    "institutionName": "Cash App",
+    "startingBalance": 75.0
+  },
+  {
+    "name": "Starbucks Gift Card",
+    "type": "CASH",
+    "subType": "GIFT_CARD",
+    "currency": "USD",
+    "institutionName": "Starbucks",
+    "startingBalance": 22.50
+  },
+  {
+    "name": "Petty Cash",
+    "type": "CASH",
+    "subType": "PHYSICAL_CASH",
+    "currency": "USD",
+    "institutionName": "Personal",
+    "startingBalance": 340.0
   }
 ]
