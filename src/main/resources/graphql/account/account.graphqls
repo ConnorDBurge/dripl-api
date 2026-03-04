@@ -1,16 +1,20 @@
 extend type Query {
-    accounts: [Account!]!
-    account(id: ID!): Account
+    accounts: [AccountResponse!]!
+    account(id: ID!): AccountResponse
 }
 
 extend type Mutation {
-    createAccount(input: CreateAccountInput!): Account!
-    updateAccount(id: ID!, input: UpdateAccountInput!): Account!
+    createAccount(input: CreateAccountInput!): AccountResponse!
+    updateAccount(id: ID!, input: UpdateAccountInput!): AccountResponse!
     deleteAccount(id: ID!): Boolean!
 }
 
-type Account {
+type AccountResponse {
     id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
     workspaceId: ID!
     name: String!
     type: AccountType!
@@ -20,12 +24,10 @@ type Account {
     currency: CurrencyCode!
     institutionName: String
     source: AccountSource!
-    status: AccountStatus!
+    status: Status!
     balanceLastUpdated: LocalDateTime
     closedAt: LocalDateTime
     externalId: String
-    createdAt: LocalDateTime!
-    updatedAt: LocalDateTime!
 }
 
 input CreateAccountInput {
@@ -45,7 +47,7 @@ input UpdateAccountInput {
     startingBalance: BigDecimal
     currency: CurrencyCode
     institutionName: String
-    status: AccountStatus
+    status: Status
 }
 
 enum AccountType {
@@ -109,10 +111,4 @@ enum AccountSubType {
 enum AccountSource {
     MANUAL
     AUTOMATIC
-}
-
-enum AccountStatus {
-    ACTIVE
-    ARCHIVED
-    CLOSED
 }

@@ -1,7 +1,7 @@
 package com.dripl.account;
 
-import com.dripl.account.dto.CreateAccountDto;
-import com.dripl.account.dto.UpdateAccountDto;
+import com.dripl.account.dto.CreateAccountInput;
+import com.dripl.account.dto.UpdateAccountInput;
 import com.dripl.account.entity.Account;
 import com.dripl.account.enums.AccountSource;
 import com.dripl.common.enums.Status;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AccountServiceTest {
+class AccountResponseServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
@@ -110,7 +110,7 @@ class AccountServiceTest {
 
     @Test
     void createAccount_success() {
-        CreateAccountDto dto = CreateAccountDto.builder()
+        CreateAccountInput dto = CreateAccountInput.builder()
                 .name("Chase Checking")
                 .type(AccountType.CASH)
                 .subType(AccountSubType.CHECKING)
@@ -131,7 +131,7 @@ class AccountServiceTest {
 
     @Test
     void createAccount_withAllFields() {
-        CreateAccountDto dto = CreateAccountDto.builder()
+        CreateAccountInput dto = CreateAccountInput.builder()
                 .name("Amex Gold")
                 .type(AccountType.CREDIT)
                 .subType(AccountSubType.CREDIT_CARD)
@@ -156,7 +156,7 @@ class AccountServiceTest {
 
     @Test
     void createAccount_duplicateName_throws() {
-        CreateAccountDto dto = CreateAccountDto.builder()
+        CreateAccountInput dto = CreateAccountInput.builder()
                 .name("Checking")
                 .type(AccountType.CASH)
                 .subType(AccountSubType.CHECKING)
@@ -172,13 +172,13 @@ class AccountServiceTest {
 
     @Test
     void createAccount_invalidTypeSubType_throws() {
-        CreateAccountDto dto = CreateAccountDto.builder()
-                .name("Bad Account")
+        CreateAccountInput dto = CreateAccountInput.builder()
+                .name("Bad AccountResponse")
                 .type(AccountType.CASH)
                 .subType(AccountSubType.CREDIT_CARD)
                 .build();
 
-        when(accountRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "Bad Account")).thenReturn(false);
+        when(accountRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "Bad AccountResponse")).thenReturn(false);
 
         assertThatThrownBy(() -> accountService.createAccount(workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -196,7 +196,7 @@ class AccountServiceTest {
         when(accountRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "New Name")).thenReturn(false);
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().name("New Name").build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().name("New Name").build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("New Name");
@@ -208,7 +208,7 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "Existing")).thenReturn(true);
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().name("Existing").build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().name("Existing").build();
 
         assertThatThrownBy(() -> accountService.updateAccount(accountId, workspaceId, dto))
                 .isInstanceOf(ConflictException.class);
@@ -220,7 +220,7 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().name("Checking").build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().name("Checking").build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Checking");
@@ -234,7 +234,7 @@ class AccountServiceTest {
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(accountRepository.sumTransactionAmounts(accountId)).thenReturn(new BigDecimal("-200.00"));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().startingBalance(new BigDecimal("1000.00")).build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().startingBalance(new BigDecimal("1000.00")).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
         assertThat(result.getStartingBalance()).isEqualByComparingTo(new BigDecimal("1000.00"));
@@ -248,7 +248,7 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().status(Status.CLOSED).build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().status(Status.CLOSED).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(Status.CLOSED);
@@ -263,7 +263,7 @@ class AccountServiceTest {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().status(Status.ACTIVE).build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().status(Status.ACTIVE).build();
         Account result = accountService.updateAccount(accountId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(Status.ACTIVE);
@@ -275,7 +275,7 @@ class AccountServiceTest {
         Account account = buildAccount("Checking", AccountType.CASH, AccountSubType.CHECKING);
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.of(account));
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().subType(AccountSubType.CREDIT_CARD).build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().subType(AccountSubType.CREDIT_CARD).build();
 
         assertThatThrownBy(() -> accountService.updateAccount(accountId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -287,7 +287,7 @@ class AccountServiceTest {
     void updateAccount_notFound_throws() {
         when(accountRepository.findByIdAndWorkspaceId(accountId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateAccountDto dto = UpdateAccountDto.builder().name("X").build();
+        UpdateAccountInput dto = UpdateAccountInput.builder().name("X").build();
 
         assertThatThrownBy(() -> accountService.updateAccount(accountId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class);

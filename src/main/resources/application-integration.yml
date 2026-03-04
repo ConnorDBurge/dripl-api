@@ -7,4 +7,4 @@ spring:
     locations: classpath:db/migration
   graphql:
     schema:
-      locations: classpath:graphql/
+      locations: classpath:graphql/**/

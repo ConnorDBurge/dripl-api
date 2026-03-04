@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -64,5 +65,33 @@ public abstract class BaseIntegrationTest {
                 new HttpEntity<>(body, jsonHeaders()),
                 Map.class);
         return response.getBody();
+    }
+
+    /**
+     * Create an account via GraphQL and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createAccount(String token, String name, String type, String subType) {
+        return createAccount(token, name, type, subType, null);
+    }
+
+    /**
+     * Create an account via GraphQL with optional startingBalance and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createAccount(String token, String name, String type, String subType, String startingBalance) {
+        String balanceArg = startingBalance != null ? ", startingBalance: %s".formatted(startingBalance) : "";
+        String query = """
+                mutation {
+                    createAccount(input: { name: "%s", type: %s, subType: %s%s }) { id }
+                }
+                """.formatted(name, type, subType, balanceArg);
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", query), authHeaders(token)),
+                Map.class);
+        var data = (Map<String, Object>) response.getBody().get("data");
+        var account = (Map<String, Object>) data.get("createAccount");
+        return (String) account.get("id");
     }
 }

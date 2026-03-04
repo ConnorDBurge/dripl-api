@@ -34,13 +34,7 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         userId = UUID.fromString((String) bootstrap.get("id"));
 
         // Create an account
-        var accountResp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Checking","type":"CASH","subType":"CHECKING","balance":1000}
-                        """, authHeaders(token)),
-                Map.class);
-        accountId = (String) accountResp.getBody().get("id");
+        accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
 
         // Create a category
         var categoryResp = restTemplate.exchange(

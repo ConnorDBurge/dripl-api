@@ -30,11 +30,7 @@ class RecurringItemViewIT extends BaseIntegrationTest {
         token = (String) bootstrap.get("token");
         workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
 
-        var accountResp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("{\"name\":\"Checking\",\"type\":\"CASH\",\"subType\":\"CHECKING\",\"balance\":5000}", authHeaders(token)),
-                Map.class);
-        accountId = (String) accountResp.getBody().get("id");
+        accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
         var categoryResp = restTemplate.exchange(
                 "/api/v1/categories", HttpMethod.POST,

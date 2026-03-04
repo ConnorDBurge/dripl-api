@@ -34,13 +34,7 @@ class TransactionSplitCrudIT extends BaseIntegrationTest {
         workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
 
         // Create account
-        var accountResp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Checking","type":"CASH","subType":"CHECKING","balance":5000}
-                        """, authHeaders(token)),
-                Map.class);
-        accountId = (String) accountResp.getBody().get("id");
+        accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
         // Create categories
         var catResp = restTemplate.exchange(
@@ -505,13 +499,7 @@ class TransactionSplitCrudIT extends BaseIntegrationTest {
         List<String> childIds = (List<String>) createResp.getBody().get("transactionIds");
 
         // Create a different account
-        var account2Resp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Savings","type":"CASH","subType":"SAVINGS","balance":10000}
-                        """, authHeaders(token)),
-                Map.class);
-        String account2Id = (String) account2Resp.getBody().get("id");
+        String account2Id = createAccount(token, "Savings", "CASH", "SAVINGS", "10000");
 
         // Create RI with different account
         var riResp = restTemplate.exchange(

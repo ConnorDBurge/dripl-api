@@ -1,10 +1,9 @@
 package com.dripl.account;
 
-import com.dripl.account.controller.AccountResolver;
-import com.dripl.account.dto.AccountDto;
-import com.dripl.account.dto.CreateAccountDto;
-import com.dripl.account.dto.UpdateAccountDto;
-import com.dripl.account.entity.Account;
+import com.dripl.account.dto.AccountResponse;
+import com.dripl.account.resolver.AccountResolver;
+import com.dripl.account.dto.CreateAccountInput;
+import com.dripl.account.dto.UpdateAccountInput;
 import com.dripl.account.enums.AccountSource;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
@@ -36,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AccountResolverTest {
+class AccountResponseResolverTest {
 
     @Mock
     private AccountService accountService;
@@ -63,8 +62,8 @@ class AccountResolverTest {
         SecurityContextHolder.clearContext();
     }
 
-    private Account buildAccount(String name) {
-        return Account.builder()
+    private com.dripl.account.entity.Account buildAccount(String name) {
+        return com.dripl.account.entity.Account.builder()
                 .id(accountId)
                 .workspaceId(workspaceId)
                 .name(name)
@@ -82,7 +81,7 @@ class AccountResolverTest {
         when(accountService.listAllByWorkspaceId(workspaceId))
                 .thenReturn(List.of(buildAccount("Checking")));
 
-        List<AccountDto> result = accountResolver.accounts();
+        List<AccountResponse> result = accountResolver.accounts();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Checking");
@@ -92,7 +91,7 @@ class AccountResolverTest {
     void accounts_emptyList() {
         when(accountService.listAllByWorkspaceId(workspaceId)).thenReturn(List.of());
 
-        List<AccountDto> result = accountResolver.accounts();
+        List<AccountResponse> result = accountResolver.accounts();
 
         assertThat(result).isEmpty();
     }
@@ -102,34 +101,34 @@ class AccountResolverTest {
         when(accountService.getAccount(accountId, workspaceId))
                 .thenReturn(buildAccount("Checking"));
 
-        AccountDto result = accountResolver.account(accountId);
+        AccountResponse result = accountResolver.account(accountId);
 
         assertThat(result.getName()).isEqualTo("Checking");
     }
 
     @Test
     void createAccount_delegatesToService() {
-        CreateAccountDto dto = CreateAccountDto.builder()
+        CreateAccountInput dto = CreateAccountInput.builder()
                 .name("Savings")
                 .type(AccountType.CASH)
                 .subType(AccountSubType.SAVINGS)
                 .build();
-        when(accountService.createAccount(eq(workspaceId), any(CreateAccountDto.class)))
+        when(accountService.createAccount(eq(workspaceId), any(CreateAccountInput.class)))
                 .thenReturn(buildAccount("Savings"));
 
-        AccountDto result = accountResolver.createAccount(dto);
+        AccountResponse result = accountResolver.createAccount(dto);
 
         assertThat(result.getName()).isEqualTo("Savings");
     }
 
     @Test
     void updateAccount_delegatesToService() {
-        UpdateAccountDto dto = UpdateAccountDto.builder().name("Updated").build();
-        Account updated = buildAccount("Updated");
-        when(accountService.updateAccount(eq(accountId), eq(workspaceId), any(UpdateAccountDto.class)))
+        UpdateAccountInput dto = UpdateAccountInput.builder().name("Updated").build();
+        com.dripl.account.entity.Account updated = buildAccount("Updated");
+        when(accountService.updateAccount(eq(accountId), eq(workspaceId), any(UpdateAccountInput.class)))
                 .thenReturn(updated);
 
-        AccountDto result = accountResolver.updateAccount(accountId, dto);
+        AccountResponse result = accountResolver.updateAccount(accountId, dto);
 
         assertThat(result.getName()).isEqualTo("Updated");
     }

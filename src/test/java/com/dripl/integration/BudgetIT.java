@@ -29,13 +29,7 @@ class BudgetIT extends BaseIntegrationTest {
         token = (String) bootstrap.get("token");
 
         // Create an account
-        var accountResp = restTemplate.exchange(
-                "/api/v1/accounts", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Checking","type":"CASH","subType":"CHECKING","startingBalance":5000}
-                        """, authHeaders(token)),
-                Map.class);
-        accountId = (String) accountResp.getBody().get("id");
+        accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
         // Create expense category (parent)
         var catResp = restTemplate.exchange(
@@ -476,13 +470,7 @@ class BudgetIT extends BaseIntegrationTest {
         @SuppressWarnings("unchecked")
         void getPeriodView_accountNotInBudget_activityExcluded() {
             // Create a second account NOT included in the budget
-            var otherAcctResp = restTemplate.exchange(
-                    "/api/v1/accounts", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"HSA","type":"CASH","subType":"SAVINGS","startingBalance":0}
-                            """, authHeaders(token)),
-                    Map.class);
-            String otherAccountId = (String) otherAcctResp.getBody().get("id");
+            String otherAccountId = createAccount(token, "HSA", "CASH", "SAVINGS", "0");
 
             // Budget only includes the original "Checking" account
             String budgetId = createMonthlyBudget();
@@ -827,7 +815,7 @@ class BudgetIT extends BaseIntegrationTest {
         @Test
         @SuppressWarnings("unchecked")
         void netTotalAvailable_matchesAccountBalance() {
-            // Account starts at 5000, add income and expense
+            // AccountResponse starts at 5000, add income and expense
             String txnDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
             createTransaction("3000.00", incomeCategoryId, txnDate);
             createTransaction("-500.00", childCategoryId, txnDate);
@@ -837,7 +825,7 @@ class BudgetIT extends BaseIntegrationTest {
                     new HttpEntity<>(authHeaders(token)), Map.class);
             assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-            // Account balance = 5000 + 3000 - 500 = 7500
+            // AccountResponse balance = 5000 + 3000 - 500 = 7500
             double netTotal = ((Number) resp.getBody().get("netTotalAvailable")).doubleValue();
             assertThat(netTotal).isEqualTo(7500.0);
         }
@@ -876,7 +864,7 @@ class BudgetIT extends BaseIntegrationTest {
             var outflow = (Map<String, Object>) body.get("outflow");
             double outflowAvailable = ((Number) outflow.get("available")).doubleValue();
 
-            // Account balance = 5000 + 3000 - 400 = 7600
+            // AccountResponse balance = 5000 + 3000 - 400 = 7600
             assertThat(netTotal).isEqualTo(7600.0);
 
             // budgetable = inflowExpected = 5000
@@ -936,7 +924,7 @@ class BudgetIT extends BaseIntegrationTest {
             double outflowAvailable = ((Number) outflow.get("available")).doubleValue();
             double outflowExpected = ((Number) outflow.get("expected")).doubleValue();
 
-            // Account balance = 5000 + 3000 - 400 + 3500 - 550 = 10550
+            // AccountResponse balance = 5000 + 3000 - 400 + 3500 - 550 = 10550
             assertThat(netTotal).isEqualTo(10550.0);
 
             // Previous period: expected=600, activity=-400, available=200 → rolls over
@@ -1000,7 +988,7 @@ class BudgetIT extends BaseIntegrationTest {
                     new HttpEntity<>(authHeaders(token)), Map.class);
             var p1 = p1Resp.getBody();
 
-            // Account balance = 5000(starting) + 5000 - 400 - 1400 = 8200
+            // AccountResponse balance = 5000(starting) + 5000 - 400 - 1400 = 8200
             assertThat(((Number) p1.get("netTotalAvailable")).doubleValue()).isEqualTo(8200.0);
             // budgetable = inflowExpected(5000) + availablePool(0) = 5000
             assertThat(((Number) p1.get("budgetable")).doubleValue()).isEqualTo(5000.0);
@@ -1041,13 +1029,7 @@ class BudgetIT extends BaseIntegrationTest {
         @SuppressWarnings("unchecked")
         void envelopeEquation_multiAccount() {
             // Create second account with balance 2000
-            var acct2Resp = restTemplate.exchange(
-                    "/api/v1/accounts", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Savings","type":"CASH","subType":"SAVINGS","startingBalance":2000}
-                            """, authHeaders(token)),
-                    Map.class);
-            String acct2Id = (String) acct2Resp.getBody().get("id");
+            String acct2Id = createAccount(token, "Savings", "CASH", "SAVINGS", "2000");
 
             // Update budget to include both accounts
             restTemplate.exchange(
@@ -1068,8 +1050,8 @@ class BudgetIT extends BaseIntegrationTest {
 
             double netTotal = ((Number) resp.getBody().get("netTotalAvailable")).doubleValue();
 
-            // Account 1: 5000 + 2000 = 7000
-            // Account 2: 2000 - 300 = 1700
+            // AccountResponse 1: 5000 + 2000 = 7000
+            // AccountResponse 2: 2000 - 300 = 1700
             // Net total = 7000 + 1700 = 8700
             assertThat(netTotal).isEqualTo(8700.0);
         }

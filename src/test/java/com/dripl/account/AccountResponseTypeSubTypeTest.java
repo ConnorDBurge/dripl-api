@@ -10,7 +10,7 @@ import java.util.EnumSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AccountTypeSubTypeTest {
+class AccountResponseTypeSubTypeTest {
 
     @Test
     void cashType_supportsOnlyCashSubTypes() {

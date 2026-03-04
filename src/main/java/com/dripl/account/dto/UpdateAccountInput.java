@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateAccountDto {
+public class UpdateAccountInput {
 
     @Size(min = 1, max = 120, message = "Account name must be between 1 and 120 characters")
     private String name;
@@ -31,7 +31,7 @@ public class UpdateAccountDto {
 
     private CurrencyCode currency;
 
-    @Size(max = 120, message = "Institution name must be at most 120 characters")
+    @Size(min = 1, max = 120, message = "Institution name must be between 1 and 120 characters")
     private String institutionName;
 
     private Status status;

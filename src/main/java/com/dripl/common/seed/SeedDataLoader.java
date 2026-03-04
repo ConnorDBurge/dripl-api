@@ -1,6 +1,6 @@
 package com.dripl.common.seed;
 
-import com.dripl.account.dto.CreateAccountDto;
+import com.dripl.account.dto.CreateAccountInput;
 import com.dripl.account.entity.Account;
 import com.dripl.account.service.AccountService;
 import com.dripl.budget.dto.CreateBudgetDto;
@@ -201,7 +201,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
         for (Map<String, Object> seed : items) {
             Account entity = accountService.createAccount(workspaceId,
-                    objectMapper.convertValue(seed, CreateAccountDto.class));
+                    objectMapper.convertValue(seed, CreateAccountInput.class));
             map.put(entity.getName(), entity.getId());
         }
         return map;

@@ -1,7 +1,7 @@
 package com.dripl.account.mapper;
 
-import com.dripl.account.dto.AccountDto;
-import com.dripl.account.dto.UpdateAccountDto;
+import com.dripl.account.dto.AccountResponse;
+import com.dripl.account.dto.UpdateAccountInput;
 import com.dripl.account.entity.Account;
 import com.dripl.common.enums.Status;
 import org.mapstruct.AfterMapping;
@@ -16,9 +16,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface AccountMapper {
 
-    AccountDto toDto(Account account);
+    AccountResponse toDto(Account account);
 
-    List<AccountDto> toDtos(List<Account> accounts);
+    List<AccountResponse> toDtos(List<Account> accounts);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -31,10 +31,10 @@ public interface AccountMapper {
     @Mapping(target = "balanceLastUpdated", ignore = true)
     @Mapping(target = "closedAt", ignore = true)
     @Mapping(target = "externalId", ignore = true)
-    void updateEntity(UpdateAccountDto dto, @MappingTarget Account account);
+    void updateEntity(UpdateAccountInput dto, @MappingTarget Account account);
 
     @AfterMapping
-    default void handleSideEffects(UpdateAccountDto dto, @MappingTarget Account account) {
+    default void handleSideEffects(UpdateAccountInput dto, @MappingTarget Account account) {
         if (dto.getStatus() != null) {
             if (dto.getStatus() == Status.CLOSED && account.getClosedAt() == null) {
                 account.setClosedAt(LocalDateTime.now());

@@ -1,7 +1,7 @@
 package com.dripl.account.service;
 
-import com.dripl.account.dto.CreateAccountDto;
-import com.dripl.account.dto.UpdateAccountDto;
+import com.dripl.account.dto.CreateAccountInput;
+import com.dripl.account.dto.UpdateAccountInput;
 import com.dripl.account.entity.Account;
 import com.dripl.account.enums.AccountSubType;
 import com.dripl.account.enums.AccountType;
@@ -41,7 +41,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createAccount(UUID workspaceId, CreateAccountDto dto) {
+    public Account createAccount(UUID workspaceId, CreateAccountInput dto) {
         if (accountRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, dto.getName())) {
             throw new ConflictException("An account named '" + dto.getName() + "' already exists");
         }
@@ -69,7 +69,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Account updateAccount(UUID accountId, UUID workspaceId, UpdateAccountDto dto) {
+    public Account updateAccount(UUID accountId, UUID workspaceId, UpdateAccountInput dto) {
         Account account = getAccount(accountId, workspaceId);
 
         if (dto.getName() != null

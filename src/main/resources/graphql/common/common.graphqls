@@ -9,3 +9,9 @@ enum CurrencyCode {
     AUD
     JPY
 }
+
+enum Status {
+    ACTIVE
+    ARCHIVED
+    CLOSED
+}
