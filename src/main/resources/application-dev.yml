@@ -1,1 +1,6 @@
 # Dev profile - activated via SPRING_PROFILES_ACTIVE=dev
+
+spring:
+  graphql:
+    graphiql:
+      enabled: true

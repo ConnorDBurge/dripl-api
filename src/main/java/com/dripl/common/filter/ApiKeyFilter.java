@@ -30,7 +30,8 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
         return uri.equals("/actuator/health")
-                || uri.startsWith("/api/v1/auth/");
+                || uri.startsWith("/api/v1/auth/")
+                || uri.startsWith("/graphiql");
     }
 
     @Override

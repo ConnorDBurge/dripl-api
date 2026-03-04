@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/bootstrap").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/graphiql/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

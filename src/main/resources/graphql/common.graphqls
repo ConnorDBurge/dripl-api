@@ -1,0 +1,11 @@
+scalar BigDecimal
+scalar LocalDateTime
+
+enum CurrencyCode {
+    USD
+    EUR
+    GBP
+    CAD
+    AUD
+    JPY
+}

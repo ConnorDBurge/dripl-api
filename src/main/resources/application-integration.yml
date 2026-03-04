@@ -5,3 +5,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  graphql:
+    schema:
+      locations: classpath:graphql/

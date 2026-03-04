@@ -1,0 +1,118 @@
+extend type Query {
+    accounts: [Account!]!
+    account(id: ID!): Account
+}
+
+extend type Mutation {
+    createAccount(input: CreateAccountInput!): Account!
+    updateAccount(id: ID!, input: UpdateAccountInput!): Account!
+    deleteAccount(id: ID!): Boolean!
+}
+
+type Account {
+    id: ID!
+    workspaceId: ID!
+    name: String!
+    type: AccountType!
+    subType: AccountSubType!
+    startingBalance: BigDecimal!
+    balance: BigDecimal!
+    currency: CurrencyCode!
+    institutionName: String
+    source: AccountSource!
+    status: AccountStatus!
+    balanceLastUpdated: LocalDateTime
+    closedAt: LocalDateTime
+    externalId: String
+    createdAt: LocalDateTime!
+    updatedAt: LocalDateTime!
+}
+
+input CreateAccountInput {
+    name: String!
+    type: AccountType!
+    subType: AccountSubType!
+    startingBalance: BigDecimal
+    currency: CurrencyCode
+    institutionName: String
+    source: AccountSource
+}
+
+input UpdateAccountInput {
+    name: String
+    type: AccountType
+    subType: AccountSubType
+    startingBalance: BigDecimal
+    currency: CurrencyCode
+    institutionName: String
+    status: AccountStatus
+}
+
+enum AccountType {
+    CASH
+    CREDIT
+    INVESTMENT
+    LOAN
+    REAL_ESTATE
+    VEHICLE
+    EMPLOYEE_COMPENSATION
+    OTHER_LIABILITY
+    OTHER_ASSET
+}
+
+enum AccountSubType {
+    CHECKING
+    SAVINGS
+    DIGITAL_WALLET
+    GIFT_CARD
+    PHYSICAL_CASH
+    OTHER_CASH
+    CREDIT_CARD
+    CHARGE_CARD
+    LINE_OF_CREDIT
+    OTHER_CREDIT
+    RETIREMENT
+    EDUCATION_SAVINGS
+    BROKERAGE
+    HEALTH_SAVINGS
+    OTHER_INVESTMENT
+    MORTGAGE
+    AUTO_LOAN
+    STUDENT_LOAN
+    PERSONAL_LOAN
+    OTHER_LOAN
+    PRIMARY_RESIDENCE
+    INVESTMENT_PROPERTY
+    LAND
+    OTHER_REAL_ESTATE
+    CAR
+    TRUCK
+    MOTORCYCLE
+    BOAT
+    RV
+    OTHER_VEHICLE
+    STOCK_OPTIONS
+    RESTRICTED_STOCK
+    ESPP
+    BONUS
+    OTHER_COMPENSATION
+    TAXES_PAYABLE
+    MEDICAL_BILL
+    LEGAL_OBLIGATION
+    OTHER_LIABILITY
+    JEWELRY
+    COLLECTIBLE
+    LIFE_INSURANCE_CASH_VALUE
+    OTHER_ASSET
+}
+
+enum AccountSource {
+    MANUAL
+    AUTOMATIC
+}
+
+enum AccountStatus {
+    ACTIVE
+    ARCHIVED
+    CLOSED
+}
