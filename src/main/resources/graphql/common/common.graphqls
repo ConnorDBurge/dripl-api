@@ -1,6 +1,14 @@
 scalar BigDecimal
 scalar LocalDateTime
 
+interface Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+}
+
 enum CurrencyCode {
     USD
     EUR

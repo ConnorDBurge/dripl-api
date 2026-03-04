@@ -94,4 +94,23 @@ public abstract class BaseIntegrationTest {
         var account = (Map<String, Object>) data.get("createAccount");
         return (String) account.get("id");
     }
+
+    /**
+     * Create a tag via GraphQL and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createTag(String token, String name) {
+        String query = """
+                mutation {
+                    createTag(input: { name: "%s" }) { id }
+                }
+                """.formatted(name);
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", query), authHeaders(token)),
+                Map.class);
+        var data = (Map<String, Object>) response.getBody().get("data");
+        var tag = (Map<String, Object>) data.get("createTag");
+        return (String) tag.get("id");
+    }
 }

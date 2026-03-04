@@ -1,0 +1,39 @@
+extend type Query {
+    tags: [Tag!]!
+    tag(id: ID!): Tag
+}
+
+extend type Mutation {
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(id: ID!, input: UpdateTagInput!): Tag!
+    deleteTag(id: ID!): Boolean!
+}
+
+type Tag implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    name: String!
+    description: String
+    status: TagStatus!
+}
+
+input CreateTagInput {
+    name: String!
+    description: String
+}
+
+input UpdateTagInput {
+    name: String
+    description: String
+    status: TagStatus
+}
+
+enum TagStatus {
+    ACTIVE
+    ARCHIVED
+    CLOSED
+}

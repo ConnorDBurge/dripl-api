@@ -48,13 +48,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         categoryId = (String) categoryResp.getBody().get("id");
 
         // Create a tag
-        var tagResp = restTemplate.exchange(
-                "/api/v1/tags", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"weekly"}
-                        """, authHeaders(token)),
-                Map.class);
-        tagId = (String) tagResp.getBody().get("id");
+        tagId = createTag(token, "weekly");
 
         // Create a recurring item
         var riResp = restTemplate.exchange(
@@ -898,13 +892,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
                 Map.class);
         String cat2Id = (String) cat2Resp.getBody().get("id");
 
-        var tag2Resp = restTemplate.exchange(
-                "/api/v1/tags", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"personal"}
-                        """, authHeaders(token)),
-                Map.class);
-        String tag2Id = (String) tag2Resp.getBody().get("id");
+        String tag2Id = createTag(token, "personal");
 
         // Create transaction with its own category, tags, notes, and currencyCode
         var createResp = restTemplate.exchange(

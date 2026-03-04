@@ -21,7 +21,7 @@ import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
 import com.dripl.recurring.enums.FrequencyGranularity;
 import com.dripl.recurring.service.RecurringItemService;
-import com.dripl.tag.dto.CreateTagDto;
+import com.dripl.tag.dto.CreateTagInput;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.dto.CreateTransactionDto;
@@ -227,7 +227,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
         for (Map<String, Object> seed : items) {
             Tag entity = tagService.createTag(workspaceId,
-                    objectMapper.convertValue(seed, CreateTagDto.class));
+                    objectMapper.convertValue(seed, CreateTagInput.class));
             map.put(entity.getName(), entity.getId());
         }
         return map;

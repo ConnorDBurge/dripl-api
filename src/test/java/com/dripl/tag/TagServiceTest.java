@@ -2,8 +2,8 @@ package com.dripl.tag;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.tag.dto.CreateTagDto;
-import com.dripl.tag.dto.UpdateTagDto;
+import com.dripl.tag.dto.CreateTagInput;
+import com.dripl.tag.dto.UpdateTagInput;
 import com.dripl.tag.entity.Tag;
 import com.dripl.common.enums.Status;
 import com.dripl.tag.mapper.TagMapper;
@@ -99,7 +99,7 @@ class TagServiceTest {
 
     @Test
     void createTag_success() {
-        CreateTagDto dto = CreateTagDto.builder()
+        CreateTagInput dto = CreateTagInput.builder()
                 .name("groceries")
                 .description("Grocery store purchases")
                 .build();
@@ -117,7 +117,7 @@ class TagServiceTest {
 
     @Test
     void createTag_withoutDescription_success() {
-        CreateTagDto dto = CreateTagDto.builder()
+        CreateTagInput dto = CreateTagInput.builder()
                 .name("groceries")
                 .build();
 
@@ -132,7 +132,7 @@ class TagServiceTest {
 
     @Test
     void createTag_duplicateName_throws() {
-        CreateTagDto dto = CreateTagDto.builder()
+        CreateTagInput dto = CreateTagInput.builder()
                 .name("groceries")
                 .build();
 
@@ -153,7 +153,7 @@ class TagServiceTest {
         when(tagRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "food")).thenReturn(false);
         when(tagRepository.save(any(Tag.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTagDto dto = UpdateTagDto.builder().name("food").build();
+        UpdateTagInput dto = UpdateTagInput.builder().name("food").build();
         Tag result = tagService.updateTag(tagId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("food");
@@ -165,7 +165,7 @@ class TagServiceTest {
         when(tagRepository.findByIdAndWorkspaceId(tagId, workspaceId)).thenReturn(Optional.of(tag));
         when(tagRepository.save(any(Tag.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTagDto dto = UpdateTagDto.builder().description("Updated description").build();
+        UpdateTagInput dto = UpdateTagInput.builder().description("Updated description").build();
         Tag result = tagService.updateTag(tagId, workspaceId, dto);
 
         assertThat(result.getDescription()).isEqualTo("Updated description");
@@ -178,7 +178,7 @@ class TagServiceTest {
         when(tagRepository.findByIdAndWorkspaceId(tagId, workspaceId)).thenReturn(Optional.of(tag));
         when(tagRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "food")).thenReturn(true);
 
-        UpdateTagDto dto = UpdateTagDto.builder().name("food").build();
+        UpdateTagInput dto = UpdateTagInput.builder().name("food").build();
 
         assertThatThrownBy(() -> tagService.updateTag(tagId, workspaceId, dto))
                 .isInstanceOf(ConflictException.class);
@@ -190,7 +190,7 @@ class TagServiceTest {
         when(tagRepository.findByIdAndWorkspaceId(tagId, workspaceId)).thenReturn(Optional.of(tag));
         when(tagRepository.save(any(Tag.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTagDto dto = UpdateTagDto.builder().name("groceries").build();
+        UpdateTagInput dto = UpdateTagInput.builder().name("groceries").build();
         Tag result = tagService.updateTag(tagId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("groceries");
@@ -202,7 +202,7 @@ class TagServiceTest {
         when(tagRepository.findByIdAndWorkspaceId(tagId, workspaceId)).thenReturn(Optional.of(tag));
         when(tagRepository.save(any(Tag.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTagDto dto = UpdateTagDto.builder().status(Status.ARCHIVED).build();
+        UpdateTagInput dto = UpdateTagInput.builder().status(Status.ARCHIVED).build();
         Tag result = tagService.updateTag(tagId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(Status.ARCHIVED);
@@ -213,7 +213,7 @@ class TagServiceTest {
     void updateTag_notFound_throws() {
         when(tagRepository.findByIdAndWorkspaceId(tagId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateTagDto dto = UpdateTagDto.builder().name("X").build();
+        UpdateTagInput dto = UpdateTagInput.builder().name("X").build();
 
         assertThatThrownBy(() -> tagService.updateTag(tagId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class);

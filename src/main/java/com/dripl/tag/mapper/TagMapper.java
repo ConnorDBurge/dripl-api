@@ -1,7 +1,7 @@
 package com.dripl.tag.mapper;
 
-import com.dripl.tag.dto.TagDto;
-import com.dripl.tag.dto.UpdateTagDto;
+import com.dripl.tag.dto.TagResponse;
+import com.dripl.tag.dto.UpdateTagInput;
 import com.dripl.tag.entity.Tag;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,9 +13,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface TagMapper {
 
-    TagDto toDto(Tag tag);
+    TagResponse toDto(Tag tag);
 
-    List<TagDto> toDtos(List<Tag> tags);
+    List<TagResponse> toDtos(List<Tag> tags);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -23,5 +23,5 @@ public interface TagMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "workspaceId", ignore = true)
-    void updateEntity(UpdateTagDto dto, @MappingTarget Tag tag);
+    void updateEntity(UpdateTagInput dto, @MappingTarget Tag tag);
 }

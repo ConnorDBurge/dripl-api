@@ -9,7 +9,7 @@ extend type Mutation {
     deleteAccount(id: ID!): Boolean!
 }
 
-type AccountResponse {
+type AccountResponse implements Base {
     id: ID!
     createdAt: LocalDateTime!
     createdBy: String!

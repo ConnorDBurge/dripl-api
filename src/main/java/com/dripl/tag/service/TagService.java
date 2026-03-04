@@ -2,8 +2,8 @@ package com.dripl.tag.service;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.tag.dto.CreateTagDto;
-import com.dripl.tag.dto.UpdateTagDto;
+import com.dripl.tag.dto.CreateTagInput;
+import com.dripl.tag.dto.UpdateTagInput;
 import com.dripl.tag.entity.Tag;
 import com.dripl.common.enums.Status;
 import com.dripl.tag.mapper.TagMapper;
@@ -36,7 +36,7 @@ public class TagService {
     }
 
     @Transactional
-    public Tag createTag(UUID workspaceId, CreateTagDto dto) {
+    public Tag createTag(UUID workspaceId, CreateTagInput dto) {
         if (tagRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, dto.getName())) {
             throw new ConflictException("A tag named '" + dto.getName() + "' already exists");
         }
@@ -53,7 +53,7 @@ public class TagService {
     }
 
     @Transactional
-    public Tag updateTag(UUID tagId, UUID workspaceId, UpdateTagDto dto) {
+    public Tag updateTag(UUID tagId, UUID workspaceId, UpdateTagInput dto) {
         Tag tag = getTag(tagId, workspaceId);
 
         if (dto.getName() != null

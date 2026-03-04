@@ -48,13 +48,7 @@ class TransactionGroupCrudIT extends BaseIntegrationTest {
         categoryId = (String) categoryResp.getBody().get("id");
 
         // Create tag
-        var tagResp = restTemplate.exchange(
-                "/api/v1/tags", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"beach-trip"}
-                        """, authHeaders(token)),
-                Map.class);
-        tagId = (String) tagResp.getBody().get("id");
+        tagId = createTag(token, "beach-trip");
 
         // Create 3 transactions
         txn1Id = createTransaction("Restaurant A", -50.00);

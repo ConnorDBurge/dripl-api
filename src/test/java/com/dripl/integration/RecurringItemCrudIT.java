@@ -46,13 +46,7 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         categoryId = (String) categoryResp.getBody().get("id");
 
         // Create a tag
-        var tagResp = restTemplate.exchange(
-                "/api/v1/tags", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"monthly"}
-                        """, authHeaders(token)),
-                Map.class);
-        tagId = (String) tagResp.getBody().get("id");
+        tagId = createTag(token, "monthly");
     }
 
     @Test

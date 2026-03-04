@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
-public class TagDto extends BaseDto {
+public class TagResponse extends BaseDto {
 
     private UUID workspaceId;
     private String name;
