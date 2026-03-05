@@ -1,8 +1,8 @@
 package com.dripl.category;
 
 import com.dripl.budget.repository.BudgetPeriodEntryRepository;
-import com.dripl.category.dto.CreateCategoryDto;
-import com.dripl.category.dto.UpdateCategoryDto;
+import com.dripl.category.dto.CreateCategoryInput;
+import com.dripl.category.dto.UpdateCategoryInput;
 import com.dripl.category.entity.Category;
 import com.dripl.category.mapper.CategoryMapper;
 import com.dripl.category.repository.CategoryRepository;
@@ -111,7 +111,7 @@ class CategoryServiceTest {
 
     @Test
     void createCategory_rootCategory_success() {
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Food")
                 .build();
 
@@ -132,7 +132,7 @@ class CategoryServiceTest {
 
     @Test
     void createCategory_withAllFields_success() {
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Salary")
                 .description("Monthly pay")
                 .income(true)
@@ -164,7 +164,7 @@ class CategoryServiceTest {
                 .parentId(null)
                 .build();
 
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Groceries")
                 .parentId(parentId)
                 .build();
@@ -194,7 +194,7 @@ class CategoryServiceTest {
                 .parentId(null)
                 .build();
 
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Bonus")
                 .parentId(parentId)
                 .income(false)
@@ -221,7 +221,7 @@ class CategoryServiceTest {
                 .parentId(null)
                 .build();
 
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Groceries")
                 .parentId(parentId)
                 .income(true)
@@ -239,7 +239,7 @@ class CategoryServiceTest {
     @Test
     void createCategory_parentNotFound_throws() {
         UUID parentId = UUID.randomUUID();
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Groceries")
                 .parentId(parentId)
                 .build();
@@ -264,7 +264,7 @@ class CategoryServiceTest {
                 .parentId(grandparentId)
                 .build();
 
-        CreateCategoryDto dto = CreateCategoryDto.builder()
+        CreateCategoryInput dto = CreateCategoryInput.builder()
                 .name("Organic")
                 .parentId(parentId)
                 .build();
@@ -285,7 +285,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().name("Food & Drink").build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().name("Food & Drink").build();
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Food & Drink");
@@ -310,7 +310,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(parentId);
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
@@ -342,7 +342,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(parentId);
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
@@ -372,7 +372,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByParentIdOrderByDisplayOrder(parentId)).thenReturn(List.of());
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(parentId);
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
@@ -390,7 +390,7 @@ class CategoryServiceTest {
         when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(dummyList(4));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(null);
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
@@ -407,7 +407,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().name("Grocery Store").build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().name("Grocery Store").build();
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Grocery Store");
@@ -419,7 +419,7 @@ class CategoryServiceTest {
         Category category = buildCategory("Food");
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(categoryId);
 
         assertThatThrownBy(() -> categoryService.updateCategory(categoryId, workspaceId, dto))
@@ -436,7 +436,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.findByIdAndWorkspaceId(fakeParentId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(fakeParentId);
 
         assertThatThrownBy(() -> categoryService.updateCategory(categoryId, workspaceId, dto))
@@ -461,7 +461,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.findByIdAndWorkspaceId(parentId, workspaceId)).thenReturn(Optional.of(parent));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(parentId);
 
         assertThatThrownBy(() -> categoryService.updateCategory(categoryId, workspaceId, dto))
@@ -493,7 +493,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(parentCategory));
         when(categoryRepository.findByIdAndWorkspaceId(childId, workspaceId)).thenReturn(Optional.of(childCategory));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(childId);
 
         // childCategory.parentId != null → validateParent blocks it as "too deep"
@@ -521,7 +521,7 @@ class CategoryServiceTest {
         when(categoryRepository.findById(transportId)).thenReturn(Optional.of(transport));
         when(categoryRepository.existsByParentId(categoryId)).thenReturn(true);
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignParentId(transportId);
 
         assertThatThrownBy(() -> categoryService.updateCategory(categoryId, workspaceId, dto))
@@ -536,7 +536,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().status(Status.ARCHIVED).build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().status(Status.ARCHIVED).build();
         Category result = categoryService.updateCategory(categoryId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(Status.ARCHIVED);
@@ -546,7 +546,7 @@ class CategoryServiceTest {
     void updateCategory_notFound_throws() {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().name("X").build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().name("X").build();
 
         assertThatThrownBy(() -> categoryService.updateCategory(categoryId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -560,7 +560,7 @@ class CategoryServiceTest {
         when(categoryRepository.findAllByParentId(categoryId)).thenReturn(List.of());
         when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(List.of());
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignChildren(List.of());
 
         categoryService.updateCategory(categoryId, workspaceId, dto);
@@ -575,7 +575,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByIdAndWorkspaceId(categoryId, workspaceId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().name("Food & Drink").build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().name("Food & Drink").build();
 
         categoryService.updateCategory(categoryId, workspaceId, dto);
 
@@ -603,7 +603,7 @@ class CategoryServiceTest {
         when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(List.of());
         when(categoryRepository.findByParentIdOrderByDisplayOrder(transportId)).thenReturn(List.of());
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignChildren(List.of());
         dto.assignParentId(transportId);
 
@@ -796,7 +796,7 @@ class CategoryServiceTest {
         when(categoryRepository.findRootsByWorkspaceIdOrderByDisplayOrder(workspaceId)).thenReturn(dummyList(6));
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateCategoryDto dto = UpdateCategoryDto.builder().build();
+        UpdateCategoryInput dto = UpdateCategoryInput.builder().build();
         dto.assignChildren(List.of());
 
         categoryService.updateCategory(categoryId, workspaceId, dto);

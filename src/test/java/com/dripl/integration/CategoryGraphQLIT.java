@@ -222,7 +222,7 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         var result = graphql("""
                 query($id: ID!) {
-                    category(id: $id) { name description children { id } }
+                    category(id: $id) { name description }
                 }
                 """, Map.of("id", categoryId));
 
@@ -230,13 +230,11 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         var category = (Map<String, Object>) data(result).get("category");
         assertThat(category.get("name")).isEqualTo("Bills");
         assertThat(category.get("description")).isEqualTo("Monthly bills");
-        assertThat(category.get("children")).isNotNull();
-        assertThat((List<?>) category.get("children")).isEmpty();
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    void getCategory_parentIncludesChildren() {
+    void categoryTree_parentIncludesChildren() {
         var parentResult = graphql("""
                 mutation { createCategory(input: { name: "Food" }) { id } }
                 """);
@@ -253,17 +251,13 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
                 }
                 """, Map.of("input", Map.of("name", "Dining Out", "parentId", parentId)));
 
-        var result = graphql("""
-                query($id: ID!) {
-                    category(id: $id) { name children { name parentId } }
-                }
-                """, Map.of("id", parentId));
+        var result = graphql("{ categoryTree { name children { name parentId } } }");
 
         assertThat(result.get("errors")).isNull();
-        var category = (Map<String, Object>) data(result).get("category");
-        assertThat(category.get("name")).isEqualTo("Food");
+        var tree = (List<Map<String, Object>>) data(result).get("categoryTree");
+        var food = tree.stream().filter(c -> "Food".equals(c.get("name"))).findFirst().orElseThrow();
 
-        var children = (List<Map<String, Object>>) category.get("children");
+        var children = (List<Map<String, Object>>) food.get("children");
         assertThat(children).hasSize(2);
         assertThat(children).extracting(c -> c.get("name"))
                 .containsExactlyInAnyOrder("Groceries", "Dining Out");

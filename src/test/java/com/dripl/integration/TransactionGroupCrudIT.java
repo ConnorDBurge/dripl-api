@@ -39,13 +39,7 @@ class TransactionGroupCrudIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
 
         // Create category
-        var categoryResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Vacation"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId = (String) categoryResp.getBody().get("id");
+        categoryId = createCategory(token, "Vacation");
 
         // Create tag
         tagId = createTag(token, "beach-trip");

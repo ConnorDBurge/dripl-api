@@ -12,6 +12,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.util.List;
 import java.util.Map;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -112,5 +113,81 @@ public abstract class BaseIntegrationTest {
         var data = (Map<String, Object>) response.getBody().get("data");
         var tag = (Map<String, Object>) data.get("createTag");
         return (String) tag.get("id");
+    }
+
+    /**
+     * Create a category via GraphQL and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createCategory(String token, String name) {
+        return createCategory(token, name, null, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected String createCategory(String token, String name, Boolean income) {
+        return createCategory(token, name, null, income);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected String createCategory(String token, String name, String parentId, Boolean income) {
+        StringBuilder inputFields = new StringBuilder();
+        inputFields.append("name: \"%s\"".formatted(name));
+        if (parentId != null) inputFields.append(", parentId: \"%s\"".formatted(parentId));
+        if (income != null) inputFields.append(", income: %s".formatted(income));
+        return createCategoryWithFields(token, inputFields.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected String createCategoryExcludedFromBudget(String token, String name) {
+        return createCategoryWithFields(token, "name: \"%s\", excludeFromBudget: true".formatted(name));
+    }
+
+    @SuppressWarnings("unchecked")
+    private String createCategoryWithFields(String token, String inputFields) {
+        String query = """
+                mutation {
+                    createCategory(input: { %s }) { id }
+                }
+                """.formatted(inputFields);
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", query), authHeaders(token)),
+                Map.class);
+        var data = (Map<String, Object>) response.getBody().get("data");
+        var category = (Map<String, Object>) data.get("createCategory");
+        return (String) category.get("id");
+    }
+
+    /**
+     * Create a merchant via GraphQL and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createMerchant(String token, String name) {
+        String query = """
+                mutation {
+                    createMerchant(input: { name: "%s" }) { id }
+                }
+                """.formatted(name);
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", query), authHeaders(token)),
+                Map.class);
+        var data = (Map<String, Object>) response.getBody().get("data");
+        var merchant = (Map<String, Object>) data.get("createMerchant");
+        return (String) merchant.get("id");
+    }
+
+    /**
+     * List merchants via GraphQL and return the list.
+     */
+    @SuppressWarnings("unchecked")
+    protected List<Map<String, Object>> listMerchants(String token) {
+        String query = "{ merchants { id name } }";
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", query), authHeaders(token)),
+                Map.class);
+        var data = (Map<String, Object>) response.getBody().get("data");
+        return (List<Map<String, Object>>) data.get("merchants");
     }
 }

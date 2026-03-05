@@ -1,0 +1,67 @@
+extend type Query {
+    categories(income: Boolean): [CategoryResponse!]!
+    categoryTree: [CategoryTree!]!
+    category(id: ID!): CategoryResponse
+}
+
+extend type Mutation {
+    createCategory(input: CreateCategoryInput!): CategoryResponse!
+    updateCategory(id: ID!, input: UpdateCategoryInput!): CategoryResponse!
+    moveCategory(id: ID!, displayOrder: Int!): Boolean!
+    deleteCategory(id: ID!): Boolean!
+}
+
+type CategoryResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    parentId: ID
+    name: String!
+    description: String
+    status: Status!
+    income: Boolean!
+    excludeFromBudget: Boolean!
+    excludeFromTotals: Boolean!
+    displayOrder: Int!
+}
+
+type CategoryTree implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    parentId: ID
+    name: String!
+    description: String
+    status: Status!
+    income: Boolean!
+    excludeFromBudget: Boolean!
+    excludeFromTotals: Boolean!
+    displayOrder: Int!
+    group: Boolean!
+    children: [CategoryTree!]!
+}
+
+input CreateCategoryInput {
+    name: String!
+    description: String
+    parentId: ID
+    income: Boolean
+    excludeFromBudget: Boolean
+    excludeFromTotals: Boolean
+}
+
+input UpdateCategoryInput {
+    name: String
+    description: String
+    status: Status
+    income: Boolean
+    excludeFromBudget: Boolean
+    excludeFromTotals: Boolean
+    parentId: ID
+}

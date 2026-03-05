@@ -1,8 +1,8 @@
 package com.dripl.category.service;
 
 import com.dripl.budget.repository.BudgetPeriodEntryRepository;
-import com.dripl.category.dto.CreateCategoryDto;
-import com.dripl.category.dto.UpdateCategoryDto;
+import com.dripl.category.dto.CreateCategoryInput;
+import com.dripl.category.dto.UpdateCategoryInput;
 import com.dripl.category.entity.Category;
 import com.dripl.category.mapper.CategoryMapper;
 import com.dripl.category.repository.CategoryRepository;
@@ -47,7 +47,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category createCategory(UUID workspaceId, CreateCategoryDto dto) {
+    public Category createCategory(UUID workspaceId, CreateCategoryInput dto) {
         boolean income = dto.getIncome() != null && dto.getIncome();
 
         if (dto.getParentId() != null) {
@@ -77,7 +77,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category updateCategory(UUID categoryId, UUID workspaceId, UpdateCategoryDto dto) {
+    public Category updateCategory(UUID categoryId, UUID workspaceId, UpdateCategoryInput dto) {
         Category category = getCategory(categoryId, workspaceId);
 
         categoryMapper.updateEntity(dto, category);

@@ -32,31 +32,13 @@ class BudgetIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
         // Create expense category (parent)
-        var catResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Food"}
-                        """, authHeaders(token)),
-                Map.class);
-        expenseCategoryId = (String) catResp.getBody().get("id");
+        expenseCategoryId = createCategory(token, "Food");
 
         // Create child expense category
-        var childCatResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Groceries","parentId":"%s"}
-                        """.formatted(expenseCategoryId), authHeaders(token)),
-                Map.class);
-        childCategoryId = (String) childCatResp.getBody().get("id");
+        childCategoryId = createCategory(token, "Groceries", expenseCategoryId, null);
 
         // Create income category
-        var incomeResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Salary","income":true}
-                        """, authHeaders(token)),
-                Map.class);
-        incomeCategoryId = (String) incomeResp.getBody().get("id");
+        incomeCategoryId = createCategory(token, "Salary", true);
     }
 
     // ── Helpers ──────────────────────────────────────────────
@@ -450,12 +432,7 @@ class BudgetIT extends BaseIntegrationTest {
         void getPeriodView_excludeFromBudget_omitted() {
             String budgetId = createMonthlyBudget();
 
-            var excludedResp = restTemplate.exchange(
-                    "/api/v1/categories", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"ExcludedCat","excludeFromBudget":true}
-                            """, authHeaders(token)), Map.class);
-            assertThat(excludedResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            createCategoryExcludedFromBudget(token, "ExcludedCat");
 
             var resp = restTemplate.exchange(
                     "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
@@ -947,12 +924,7 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("-400.00", childCategoryId, prevTxnDate);
 
             // Create a rent category (non-parent expense)
-            var rentResp = restTemplate.exchange(
-                    "/api/v1/categories", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Rent"}
-                            """, authHeaders(token)), Map.class);
-            String rentCategoryId = (String) rentResp.getBody().get("id");
+            String rentCategoryId = createCategory(token, "Rent");
             createTransaction("-1400.00", rentCategoryId, prevTxnDate);
 
             // Set expected for Period 1

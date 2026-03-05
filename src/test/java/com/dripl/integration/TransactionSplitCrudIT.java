@@ -37,21 +37,8 @@ class TransactionSplitCrudIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
         // Create categories
-        var catResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Groceries"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId = (String) catResp.getBody().get("id");
-
-        var cat2Resp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Electronics"}
-                        """, authHeaders(token)),
-                Map.class);
-        category2Id = (String) cat2Resp.getBody().get("id");
+        categoryId = createCategory(token, "Groceries");
+        category2Id = createCategory(token, "Electronics");
 
         // Create tag
         tagId = createTag(token, "split-tag");

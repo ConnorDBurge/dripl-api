@@ -2,8 +2,8 @@ package com.dripl.merchant.service;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.merchant.dto.CreateMerchantDto;
-import com.dripl.merchant.dto.UpdateMerchantDto;
+import com.dripl.merchant.dto.CreateMerchantInput;
+import com.dripl.merchant.dto.UpdateMerchantInput;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.common.enums.Status;
 import com.dripl.merchant.mapper.MerchantMapper;
@@ -36,7 +36,7 @@ public class MerchantService {
     }
 
     @Transactional
-    public Merchant createMerchant(UUID workspaceId, CreateMerchantDto dto) {
+    public Merchant createMerchant(UUID workspaceId, CreateMerchantInput dto) {
         if (merchantRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, dto.getName())) {
             throw new ConflictException("A merchant named '" + dto.getName() + "' already exists");
         }
@@ -52,7 +52,7 @@ public class MerchantService {
     }
 
     @Transactional
-    public Merchant updateMerchant(UUID merchantId, UUID workspaceId, UpdateMerchantDto dto) {
+    public Merchant updateMerchant(UUID merchantId, UUID workspaceId, UpdateMerchantInput dto) {
         Merchant merchant = getMerchant(merchantId, workspaceId);
 
         if (dto.getName() != null

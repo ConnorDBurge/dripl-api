@@ -2,8 +2,8 @@ package com.dripl.merchant;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.merchant.dto.CreateMerchantDto;
-import com.dripl.merchant.dto.UpdateMerchantDto;
+import com.dripl.merchant.dto.CreateMerchantInput;
+import com.dripl.merchant.dto.UpdateMerchantInput;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.common.enums.Status;
 import com.dripl.merchant.mapper.MerchantMapper;
@@ -99,7 +99,7 @@ class MerchantServiceTest {
 
     @Test
     void createMerchant_success() {
-        CreateMerchantDto dto = CreateMerchantDto.builder()
+        CreateMerchantInput dto = CreateMerchantInput.builder()
                 .name("Walmart")
                 .build();
 
@@ -115,7 +115,7 @@ class MerchantServiceTest {
 
     @Test
     void createMerchant_duplicateName_throws() {
-        CreateMerchantDto dto = CreateMerchantDto.builder()
+        CreateMerchantInput dto = CreateMerchantInput.builder()
                 .name("Amazon")
                 .build();
 
@@ -136,7 +136,7 @@ class MerchantServiceTest {
         when(merchantRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "Amazon.com")).thenReturn(false);
         when(merchantRepository.save(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().name("Amazon.com").build();
+        UpdateMerchantInput dto = UpdateMerchantInput.builder().name("Amazon.com").build();
         Merchant result = merchantService.updateMerchant(merchantId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Amazon.com");
@@ -148,7 +148,7 @@ class MerchantServiceTest {
         when(merchantRepository.findByIdAndWorkspaceId(merchantId, workspaceId)).thenReturn(Optional.of(merchant));
         when(merchantRepository.existsByWorkspaceIdAndNameIgnoreCase(workspaceId, "Target")).thenReturn(true);
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().name("Target").build();
+        UpdateMerchantInput dto = UpdateMerchantInput.builder().name("Target").build();
 
         assertThatThrownBy(() -> merchantService.updateMerchant(merchantId, workspaceId, dto))
                 .isInstanceOf(ConflictException.class);
@@ -160,7 +160,7 @@ class MerchantServiceTest {
         when(merchantRepository.findByIdAndWorkspaceId(merchantId, workspaceId)).thenReturn(Optional.of(merchant));
         when(merchantRepository.save(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().name("Amazon").build();
+        UpdateMerchantInput dto = UpdateMerchantInput.builder().name("Amazon").build();
         Merchant result = merchantService.updateMerchant(merchantId, workspaceId, dto);
 
         assertThat(result.getName()).isEqualTo("Amazon");
@@ -172,7 +172,7 @@ class MerchantServiceTest {
         when(merchantRepository.findByIdAndWorkspaceId(merchantId, workspaceId)).thenReturn(Optional.of(merchant));
         when(merchantRepository.save(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().status(Status.ARCHIVED).build();
+        UpdateMerchantInput dto = UpdateMerchantInput.builder().status(Status.ARCHIVED).build();
         Merchant result = merchantService.updateMerchant(merchantId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(Status.ARCHIVED);
@@ -183,7 +183,7 @@ class MerchantServiceTest {
     void updateMerchant_notFound_throws() {
         when(merchantRepository.findByIdAndWorkspaceId(merchantId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateMerchantDto dto = UpdateMerchantDto.builder().name("X").build();
+        UpdateMerchantInput dto = UpdateMerchantInput.builder().name("X").build();
 
         assertThatThrownBy(() -> merchantService.updateMerchant(merchantId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class);

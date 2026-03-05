@@ -56,11 +56,7 @@ public class CategoryResolver {
     public CategoryResponse category(@Argument UUID id) {
         UUID workspaceId = GraphQLContext.workspaceId();
         Category cat = categoryService.getCategory(id, workspaceId);
-        List<Category> children = categoryService.getChildren(id);
-        return categoryMapper.toDto(cat)
-                .toBuilder()
-                .children(categoryMapper.toDtos(children))
-                .build();
+        return categoryMapper.toDto(cat);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

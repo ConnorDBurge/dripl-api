@@ -123,21 +123,19 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
     @Test
     void readOnly_cannotDeleteResource() {
         // Owner creates a merchant
-        var createResponse = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Test Merchant"}
-                        """, authHeaders(ownerToken)),
-                Map.class);
-        String merchantId = (String) createResponse.getBody().get("id");
+        String merchantId = createMerchant(ownerToken, "Test Merchant");
 
         // READ-only user cannot delete it
+        @SuppressWarnings("unchecked")
         var response = restTemplate.exchange(
-                "/api/v1/merchants/" + merchantId, HttpMethod.DELETE,
-                new HttpEntity<>(authHeaders(readOnlyToken)),
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", """
+                        mutation { deleteMerchant(id: "%s") }
+                        """.formatted(merchantId)), authHeaders(readOnlyToken)),
                 Map.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("errors")).isNotNull();
     }
 
     @Test
@@ -163,22 +161,19 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
                 List.of("READ", "WRITE"));
 
         // Writer creates a merchant (WRITE works)
-        var createResponse = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Writer Merchant"}
-                        """, authHeaders(writeOnlyToken)),
-                Map.class);
-        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        String merchantId = (String) createResponse.getBody().get("id");
+        String merchantId = createMerchant(writeOnlyToken, "Writer Merchant");
 
         // Writer cannot delete it (no DELETE role)
+        @SuppressWarnings("unchecked")
         var response = restTemplate.exchange(
-                "/api/v1/merchants/" + merchantId, HttpMethod.DELETE,
-                new HttpEntity<>(authHeaders(writeOnlyToken)),
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", """
+                        mutation { deleteMerchant(id: "%s") }
+                        """.formatted(merchantId)), authHeaders(writeOnlyToken)),
                 Map.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().get("errors")).isNotNull();
     }
 
     @Test

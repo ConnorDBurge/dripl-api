@@ -12,10 +12,10 @@ import com.dripl.budget.service.BudgetService;
 import com.dripl.budget.service.BudgetConfigService;
 import com.dripl.budget.util.BudgetPeriodCalculator;
 import com.dripl.budget.util.PeriodRange;
-import com.dripl.category.dto.CreateCategoryDto;
+import com.dripl.category.dto.CreateCategoryInput;
 import com.dripl.category.entity.Category;
 import com.dripl.category.service.CategoryService;
-import com.dripl.merchant.dto.CreateMerchantDto;
+import com.dripl.merchant.dto.CreateMerchantInput;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.dto.CreateRecurringItemDto;
@@ -214,7 +214,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
         for (Map<String, Object> seed : items) {
             Merchant entity = merchantService.createMerchant(workspaceId,
-                    objectMapper.convertValue(seed, CreateMerchantDto.class));
+                    objectMapper.convertValue(seed, CreateMerchantInput.class));
             map.put(entity.getName(), entity.getId());
         }
         return map;
@@ -244,14 +244,14 @@ public class SeedDataLoader implements CommandLineRunner {
             seed.remove("children");
 
             Category parent = categoryService.createCategory(workspaceId,
-                    objectMapper.convertValue(seed, CreateCategoryDto.class));
+                    objectMapper.convertValue(seed, CreateCategoryInput.class));
             map.put(parent.getName(), parent.getId());
 
             if (children != null) {
                 for (Map<String, Object> child : children) {
                     child.put("parentId", parent.getId().toString());
                     Category childEntity = categoryService.createCategory(workspaceId,
-                            objectMapper.convertValue(child, CreateCategoryDto.class));
+                            objectMapper.convertValue(child, CreateCategoryInput.class));
                     map.put(childEntity.getName(), childEntity.getId());
                 }
             }

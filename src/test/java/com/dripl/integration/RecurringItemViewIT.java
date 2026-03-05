@@ -32,11 +32,7 @@ class RecurringItemViewIT extends BaseIntegrationTest {
 
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 
-        var categoryResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("{\"name\":\"Subscriptions\"}", authHeaders(token)),
-                Map.class);
-        categoryId = (String) categoryResp.getBody().get("id");
+        categoryId = createCategory(token, "Subscriptions");
     }
 
     private void createRecurringItem(String description, String amount, String granularity,

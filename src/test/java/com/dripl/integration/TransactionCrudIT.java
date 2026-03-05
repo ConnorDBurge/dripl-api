@@ -39,13 +39,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
 
         // Create a category
-        var categoryResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Groceries"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId = (String) categoryResp.getBody().get("id");
+        categoryId = createCategory(token, "Groceries");
 
         // Create a tag
         tagId = createTag(token, "weekly");
@@ -64,12 +58,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
     @Test
     void createTransaction_withExistingMerchant_returns201() {
         // Pre-create merchant
-        restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Kroger"}
-                        """, authHeaders(token)),
-                Map.class);
+        createMerchant(token, "Kroger");
 
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
@@ -104,23 +93,14 @@ class TransactionCrudIT extends BaseIntegrationTest {
         assertThat(response.getBody().get("merchantId")).isNotNull();
 
         // Verify the merchant was actually created
-        var merchantsResp = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
-        List<Map<String, Object>> merchants = merchantsResp.getBody();
+        List<Map<String, Object>> merchants = listMerchants(token);
         assertThat(merchants).extracting(m -> m.get("name")).contains("Brand New Store");
     }
 
     @Test
     void createTransaction_merchantLookup_caseInsensitive() {
         // Create "Kroger"
-        restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Kroger"}
-                        """, authHeaders(token)),
-                Map.class);
+        createMerchant(token, "Kroger");
 
         // Create transaction with "KROGER" — should find existing, not create new
         var response = restTemplate.exchange(
@@ -133,11 +113,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // Verify no duplicate merchant
-        var merchantsResp = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
-        long krogerCount = ((List<Map<String, Object>>) merchantsResp.getBody()).stream()
+        long krogerCount = listMerchants(token).stream()
                 .filter(m -> ((String) m.get("name")).equalsIgnoreCase("Kroger"))
                 .count();
         assertThat(krogerCount).isEqualTo(1);
@@ -391,20 +367,8 @@ class TransactionCrudIT extends BaseIntegrationTest {
     @Test
     void createTransaction_categoryIsGroup_returns400() {
         // Create a parent category with a child
-        var parentResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Food Group"}
-                        """, authHeaders(token)),
-                Map.class);
-        String parentCategoryId = (String) parentResp.getBody().get("id");
-
-        restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Dining Out","parentId":"%s"}
-                        """.formatted(parentCategoryId), authHeaders(token)),
-                Map.class);
+        String parentCategoryId = createCategory(token, "Food Group");
+        createCategory(token, "Dining Out", parentCategoryId, null);
 
         var response = restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
@@ -429,20 +393,8 @@ class TransactionCrudIT extends BaseIntegrationTest {
         String txnId = (String) createResp.getBody().get("id");
 
         // Create a parent category with a child
-        var parentResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Bills Group"}
-                        """, authHeaders(token)),
-                Map.class);
-        String parentCategoryId = (String) parentResp.getBody().get("id");
-
-        restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Utilities","parentId":"%s"}
-                        """.formatted(parentCategoryId), authHeaders(token)),
-                Map.class);
+        String parentCategoryId = createCategory(token, "Bills Group");
+        createCategory(token, "Utilities", parentCategoryId, null);
 
         var response = restTemplate.exchange(
                 "/api/v1/transactions/" + txnId, HttpMethod.PATCH,
@@ -884,13 +836,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
     @SuppressWarnings("unchecked")
     void updateTransaction_linkRI_overwritesExistingLockedFields() {
         // Create a second category and tag to set on the transaction
-        var cat2Resp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Dining"}
-                        """, authHeaders(token)),
-                Map.class);
-        String cat2Id = (String) cat2Resp.getBody().get("id");
+        String cat2Id = createCategory(token, "Dining");
 
         String tag2Id = createTag(token, "personal");
 
@@ -1108,21 +1054,8 @@ class TransactionCrudIT extends BaseIntegrationTest {
     @Test
     void listTransactions_sortByCategory_sortsByCategoryName() {
         // Create categories with known alphabetical order
-        var catA = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"AAA Category"}
-                        """, authHeaders(token)),
-                Map.class);
-        String catAId = (String) catA.getBody().get("id");
-
-        var catZ = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"ZZZ Category"}
-                        """, authHeaders(token)),
-                Map.class);
-        String catZId = (String) catZ.getBody().get("id");
+        String catAId = createCategory(token, "AAA Category");
+        String catZId = createCategory(token, "ZZZ Category");
 
         restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,
@@ -1345,13 +1278,7 @@ class TransactionCrudIT extends BaseIntegrationTest {
 
     @Test
     void listTransactions_searchByCategoryName_matchesCategory() {
-        var catResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Qwerty Utilities"}
-                        """, authHeaders(token)),
-                Map.class);
-        String qCatId = (String) catResp.getBody().get("id");
+        String qCatId = createCategory(token, "Qwerty Utilities");
 
         restTemplate.exchange(
                 "/api/v1/transactions", HttpMethod.POST,

@@ -37,13 +37,7 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
 
         // Create a category
-        var categoryResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Subscriptions"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId = (String) categoryResp.getBody().get("id");
+        categoryId = createCategory(token, "Subscriptions");
 
         // Create a tag
         tagId = createTag(token, "monthly");
@@ -52,12 +46,7 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     @Test
     void createRecurringItem_withExistingMerchant_returns201() {
         // Pre-create merchant
-        restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Netflix"}
-                        """, authHeaders(token)),
-                Map.class);
+        createMerchant(token, "Netflix");
 
         var response = restTemplate.exchange(
                 "/api/v1/recurring-items", HttpMethod.POST,
@@ -92,23 +81,14 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         assertThat(response.getBody().get("merchantId")).isNotNull();
 
         // Verify the merchant was actually created
-        var merchantsResp = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
-        List<Map<String, Object>> merchants = merchantsResp.getBody();
+        List<Map<String, Object>> merchants = listMerchants(token);
         assertThat(merchants).extracting(m -> m.get("name")).contains("New Service");
     }
 
     @Test
     void createRecurringItem_merchantLookup_caseInsensitive() {
         // Create "Netflix"
-        restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Netflix"}
-                        """, authHeaders(token)),
-                Map.class);
+        createMerchant(token, "Netflix");
 
         // Create recurring item with "NETFLIX" — should find existing, not create new
         var response = restTemplate.exchange(
@@ -121,11 +101,7 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // Verify no duplicate merchant
-        var merchantsResp = restTemplate.exchange(
-                "/api/v1/merchants", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
-        long netflixCount = ((List<Map<String, Object>>) merchantsResp.getBody()).stream()
+        long netflixCount = listMerchants(token).stream()
                 .filter(m -> ((String) m.get("name")).equalsIgnoreCase("Netflix"))
                 .count();
         assertThat(netflixCount).isEqualTo(1);

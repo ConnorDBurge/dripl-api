@@ -37,21 +37,8 @@ class TransactionEventIT extends BaseIntegrationTest {
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
 
         // Create categories (expense)
-        var categoryResp = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Groceries"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId = (String) categoryResp.getBody().get("id");
-
-        var categoryResp2 = restTemplate.exchange(
-                "/api/v1/categories", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Dining"}
-                        """, authHeaders(token)),
-                Map.class);
-        categoryId2 = (String) categoryResp2.getBody().get("id");
+        categoryId = createCategory(token, "Groceries");
+        categoryId2 = createCategory(token, "Dining");
     }
 
     private String createTransaction(String amount, String categoryId) {

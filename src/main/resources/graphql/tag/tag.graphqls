@@ -18,7 +18,7 @@ type Tag implements Base {
     workspaceId: ID!
     name: String!
     description: String
-    status: TagStatus!
+    status: Status!
 }
 
 input CreateTagInput {
@@ -29,11 +29,5 @@ input CreateTagInput {
 input UpdateTagInput {
     name: String
     description: String
-    status: TagStatus
-}
-
-enum TagStatus {
-    ACTIVE
-    ARCHIVED
-    CLOSED
+    status: Status
 }

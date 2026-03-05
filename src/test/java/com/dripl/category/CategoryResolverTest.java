@@ -105,14 +105,12 @@ class CategoryResolverTest {
     }
 
     @Test
-    void category_returnsWithChildren() {
+    void category_returnsSingleCategory() {
         when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(buildCategory("Food"));
-        when(categoryService.getChildren(categoryId)).thenReturn(List.of());
 
         CategoryResponse result = categoryResolver.category(categoryId);
 
         assertThat(result.getName()).isEqualTo("Food");
-        assertThat(result.getChildren()).isEmpty();
     }
 
     @Test
