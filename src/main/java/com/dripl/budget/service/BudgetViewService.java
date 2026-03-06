@@ -1,9 +1,9 @@
 package com.dripl.budget.service;
 
 import com.dripl.account.repository.AccountRepository;
-import com.dripl.budget.dto.BudgetCategoryViewDto;
-import com.dripl.budget.dto.BudgetPeriodViewDto;
-import com.dripl.budget.dto.BudgetSectionDto;
+import com.dripl.budget.dto.BudgetCategoryViewResponse;
+import com.dripl.budget.dto.BudgetPeriodViewResponse;
+import com.dripl.budget.dto.BudgetSectionResponse;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.entity.BudgetAccount;
 import com.dripl.budget.entity.BudgetCategoryConfig;
@@ -59,7 +59,7 @@ public class BudgetViewService {
     private final BudgetService budgetService;
 
     @Transactional
-    public BudgetPeriodViewDto getView(UUID workspaceId, UUID budgetId, int periodOffset) {
+    public BudgetPeriodViewResponse getView(UUID workspaceId, UUID budgetId, int periodOffset) {
         Budget budget = budgetService.findBudget(workspaceId, budgetId);
         requireBudgetConfigured(budget);
         PeriodRange period = BudgetPeriodCalculator.computePeriodByOffset(budget, periodOffset);
@@ -67,14 +67,14 @@ public class BudgetViewService {
     }
 
     @Transactional
-    public BudgetPeriodViewDto getView(UUID workspaceId, UUID budgetId, LocalDate periodStart) {
+    public BudgetPeriodViewResponse getView(UUID workspaceId, UUID budgetId, LocalDate periodStart) {
         Budget budget = budgetService.findBudget(workspaceId, budgetId);
         requireBudgetConfigured(budget);
         PeriodRange period = BudgetPeriodCalculator.computePeriod(budget, periodStart);
         return buildPeriodView(budget, period);
     }
 
-    private BudgetPeriodViewDto buildPeriodView(Budget budget, PeriodRange period) {
+    private BudgetPeriodViewResponse buildPeriodView(Budget budget, PeriodRange period) {
         UUID budgetId = budget.getId();
         UUID workspaceId = budget.getWorkspaceId();
 
@@ -100,7 +100,7 @@ public class BudgetViewService {
         Map<UUID, BigDecimal> recurringExpectedMap = computeRecurringExpected(workspaceId, period, includedAccountIds);
 
         // Build a flat view for each leaf/root category
-        Map<UUID, BudgetCategoryViewDto> viewMap = new HashMap<>();
+        Map<UUID, BudgetCategoryViewResponse> viewMap = new HashMap<>();
         for (Category cat : budgetCategories) {
             BigDecimal expected = expectedMap.getOrDefault(cat.getId(), BigDecimal.ZERO);
             BigDecimal recurringExpected = recurringExpectedMap.getOrDefault(cat.getId(), BigDecimal.ZERO);
@@ -115,7 +115,7 @@ public class BudgetViewService {
                 available = expected.add(rolledOver).add(activity);
             }
 
-            viewMap.put(cat.getId(), BudgetCategoryViewDto.builder()
+            viewMap.put(cat.getId(), BudgetCategoryViewResponse.builder()
                     .categoryId(cat.getId())
                     .name(cat.getName())
                     .parentId(cat.getParentId())
@@ -131,8 +131,8 @@ public class BudgetViewService {
         }
 
         // Build tree — nest children under parents
-        List<BudgetCategoryViewDto> roots = new ArrayList<>();
-        for (BudgetCategoryViewDto view : viewMap.values()) {
+        List<BudgetCategoryViewResponse> roots = new ArrayList<>();
+        for (BudgetCategoryViewResponse view : viewMap.values()) {
             if (view.getParentId() != null && viewMap.containsKey(view.getParentId())) {
                 viewMap.get(view.getParentId()).getChildren().add(view);
             } else {
@@ -141,20 +141,20 @@ public class BudgetViewService {
         }
 
         // Zero out direct expected on parents — parents roll up from children only
-        for (BudgetCategoryViewDto view : viewMap.values()) {
+        for (BudgetCategoryViewResponse view : viewMap.values()) {
             if (!view.getChildren().isEmpty()) {
                 view.setExpected(BigDecimal.ZERO);
                 view.setRecurringExpected(BigDecimal.ZERO);
                 view.setActivity(BigDecimal.ZERO);
                 view.setAvailable(BigDecimal.ZERO);
                 view.setRolledOver(BigDecimal.ZERO);
-                view.getChildren().sort(Comparator.comparingInt(BudgetCategoryViewDto::getDisplayOrder));
+                view.getChildren().sort(Comparator.comparingInt(BudgetCategoryViewResponse::getDisplayOrder));
             }
         }
-        roots.sort(Comparator.comparingInt(BudgetCategoryViewDto::getDisplayOrder));
+        roots.sort(Comparator.comparingInt(BudgetCategoryViewResponse::getDisplayOrder));
 
         // Accumulate parent totals from children
-        for (BudgetCategoryViewDto root : roots) {
+        for (BudgetCategoryViewResponse root : roots) {
             accumulateChildren(root);
         }
 
@@ -163,11 +163,11 @@ public class BudgetViewService {
                 .filter(c -> c.getParentId() == null || !viewMap.containsKey(c.getParentId()))
                 .collect(Collectors.partitioningBy(Category::isIncome));
 
-        List<BudgetCategoryViewDto> inflowRoots = roots.stream()
+        List<BudgetCategoryViewResponse> inflowRoots = roots.stream()
                 .filter(v -> catByIncome.getOrDefault(true, List.of()).stream()
                         .anyMatch(c -> c.getId().equals(v.getCategoryId())))
                 .toList();
-        List<BudgetCategoryViewDto> outflowRoots = roots.stream()
+        List<BudgetCategoryViewResponse> outflowRoots = roots.stream()
                 .filter(v -> catByIncome.getOrDefault(false, List.of()).stream()
                         .anyMatch(c -> c.getId().equals(v.getCategoryId())))
                 .toList();
@@ -175,16 +175,16 @@ public class BudgetViewService {
         // Compute available pool from AVAILABLE_POOL rollovers in previous period
         BigDecimal availablePool = computeAvailablePool(budget, period, budgetCategories, rolloverMap);
 
-        BudgetSectionDto inflowSection = buildSection(inflowRoots);
-        BudgetSectionDto outflowSection = buildSection(outflowRoots);
+        BudgetSectionResponse inflowSection = buildSection(inflowRoots);
+        BudgetSectionResponse outflowSection = buildSection(outflowRoots);
 
         BigDecimal totalRolledOver = roots.stream()
-                .map(BudgetCategoryViewDto::getRolledOver)
+                .map(BudgetCategoryViewResponse::getRolledOver)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .add(availablePool);
 
         BigDecimal totalRecurringExpected = roots.stream()
-                .map(BudgetCategoryViewDto::getRecurringExpected)
+                .map(BudgetCategoryViewResponse::getRecurringExpected)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal budgetable = inflowSection.getExpected().add(availablePool);
@@ -197,7 +197,7 @@ public class BudgetViewService {
                 ? BigDecimal.ZERO
                 : accountRepository.sumBalancesByIds(linkedAccountIds);
 
-        return BudgetPeriodViewDto.builder()
+        return BudgetPeriodViewResponse.builder()
                 .periodStart(period.start())
                 .periodEnd(period.end())
                 .budgetable(budgetable)
@@ -212,8 +212,8 @@ public class BudgetViewService {
                 .build();
     }
 
-    private void accumulateChildren(BudgetCategoryViewDto parent) {
-        for (BudgetCategoryViewDto child : parent.getChildren()) {
+    private void accumulateChildren(BudgetCategoryViewResponse parent) {
+        for (BudgetCategoryViewResponse child : parent.getChildren()) {
             accumulateChildren(child);
             parent.setExpected(parent.getExpected().add(child.getExpected()));
             parent.setRecurringExpected(parent.getRecurringExpected().add(child.getRecurringExpected()));
@@ -223,18 +223,18 @@ public class BudgetViewService {
         }
     }
 
-    private BudgetSectionDto buildSection(List<BudgetCategoryViewDto> roots) {
+    private BudgetSectionResponse buildSection(List<BudgetCategoryViewResponse> roots) {
         BigDecimal totalExpected = BigDecimal.ZERO;
         BigDecimal totalActivity = BigDecimal.ZERO;
         BigDecimal totalAvailable = BigDecimal.ZERO;
 
-        for (BudgetCategoryViewDto root : roots) {
+        for (BudgetCategoryViewResponse root : roots) {
             totalExpected = totalExpected.add(root.getExpected());
             totalActivity = totalActivity.add(root.getActivity());
             totalAvailable = totalAvailable.add(root.getAvailable());
         }
 
-        return BudgetSectionDto.builder()
+        return BudgetSectionResponse.builder()
                 .expected(totalExpected)
                 .activity(totalActivity)
                 .available(totalAvailable)
@@ -339,7 +339,7 @@ public class BudgetViewService {
                 String key = ri.getId() + ":" + date;
                 RecurringItemOverride override = overrideMap.get(key);
 
-                // recurringExpected always uses expected amount (override ?? default),
+                // recurringExpected always uses the expected amount (override ?? default),
                 // never the transaction amount — that's captured in activity
                 if (override != null && override.getAmount() != null) {
                     total = total.add(override.getAmount());

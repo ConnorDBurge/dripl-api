@@ -2,8 +2,7 @@ package com.dripl.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
+
 
 import java.util.List;
 import java.util.Map;
@@ -328,14 +327,18 @@ class TransactionGroupGraphQLIT extends BaseIntegrationTest {
         var group = createTransactionGroup(token, "Trip", txnIds2());
         String groupId = (String) group.get("id");
 
-        // Create a recurring item (still REST — not yet migrated to GraphQL)
-        var riResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"accountId":"%s","merchantName":"Netflix","amount":-15.99,"frequencyGranularity":"MONTH","anchorDates":["2025-01-15T00:00:00"],"startDate":"2025-01-01T00:00:00"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String riId = (String) riResp.getBody().get("id");
+        // Create a recurring item via GraphQL
+        @SuppressWarnings("unchecked")
+        var riData = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        accountId: "%s", merchantName: "Netflix", amount: -15.99,
+                        frequencyGranularity: MONTH, anchorDates: ["2025-01-15T00:00:00"],
+                        startDate: "2025-01-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId)).get("createRecurringItem");
+        String riId = (String) riData.get("id");
 
         // Create RI-linked transaction via GraphQL
         @SuppressWarnings("unchecked")

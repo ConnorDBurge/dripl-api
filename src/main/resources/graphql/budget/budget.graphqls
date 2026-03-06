@@ -1,0 +1,102 @@
+extend type Query {
+    budgets: [BudgetResponse!]!
+    budget(budgetId: ID!): BudgetResponse
+    budgetView(budgetId: ID!, date: String, periodOffset: Int): BudgetPeriodViewResponse!
+}
+
+extend type Mutation {
+    createBudget(input: CreateBudgetInput!): BudgetResponse!
+    updateBudget(budgetId: ID!, input: UpdateBudgetInput!): BudgetResponse!
+    deleteBudget(budgetId: ID!): Boolean!
+    updateBudgetCategoryConfig(budgetId: ID!, categoryId: ID!, input: UpdateBudgetCategoryConfigInput!): BudgetCategoryConfigResponse!
+    setBudgetExpectedAmount(budgetId: ID!, categoryId: ID!, periodStart: String!, input: SetExpectedAmountInput!): Boolean!
+}
+
+type BudgetResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    name: String!
+    anchorDay1: Int
+    anchorDay2: Int
+    intervalDays: Int
+    anchorDate: String
+    accountIds: [ID!]!
+    currentPeriodStart: String
+    currentPeriodEnd: String
+}
+
+type BudgetCategoryConfigResponse {
+    id: ID!
+    categoryId: ID!
+    rolloverType: RolloverType!
+}
+
+type BudgetPeriodViewResponse {
+    periodStart: String!
+    periodEnd: String!
+    budgetable: BigDecimal!
+    totalBudgeted: BigDecimal!
+    leftToBudget: BigDecimal!
+    netTotalAvailable: BigDecimal!
+    recurringExpected: BigDecimal!
+    availablePool: BigDecimal!
+    totalRolledOver: BigDecimal!
+    inflow: BudgetSectionResponse!
+    outflow: BudgetSectionResponse!
+}
+
+type BudgetSectionResponse {
+    expected: BigDecimal!
+    activity: BigDecimal!
+    available: BigDecimal!
+    categories: [BudgetCategoryViewResponse!]!
+}
+
+type BudgetCategoryViewResponse {
+    categoryId: ID!
+    name: String!
+    parentId: ID
+    displayOrder: Int!
+    expected: BigDecimal!
+    recurringExpected: BigDecimal!
+    activity: BigDecimal!
+    available: BigDecimal!
+    rolledOver: BigDecimal!
+    rolloverType: RolloverType!
+    children: [BudgetCategoryViewResponse!]!
+}
+
+input CreateBudgetInput {
+    name: String!
+    anchorDay1: Int
+    anchorDay2: Int
+    intervalDays: Int
+    anchorDate: String
+    accountIds: [ID!]
+}
+
+input UpdateBudgetInput {
+    name: String
+    anchorDay1: Int
+    anchorDay2: Int
+    intervalDays: Int
+    anchorDate: String
+    accountIds: [ID!]
+}
+
+input UpdateBudgetCategoryConfigInput {
+    rolloverType: RolloverType!
+}
+
+input SetExpectedAmountInput {
+    expectedAmount: BigDecimal
+}
+
+enum RolloverType {
+    NONE
+    SAME_CATEGORY
+    AVAILABLE_POOL
+}

@@ -1,6 +1,6 @@
 package com.dripl.budget.entity;
 
-import com.dripl.budget.dto.BudgetDto;
+import com.dripl.budget.dto.BudgetResponse;
 import com.dripl.budget.util.BudgetPeriodCalculator;
 import com.dripl.budget.util.PeriodRange;
 import com.dripl.common.audit.BaseEntity;
@@ -63,7 +63,7 @@ public class Budget extends BaseEntity {
         return anchorDay1 != null;
     }
 
-    public BudgetDto toDto() {
+    public BudgetResponse toResponse() {
         LocalDate currentPeriodStart = null;
         LocalDate currentPeriodEnd = null;
         if (isBudgetConfigured()) {
@@ -72,8 +72,12 @@ public class Budget extends BaseEntity {
             currentPeriodEnd = period.end();
         }
 
-        return BudgetDto.builder()
+        return BudgetResponse.builder()
                 .id(getId())
+                .createdAt(getCreatedAt())
+                .createdBy(getCreatedBy())
+                .updatedAt(getUpdatedAt())
+                .updatedBy(getUpdatedBy())
                 .name(name)
                 .anchorDay1(anchorDay1)
                 .anchorDay2(anchorDay2)
@@ -85,9 +89,9 @@ public class Budget extends BaseEntity {
                 .build();
     }
 
-    public static List<BudgetDto> toDtos(List<Budget> budgets) {
+    public static List<BudgetResponse> toResponses(List<Budget> budgets) {
         return budgets.stream()
-                .map(Budget::toDto)
+                .map(Budget::toResponse)
                 .toList();
     }
 }

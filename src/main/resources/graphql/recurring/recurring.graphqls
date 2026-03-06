@@ -1,0 +1,145 @@
+extend type Query {
+    recurringItems: [RecurringItemResponse!]!
+    recurringItem(recurringItemId: ID!): RecurringItemResponse
+    recurringItemMonthView(month: String, periodOffset: Int): RecurringItemMonthViewResponse!
+}
+
+extend type Mutation {
+    createRecurringItem(input: CreateRecurringItemInput!): RecurringItemResponse!
+    updateRecurringItem(recurringItemId: ID!, input: UpdateRecurringItemInput!): RecurringItemResponse!
+    deleteRecurringItem(recurringItemId: ID!): Boolean!
+    createRecurringItemOverride(recurringItemId: ID!, input: SetOccurrenceOverrideInput!): RecurringItemOverrideResponse!
+    updateRecurringItemOverride(recurringItemId: ID!, overrideId: ID!, input: UpdateOccurrenceOverrideInput!): RecurringItemOverrideResponse!
+    deleteRecurringItemOverride(recurringItemId: ID!, overrideId: ID!): Boolean!
+}
+
+type RecurringItemResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    description: String
+    merchantId: ID
+    accountId: ID!
+    categoryId: ID
+    amount: BigDecimal!
+    currencyCode: CurrencyCode!
+    notes: String
+    frequencyGranularity: FrequencyGranularity!
+    frequencyQuantity: Int!
+    anchorDates: [LocalDateTime!]!
+    startDate: LocalDateTime!
+    endDate: LocalDateTime
+    status: RecurringItemStatus!
+    tagIds: [ID!]
+}
+
+type RecurringItemOverrideResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    recurringItemId: ID!
+    occurrenceDate: String!
+    amount: BigDecimal
+    notes: String
+}
+
+type RecurringItemMonthViewResponse {
+    monthStart: String!
+    monthEnd: String!
+    expectedExpenses: BigDecimal!
+    expectedIncome: BigDecimal!
+    occurrenceCount: Int!
+    itemCount: Int!
+    items: [RecurringItemViewResponse!]!
+}
+
+type RecurringItemViewResponse {
+    recurringItemId: ID!
+    description: String
+    merchantId: ID
+    accountId: ID!
+    categoryId: ID
+    amount: BigDecimal!
+    currencyCode: CurrencyCode!
+    status: RecurringItemStatus!
+    frequencyGranularity: FrequencyGranularity!
+    frequencyQuantity: Int!
+    occurrences: [RecurringOccurrenceResponse!]!
+    totalExpected: BigDecimal!
+}
+
+type RecurringOccurrenceResponse {
+    date: String!
+    expectedAmount: BigDecimal!
+    overrideId: ID
+    notes: String
+    transaction: OccurrenceTransactionResponse
+}
+
+type OccurrenceTransactionResponse {
+    id: ID!
+    date: String!
+    amount: BigDecimal!
+}
+
+input CreateRecurringItemInput {
+    description: String
+    merchantName: String!
+    accountId: ID!
+    categoryId: ID
+    amount: BigDecimal!
+    currencyCode: CurrencyCode
+    notes: String
+    frequencyGranularity: FrequencyGranularity!
+    frequencyQuantity: Int
+    anchorDates: [LocalDateTime!]!
+    startDate: LocalDateTime!
+    endDate: LocalDateTime
+    tagIds: [ID!]
+}
+
+input UpdateRecurringItemInput {
+    description: String
+    merchantName: String
+    accountId: ID
+    categoryId: ID
+    amount: BigDecimal
+    currencyCode: CurrencyCode
+    notes: String
+    frequencyGranularity: FrequencyGranularity
+    frequencyQuantity: Int
+    anchorDates: [LocalDateTime!]
+    startDate: LocalDateTime
+    endDate: LocalDateTime
+    status: RecurringItemStatus
+    tagIds: [ID!]
+}
+
+input SetOccurrenceOverrideInput {
+    occurrenceDate: String!
+    amount: BigDecimal
+    notes: String
+}
+
+input UpdateOccurrenceOverrideInput {
+    amount: BigDecimal
+    notes: String
+}
+
+enum FrequencyGranularity {
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+enum RecurringItemStatus {
+    ACTIVE
+    PAUSED
+    CANCELLED
+}

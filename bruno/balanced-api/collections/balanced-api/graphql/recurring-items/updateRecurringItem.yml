@@ -1,0 +1,48 @@
+info:
+  name: updateRecurringItem
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateRecurringItem($recurringItemId: ID!, $input: UpdateRecurringItemInput!) {
+        updateRecurringItem(recurringItemId: $recurringItemId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          description
+          merchantId
+          accountId
+          categoryId
+          amount
+          currencyCode
+          status
+          frequencyGranularity
+          frequencyQuantity
+          anchorDates
+          startDate
+          endDate
+          notes
+          tagIds
+        }
+      }
+    variables: |-
+      {
+        "recurringItemId": "",
+        "input": {
+          "status": "PAUSED"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

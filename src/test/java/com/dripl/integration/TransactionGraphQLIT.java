@@ -40,15 +40,20 @@ class TransactionGraphQLIT extends BaseIntegrationTest {
         categoryId = createCategory(token, "Groceries");
         tagId = createTag(token, "weekly");
 
-        // Create a recurring item (still REST — not yet migrated to GraphQL)
-        var riResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"accountId":"%s","merchantName":"Netflix","categoryId":"%s","amount":-15.99,"currencyCode":"EUR","frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-01-15T00:00:00"],"startDate":"2025-01-01T00:00:00","tagIds":["%s"]}
-                        """.formatted(accountId, categoryId, tagId), authHeaders(token)),
-                Map.class);
-        recurringItemId = (String) riResp.getBody().get("id");
-        recurringMerchantId = (String) riResp.getBody().get("merchantId");
+        // Create a recurring item via GraphQL
+        @SuppressWarnings("unchecked")
+        var riData = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        accountId: "%s", merchantName: "Netflix", categoryId: "%s",
+                        amount: -15.99, currencyCode: EUR, frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-01-15T00:00:00"], startDate: "2025-01-01T00:00:00",
+                        tagIds: ["%s"]
+                    }) { id merchantId }
+                }
+                """.formatted(accountId, categoryId, tagId)).get("createRecurringItem");
+        recurringItemId = (String) riData.get("id");
+        recurringMerchantId = (String) riData.get("merchantId");
     }
 
     // ── GraphQL helpers ──────────────────────────────────────────────

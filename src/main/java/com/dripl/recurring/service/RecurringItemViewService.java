@@ -1,10 +1,10 @@
 package com.dripl.recurring.service;
 
 import com.dripl.common.exception.BadRequestException;
-import com.dripl.recurring.dto.RecurringItemMonthViewDto;
-import com.dripl.recurring.dto.RecurringItemViewDto;
-import com.dripl.recurring.dto.RecurringOccurrenceDto;
-import com.dripl.recurring.dto.OccurrenceTransactionDto;
+import com.dripl.recurring.dto.RecurringItemMonthViewResponse;
+import com.dripl.recurring.dto.RecurringItemViewResponse;
+import com.dripl.recurring.dto.RecurringOccurrenceResponse;
+import com.dripl.recurring.dto.OccurrenceTransactionResponse;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.RecurringItemStatus;
@@ -34,7 +34,7 @@ public class RecurringItemViewService {
     private final TransactionRepository transactionRepository;
 
     @Transactional(readOnly = true)
-    public RecurringItemMonthViewDto getMonthView(UUID workspaceId, YearMonth month, Integer periodOffset) {
+    public RecurringItemMonthViewResponse getMonthView(UUID workspaceId, YearMonth month, Integer periodOffset) {
         if (month != null && periodOffset != null) {
             throw new BadRequestException("Cannot specify both 'month' and 'periodOffset'");
         }
@@ -51,7 +51,7 @@ public class RecurringItemViewService {
         return buildMonthView(workspaceId, target);
     }
 
-    private RecurringItemMonthViewDto buildMonthView(UUID workspaceId, YearMonth month) {
+    private RecurringItemMonthViewResponse buildMonthView(UUID workspaceId, YearMonth month) {
         LocalDate monthStart = month.atDay(1);
         LocalDate monthEnd = month.atEndOfMonth();
 
@@ -74,7 +74,7 @@ public class RecurringItemViewService {
                         t -> t,
                         (a, b) -> a));
 
-        List<RecurringItemViewDto> viewItems = new ArrayList<>();
+        List<RecurringItemViewResponse> viewItems = new ArrayList<>();
         BigDecimal expectedExpenses = BigDecimal.ZERO;
         BigDecimal expectedIncome = BigDecimal.ZERO;
         int totalOccurrences = 0;
@@ -85,7 +85,7 @@ public class RecurringItemViewService {
             List<LocalDate> dates = RecurringOccurrenceCalculator.computeOccurrences(ri, monthStart, monthEnd);
 
             BigDecimal itemTotal = BigDecimal.ZERO;
-            List<RecurringOccurrenceDto> occurrences = new ArrayList<>();
+            List<RecurringOccurrenceResponse> occurrences = new ArrayList<>();
 
             for (LocalDate date : dates) {
                 String key = ri.getId() + ":" + date;
@@ -97,16 +97,16 @@ public class RecurringItemViewService {
                         ? override.getAmount() : ri.getAmount();
 
                 // Build transaction summary if linked
-                OccurrenceTransactionDto txnDto = null;
+                OccurrenceTransactionResponse txnDto = null;
                 if (linkedTxn != null) {
-                    txnDto = OccurrenceTransactionDto.builder()
+                    txnDto = OccurrenceTransactionResponse.builder()
                             .id(linkedTxn.getId())
                             .date(linkedTxn.getDate().toLocalDate())
                             .amount(linkedTxn.getAmount())
                             .build();
                 }
 
-                occurrences.add(RecurringOccurrenceDto.builder()
+                occurrences.add(RecurringOccurrenceResponse.builder()
                         .date(date)
                         .expectedAmount(expectedAmount)
                         .overrideId(override != null ? override.getId() : null)
@@ -119,9 +119,9 @@ public class RecurringItemViewService {
 
             if (occurrences.isEmpty()) continue;
 
-            occurrences.sort(Comparator.comparing(RecurringOccurrenceDto::getDate));
+            occurrences.sort(Comparator.comparing(RecurringOccurrenceResponse::getDate));
 
-            viewItems.add(RecurringItemViewDto.builder()
+            viewItems.add(RecurringItemViewResponse.builder()
                     .recurringItemId(ri.getId())
                     .description(ri.getDescription())
                     .merchantId(ri.getMerchantId())
@@ -146,7 +146,7 @@ public class RecurringItemViewService {
 
         viewItems.sort(Comparator.comparing(v -> v.getOccurrences().getFirst().getDate()));
 
-        return RecurringItemMonthViewDto.builder()
+        return RecurringItemMonthViewResponse.builder()
                 .monthStart(monthStart)
                 .monthEnd(monthEnd)
                 .items(viewItems)

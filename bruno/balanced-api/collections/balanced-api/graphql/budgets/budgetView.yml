@@ -1,0 +1,87 @@
+info:
+  name: budgetView
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query BudgetView($budgetId: ID!, $date: String, $periodOffset: Int) {
+        budgetView(budgetId: $budgetId, date: $date, periodOffset: $periodOffset) {
+          periodStart
+          periodEnd
+          budgetable
+          totalBudgeted
+          leftToBudget
+          netTotalAvailable
+          recurringExpected
+          availablePool
+          totalRolledOver
+          inflow {
+            expected
+            activity
+            available
+            categories {
+              categoryId
+              name
+              parentId
+              displayOrder
+              expected
+              recurringExpected
+              activity
+              available
+              rolledOver
+              rolloverType
+              children {
+                categoryId
+                name
+                expected
+                activity
+                available
+                rolledOver
+                rolloverType
+              }
+            }
+          }
+          outflow {
+            expected
+            activity
+            available
+            categories {
+              categoryId
+              name
+              parentId
+              displayOrder
+              expected
+              recurringExpected
+              activity
+              available
+              rolledOver
+              rolloverType
+              children {
+                categoryId
+                name
+                expected
+                activity
+                available
+                rolledOver
+                rolloverType
+              }
+            }
+          }
+        }
+      }
+    variables: |-
+      {
+        "budgetId": "d9bedbb4-1f81-4512-bebc-988e775c65b1",
+        "periodOffset": 0
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

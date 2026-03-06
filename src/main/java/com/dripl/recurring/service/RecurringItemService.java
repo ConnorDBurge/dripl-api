@@ -6,10 +6,10 @@ import com.dripl.category.service.CategoryService;
 import com.dripl.common.exception.BadRequestException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.merchant.service.MerchantService;
-import com.dripl.recurring.dto.CreateRecurringItemDto;
-import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
-import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
-import com.dripl.recurring.dto.UpdateRecurringItemDto;
+import com.dripl.recurring.dto.CreateRecurringItemInput;
+import com.dripl.recurring.dto.SetOccurrenceOverrideInput;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideInput;
+import com.dripl.recurring.dto.UpdateRecurringItemInput;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.RecurringItemStatus;
@@ -58,7 +58,7 @@ public class RecurringItemService {
     }
 
     @Transactional
-    public RecurringItem createRecurringItem(UUID workspaceId, CreateRecurringItemDto dto) {
+    public RecurringItem createRecurringItem(UUID workspaceId, CreateRecurringItemInput dto) {
         var account = accountService.getAccount(dto.getAccountId(), workspaceId);
         var merchant = merchantService.resolveMerchant(dto.getMerchantName(), workspaceId);
         UUID categoryId = null;
@@ -93,7 +93,7 @@ public class RecurringItemService {
     }
 
     @Transactional
-    public RecurringItem updateRecurringItem(UUID recurringItemId, UUID workspaceId, UpdateRecurringItemDto dto) {
+    public RecurringItem updateRecurringItem(UUID recurringItemId, UUID workspaceId, UpdateRecurringItemInput dto) {
         RecurringItem recurringItem = getRecurringItem(recurringItemId, workspaceId);
 
         if (dto.getAccountId() != null) {
@@ -184,7 +184,7 @@ public class RecurringItemService {
 
     @Transactional
     public RecurringItemOverride createOverride(UUID recurringItemId, UUID workspaceId,
-                                                SetOccurrenceOverrideDto dto) {
+                                                SetOccurrenceOverrideInput dto) {
         RecurringItem ri = getRecurringItem(recurringItemId, workspaceId);
         LocalDate occurrenceDate = dto.getOccurrenceDate();
 
@@ -216,7 +216,7 @@ public class RecurringItemService {
 
     @Transactional
     public RecurringItemOverride updateOverride(UUID overrideId, UUID workspaceId,
-                                                UpdateOccurrenceOverrideDto dto) {
+                                                UpdateOccurrenceOverrideInput dto) {
         RecurringItemOverride override = overrideRepository.findById(overrideId)
                 .filter(o -> o.getWorkspaceId().equals(workspaceId))
                 .orElseThrow(() -> new ResourceNotFoundException("Override not found"));

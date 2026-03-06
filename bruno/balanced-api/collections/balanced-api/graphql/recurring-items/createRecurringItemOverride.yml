@@ -1,0 +1,39 @@
+info:
+  name: createRecurringItemOverride
+  type: graphql
+  seq: 7
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateRecurringItemOverride($recurringItemId: ID!, $input: SetOccurrenceOverrideInput!) {
+        createRecurringItemOverride(recurringItemId: $recurringItemId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          recurringItemId
+          occurrenceDate
+          amount
+          notes
+        }
+      }
+    variables: |-
+      {
+        "recurringItemId": "",
+        "input": {
+          "occurrenceDate": "2026-03-15",
+          "amount": -145.00,
+          "notes": "Higher than usual"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

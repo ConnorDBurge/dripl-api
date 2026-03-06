@@ -1,0 +1,29 @@
+info:
+  name: setBudgetExpectedAmount
+  type: graphql
+  seq: 8
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation SetBudgetExpectedAmount($budgetId: ID!, $categoryId: ID!, $periodStart: String!, $input: SetExpectedAmountInput!) {
+        setBudgetExpectedAmount(budgetId: $budgetId, categoryId: $categoryId, periodStart: $periodStart, input: $input)
+      }
+    variables: |-
+      {
+        "budgetId": "6ad9cbd8-f4c5-40f0-b426-0170311dddad",
+        "categoryId": "00000000-0000-0000-0000-000000000000",
+        "periodStart": "2026-01-01",
+        "input": {
+          "expectedAmount": 500.00
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

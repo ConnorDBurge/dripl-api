@@ -1,0 +1,53 @@
+info:
+  name: createRecurringItem
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateRecurringItem($input: CreateRecurringItemInput!) {
+        createRecurringItem(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          description
+          merchantId
+          accountId
+          categoryId
+          amount
+          currencyCode
+          status
+          frequencyGranularity
+          frequencyQuantity
+          anchorDates
+          startDate
+          endDate
+          notes
+          tagIds
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "merchantName": "Netflix",
+          "accountId": "",
+          "amount": -15.99,
+          "frequencyGranularity": "MONTH",
+          "frequencyQuantity": 1,
+          "anchorDates": ["2025-01-15T00:00:00"],
+          "startDate": "2025-01-01T00:00:00"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

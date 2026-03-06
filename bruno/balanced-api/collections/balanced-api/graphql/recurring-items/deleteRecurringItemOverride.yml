@@ -1,0 +1,25 @@
+info:
+  name: deleteRecurringItemOverride
+  type: graphql
+  seq: 9
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation DeleteRecurringItemOverride($recurringItemId: ID!, $overrideId: ID!) {
+        deleteRecurringItemOverride(recurringItemId: $recurringItemId, overrideId: $overrideId)
+      }
+    variables: |-
+      {
+        "recurringItemId": "",
+        "overrideId": ""
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

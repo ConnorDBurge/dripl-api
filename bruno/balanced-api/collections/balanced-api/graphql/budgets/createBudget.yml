@@ -1,0 +1,43 @@
+info:
+  name: createBudget
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateBudget($input: CreateBudgetInput!) {
+        createBudget(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          name
+          anchorDay1
+          anchorDay2
+          intervalDays
+          anchorDate
+          accountIds
+          currentPeriodStart
+          currentPeriodEnd
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "Bi-Weekly Budget",
+          "anchorDate": "2026-03-06",
+          "intervalDays": 14,
+          "accountIds": ["a4b64e2d-fab1-4e72-a39e-0714ba13499d"]
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

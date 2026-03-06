@@ -2,8 +2,8 @@ package com.dripl.budget;
 
 import com.dripl.account.entity.Account;
 import com.dripl.account.repository.AccountRepository;
-import com.dripl.budget.dto.CreateBudgetDto;
-import com.dripl.budget.dto.UpdateBudgetDto;
+import com.dripl.budget.dto.CreateBudgetInput;
+import com.dripl.budget.dto.UpdateBudgetInput;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.repository.BudgetAccountRepository;
 import com.dripl.budget.repository.BudgetRepository;
@@ -44,7 +44,7 @@ class BudgetServiceTest {
 
         @Test
         void create_monthlyBudget_succeeds() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Monthly Bills")
                     .anchorDay1(1)
                     .build();
@@ -63,7 +63,7 @@ class BudgetServiceTest {
         @Test
         void create_fixedInterval_succeeds() {
             LocalDate anchor = LocalDate.now().minusDays(7);
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Biweekly")
                     .intervalDays(14)
                     .anchorDate(anchor)
@@ -84,7 +84,7 @@ class BudgetServiceTest {
         void create_withAccounts_savesLinks() {
             UUID acc1 = UUID.randomUUID();
             UUID acc2 = UUID.randomUUID();
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Test")
                     .anchorDay1(1)
                     .accountIds(List.of(acc1, acc2))
@@ -108,7 +108,7 @@ class BudgetServiceTest {
         void create_withInvalidAccountIds_throws() {
             UUID validAcc = UUID.randomUUID();
             UUID invalidAcc = UUID.randomUUID();
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Test")
                     .anchorDay1(1)
                     .accountIds(List.of(validAcc, invalidAcc))
@@ -128,7 +128,7 @@ class BudgetServiceTest {
 
         @Test
         void create_duplicateName_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Existing")
                     .anchorDay1(1)
                     .build();
@@ -141,7 +141,7 @@ class BudgetServiceTest {
 
         @Test
         void create_noPeriodConfig_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder().name("Bad").build();
+            CreateBudgetInput dto = CreateBudgetInput.builder().name("Bad").build();
             when(budgetRepository.existsByWorkspaceIdAndName(workspaceId, "Bad")).thenReturn(false);
 
             assertThatThrownBy(() -> service.createBudget(workspaceId, dto))
@@ -151,7 +151,7 @@ class BudgetServiceTest {
 
         @Test
         void create_mixedModes_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Mixed")
                     .anchorDay1(1)
                     .intervalDays(14)
@@ -166,7 +166,7 @@ class BudgetServiceTest {
 
         @Test
         void create_anchorDay1OutOfRange_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Bad Day")
                     .anchorDay1(32)
                     .build();
@@ -179,7 +179,7 @@ class BudgetServiceTest {
 
         @Test
         void create_anchorDay2SameAsDay1_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Same Days")
                     .anchorDay1(15)
                     .anchorDay2(15)
@@ -193,7 +193,7 @@ class BudgetServiceTest {
 
         @Test
         void create_intervalDaysZero_throws() {
-            CreateBudgetDto dto = CreateBudgetDto.builder()
+            CreateBudgetInput dto = CreateBudgetInput.builder()
                     .name("Zero")
                     .intervalDays(0)
                     .anchorDate(LocalDate.now())
@@ -261,7 +261,7 @@ class BudgetServiceTest {
             when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> inv.getArgument(0));
             when(budgetAccountRepository.findAllByBudgetId(budgetId)).thenReturn(List.of());
 
-            UpdateBudgetDto dto = UpdateBudgetDto.builder().name("New").build();
+            UpdateBudgetInput dto = UpdateBudgetInput.builder().name("New").build();
             Budget result = service.updateBudget(workspaceId, budgetId, dto);
 
             assertThat(result.getName()).isEqualTo("New");
@@ -275,7 +275,7 @@ class BudgetServiceTest {
             when(budgetRepository.findByIdAndWorkspaceId(budgetId, workspaceId)).thenReturn(Optional.of(existing));
             when(budgetRepository.existsByWorkspaceIdAndName(workspaceId, "Taken")).thenReturn(true);
 
-            UpdateBudgetDto dto = UpdateBudgetDto.builder().name("Taken").build();
+            UpdateBudgetInput dto = UpdateBudgetInput.builder().name("Taken").build();
 
             assertThatThrownBy(() -> service.updateBudget(workspaceId, budgetId, dto))
                     .isInstanceOf(BadRequestException.class)
@@ -292,7 +292,7 @@ class BudgetServiceTest {
             when(accountRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(
                     Account.builder().id(newAcc).workspaceId(workspaceId).build()));
 
-            UpdateBudgetDto dto = UpdateBudgetDto.builder().accountIds(List.of(newAcc)).build();
+            UpdateBudgetInput dto = UpdateBudgetInput.builder().accountIds(List.of(newAcc)).build();
             Budget result = service.updateBudget(workspaceId, budgetId, dto);
 
             verify(budgetAccountRepository).deleteAllByBudgetId(budgetId);
@@ -309,7 +309,7 @@ class BudgetServiceTest {
             when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> inv.getArgument(0));
             when(accountRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of());
 
-            UpdateBudgetDto dto = UpdateBudgetDto.builder().accountIds(List.of(invalidAcc)).build();
+            UpdateBudgetInput dto = UpdateBudgetInput.builder().accountIds(List.of(invalidAcc)).build();
 
             assertThatThrownBy(() -> service.updateBudget(workspaceId, budgetId, dto))
                     .isInstanceOf(BadRequestException.class)

@@ -1,0 +1,41 @@
+info:
+  name: recurringItems
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query RecurringItems {
+        recurringItems {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          description
+          merchantId
+          accountId
+          categoryId
+          amount
+          currencyCode
+          status
+          frequencyGranularity
+          frequencyQuantity
+          anchorDates
+          startDate
+          endDate
+          notes
+          tagIds
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

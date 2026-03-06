@@ -1,0 +1,24 @@
+info:
+  name: deleteRecurringItem
+  type: graphql
+  seq: 6
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation DeleteRecurringItem($recurringItemId: ID!) {
+        deleteRecurringItem(recurringItemId: $recurringItemId)
+      }
+    variables: |-
+      {
+        "recurringItemId": "0e988333-7d73-459a-b1e0-01ec2e2ec770"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

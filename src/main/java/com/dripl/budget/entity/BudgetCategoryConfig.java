@@ -1,6 +1,6 @@
 package com.dripl.budget.entity;
 
-import com.dripl.budget.dto.BudgetCategoryConfigDto;
+import com.dripl.budget.dto.BudgetCategoryConfigResponse;
 import com.dripl.budget.enums.RolloverType;
 import com.dripl.common.audit.BaseEntity;
 import jakarta.persistence.Column;
@@ -40,8 +40,8 @@ public class BudgetCategoryConfig extends BaseEntity {
     @Column(name = "rollover_type", nullable = false)
     private RolloverType rolloverType = RolloverType.NONE;
 
-    public BudgetCategoryConfigDto toDto() {
-        return BudgetCategoryConfigDto.builder()
+    public BudgetCategoryConfigResponse toResponse() {
+        return BudgetCategoryConfigResponse.builder()
                 .id(getId())
                 .categoryId(categoryId)
                 .rolloverType(rolloverType)

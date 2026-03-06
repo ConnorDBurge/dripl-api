@@ -1,0 +1,39 @@
+info:
+  name: updateRecurringItemOverride
+  type: graphql
+  seq: 8
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateRecurringItemOverride($recurringItemId: ID!, $overrideId: ID!, $input: UpdateOccurrenceOverrideInput!) {
+        updateRecurringItemOverride(recurringItemId: $recurringItemId, overrideId: $overrideId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          recurringItemId
+          occurrenceDate
+          amount
+          notes
+        }
+      }
+    variables: |-
+      {
+        "recurringItemId": "",
+        "overrideId": "",
+        "input": {
+          "amount": -200.00,
+          "notes": "Updated override"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

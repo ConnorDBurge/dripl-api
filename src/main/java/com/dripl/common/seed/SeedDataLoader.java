@@ -3,9 +3,9 @@ package com.dripl.common.seed;
 import com.dripl.account.dto.CreateAccountInput;
 import com.dripl.account.entity.Account;
 import com.dripl.account.service.AccountService;
-import com.dripl.budget.dto.CreateBudgetDto;
-import com.dripl.budget.dto.SetExpectedAmountDto;
-import com.dripl.budget.dto.UpdateBudgetCategoryConfigDto;
+import com.dripl.budget.dto.CreateBudgetInput;
+import com.dripl.budget.dto.SetExpectedAmountInput;
+import com.dripl.budget.dto.UpdateBudgetCategoryConfigInput;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.enums.RolloverType;
 import com.dripl.budget.service.BudgetService;
@@ -18,7 +18,7 @@ import com.dripl.category.service.CategoryService;
 import com.dripl.merchant.dto.CreateMerchantInput;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
-import com.dripl.recurring.dto.CreateRecurringItemDto;
+import com.dripl.recurring.dto.CreateRecurringItemInput;
 import com.dripl.recurring.enums.FrequencyGranularity;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.dto.CreateTagInput;
@@ -282,7 +282,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
             int startDaysAgo = ((Number) seed.get("startDaysAgo")).intValue();
 
-            CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+            CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                     .description((String) seed.get("description"))
                     .merchantName((String) seed.get("merchantName"))
                     .accountId(accounts.get((String) seed.get("accountName")))
@@ -436,7 +436,7 @@ public class SeedDataLoader implements CommandLineRunner {
         // Create a Budget entity from workspace settings period config
         UUID budgetId = null;
         if (settingsSeed != null) {
-            CreateBudgetDto.CreateBudgetDtoBuilder budgetBuilder = CreateBudgetDto.builder()
+            CreateBudgetInput.CreateBudgetInputBuilder budgetBuilder = CreateBudgetInput.builder()
                     .name("Default Budget")
                     .accountIds(accountIds);
 
@@ -471,7 +471,7 @@ public class SeedDataLoader implements CommandLineRunner {
                     continue;
                 }
                 budgetConfigService.updateConfig(workspaceId, budgetId, categoryId,
-                        UpdateBudgetCategoryConfigDto.builder()
+                        UpdateBudgetCategoryConfigInput.builder()
                                 .rolloverType(RolloverType.valueOf((String) config.get("rolloverType")))
                                 .build());
             }
@@ -496,7 +496,7 @@ public class SeedDataLoader implements CommandLineRunner {
                     UUID categoryId = categoriesByName.get(categoryName);
                     if (categoryId == null) continue;
                     budgetConfigService.setExpectedAmount(workspaceId, budgetId, categoryId, targetPeriod.start(),
-                            SetExpectedAmountDto.builder()
+                            SetExpectedAmountInput.builder()
                                     .expectedAmount(new java.math.BigDecimal(entry.get("expectedAmount").toString()))
                                     .build());
                 }

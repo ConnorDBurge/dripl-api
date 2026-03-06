@@ -45,26 +45,28 @@ class BudgetIT extends BaseIntegrationTest {
 
     @SuppressWarnings("unchecked")
     private String createMonthlyBudget() {
-        var resp = restTemplate.exchange(
-                "/api/v1/budgets", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Monthly Budget","anchorDay1":1,"accountIds":["%s"]}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return (String) resp.getBody().get("id");
+        var data = graphqlData(token, """
+                mutation {
+                    createBudget(input: { name: "Monthly Budget", anchorDay1: 1, accountIds: ["%s"] }) {
+                        id name anchorDay1 anchorDay2 intervalDays anchorDate accountIds currentPeriodStart currentPeriodEnd
+                    }
+                }
+                """.formatted(accountId));
+        var body = (Map<String, Object>) data.get("createBudget");
+        return (String) body.get("id");
     }
 
     @SuppressWarnings("unchecked")
     private String createFixedIntervalBudget(LocalDate anchor, int intervalDays) {
-        var resp = restTemplate.exchange(
-                "/api/v1/budgets", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Fixed Budget","anchorDate":"%s","intervalDays":%d,"accountIds":["%s"]}
-                        """.formatted(anchor, intervalDays, accountId), authHeaders(token)),
-                Map.class);
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return (String) resp.getBody().get("id");
+        var data = graphqlData(token, """
+                mutation {
+                    createBudget(input: { name: "Fixed Budget", anchorDate: "%s", intervalDays: %d, accountIds: ["%s"] }) {
+                        id name anchorDate intervalDays accountIds currentPeriodStart currentPeriodEnd
+                    }
+                }
+                """.formatted(anchor, intervalDays, accountId));
+        var body = (Map<String, Object>) data.get("createBudget");
+        return (String) body.get("id");
     }
 
     private String createTransaction(String amount, String categoryId, String date) {
@@ -95,6 +97,54 @@ class BudgetIT extends BaseIntegrationTest {
         return (String) data.get("id");
     }
 
+    private void setExpectedAmount(String budgetId, String categoryId, LocalDate periodStart, String amount) {
+        graphqlData(token, """
+                mutation {
+                    setBudgetExpectedAmount(budgetId: "%s", categoryId: "%s", periodStart: "%s", input: { expectedAmount: %s })
+                }
+                """.formatted(budgetId, categoryId, periodStart, amount));
+    }
+
+    private void setCategoryConfig(String budgetId, String categoryId, String rolloverType) {
+        graphqlData(token, """
+                mutation {
+                    updateBudgetCategoryConfig(budgetId: "%s", categoryId: "%s", input: { rolloverType: %s }) {
+                        id categoryId rolloverType
+                    }
+                }
+                """.formatted(budgetId, categoryId, rolloverType));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getBudgetView(String budgetId, int periodOffset) {
+        var data = graphqlData(token, """
+                query {
+                    budgetView(budgetId: "%s", periodOffset: %d) {
+                        periodStart periodEnd budgetable totalBudgeted leftToBudget
+                        netTotalAvailable recurringExpected availablePool totalRolledOver
+                        inflow { expected activity available categories { categoryId name expected recurringExpected activity available rolledOver rolloverType children { categoryId name expected activity available rolledOver rolloverType } } }
+                        outflow { expected activity available categories { categoryId name expected recurringExpected activity available rolledOver rolloverType children { categoryId name expected activity available rolledOver rolloverType } } }
+                    }
+                }
+                """.formatted(budgetId, periodOffset));
+        return (Map<String, Object>) data.get("budgetView");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getBudgetViewByDate(String budgetId, String date) {
+        var data = graphqlData(token, """
+                query {
+                    budgetView(budgetId: "%s", date: "%s") {
+                        periodStart periodEnd budgetable totalBudgeted leftToBudget
+                        netTotalAvailable recurringExpected availablePool totalRolledOver
+                        inflow { expected activity available categories { categoryId name expected recurringExpected activity available rolledOver rolloverType children { categoryId name expected activity available rolledOver rolloverType } } }
+                        outflow { expected activity available categories { categoryId name expected recurringExpected activity available rolledOver rolloverType children { categoryId name expected activity available rolledOver rolloverType } } }
+                    }
+                }
+                """.formatted(budgetId, date));
+        return (Map<String, Object>) data.get("budgetView");
+    }
+
     // ── Budget CRUD Tests ───────────────────────────────────
 
     @Nested
@@ -103,130 +153,145 @@ class BudgetIT extends BaseIntegrationTest {
         @Test
         @SuppressWarnings("unchecked")
         void createBudget_monthly() {
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"My Budget","anchorDay1":1,"accountIds":["%s"]}
-                            """.formatted(accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(resp.getBody().get("name")).isEqualTo("My Budget");
-            assertThat(resp.getBody().get("anchorDay1")).isEqualTo(1);
-            assertThat(resp.getBody().get("currentPeriodStart")).isNotNull();
-            assertThat(resp.getBody().get("currentPeriodEnd")).isNotNull();
-            assertThat((List<?>) resp.getBody().get("accountIds")).hasSize(1);
+            var data = graphqlData(token, """
+                    mutation {
+                        createBudget(input: { name: "My Budget", anchorDay1: 1, accountIds: ["%s"] }) {
+                            id name anchorDay1 currentPeriodStart currentPeriodEnd accountIds
+                        }
+                    }
+                    """.formatted(accountId));
+            var body = (Map<String, Object>) data.get("createBudget");
+            assertThat(body.get("name")).isEqualTo("My Budget");
+            assertThat(body.get("anchorDay1")).isEqualTo(1);
+            assertThat(body.get("currentPeriodStart")).isNotNull();
+            assertThat(body.get("currentPeriodEnd")).isNotNull();
+            assertThat((List<?>) body.get("accountIds")).hasSize(1);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         void createBudget_fixedInterval() {
             LocalDate anchor = LocalDate.now().minusDays(7);
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Biweekly","anchorDate":"%s","intervalDays":14,"accountIds":["%s"]}
-                            """.formatted(anchor, accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(resp.getBody().get("intervalDays")).isEqualTo(14);
+            var data = graphqlData(token, """
+                    mutation {
+                        createBudget(input: { name: "Biweekly", anchorDate: "%s", intervalDays: 14, accountIds: ["%s"] }) {
+                            id intervalDays
+                        }
+                    }
+                    """.formatted(anchor, accountId));
+            var body = (Map<String, Object>) data.get("createBudget");
+            assertThat(body.get("intervalDays")).isEqualTo(14);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         void createBudget_semiMonthly() {
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Semi","anchorDay1":1,"anchorDay2":15,"accountIds":["%s"]}
-                            """.formatted(accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(resp.getBody().get("anchorDay1")).isEqualTo(1);
-            assertThat(resp.getBody().get("anchorDay2")).isEqualTo(15);
+            var data = graphqlData(token, """
+                    mutation {
+                        createBudget(input: { name: "Semi", anchorDay1: 1, anchorDay2: 15, accountIds: ["%s"] }) {
+                            id anchorDay1 anchorDay2
+                        }
+                    }
+                    """.formatted(accountId));
+            var body = (Map<String, Object>) data.get("createBudget");
+            assertThat(body.get("anchorDay1")).isEqualTo(1);
+            assertThat(body.get("anchorDay2")).isEqualTo(15);
         }
 
         @Test
         void createBudget_invalidAnchorDay_returns400() {
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Bad","anchorDay1":32,"accountIds":["%s"]}
-                            """.formatted(accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            var resp = graphql(token, """
+                    mutation {
+                        createBudget(input: { name: "Bad", anchorDay1: 32, accountIds: ["%s"] }) {
+                            id
+                        }
+                    }
+                    """.formatted(accountId));
+            assertThat(resp.get("errors")).isNotNull();
         }
 
         @Test
         void createBudget_duplicateAnchorDays_returns400() {
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Bad","anchorDay1":15,"anchorDay2":15,"accountIds":["%s"]}
-                            """.formatted(accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            var resp = graphql(token, """
+                    mutation {
+                        createBudget(input: { name: "Bad", anchorDay1: 15, anchorDay2: 15, accountIds: ["%s"] }) {
+                            id
+                        }
+                    }
+                    """.formatted(accountId));
+            assertThat(resp.get("errors")).isNotNull();
         }
 
         @Test
         @SuppressWarnings("unchecked")
         void listBudgets() {
             createMonthlyBudget();
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), List.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resp.getBody()).hasSize(1);
+            var data = graphqlData(token, """
+                    query {
+                        budgets {
+                            id name anchorDay1 anchorDay2 intervalDays anchorDate accountIds currentPeriodStart currentPeriodEnd
+                        }
+                    }
+                    """);
+            var budgets = (List<?>) data.get("budgets");
+            assertThat(budgets).hasSize(1);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         void getBudget() {
             String budgetId = createMonthlyBudget();
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resp.getBody().get("name")).isEqualTo("Monthly Budget");
+            var data = graphqlData(token, """
+                    query {
+                        budget(budgetId: "%s") {
+                            id name
+                        }
+                    }
+                    """.formatted(budgetId));
+            var body = (Map<String, Object>) data.get("budget");
+            assertThat(body.get("name")).isEqualTo("Monthly Budget");
         }
 
         @Test
         @SuppressWarnings("unchecked")
         void updateBudget() {
             String budgetId = createMonthlyBudget();
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s".formatted(budgetId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"name":"Updated Budget"}
-                            """, authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resp.getBody().get("name")).isEqualTo("Updated Budget");
+            var data = graphqlData(token, """
+                    mutation {
+                        updateBudget(budgetId: "%s", input: { name: "Updated Budget" }) {
+                            id name
+                        }
+                    }
+                    """.formatted(budgetId));
+            var body = (Map<String, Object>) data.get("updateBudget");
+            assertThat(body.get("name")).isEqualTo("Updated Budget");
         }
 
         @Test
         void deleteBudget() {
             String budgetId = createMonthlyBudget();
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s".formatted(budgetId), HttpMethod.DELETE,
-                    new HttpEntity<>(authHeaders(token)), Void.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+            graphqlData(token, """
+                    mutation { deleteBudget(budgetId: "%s") }
+                    """.formatted(budgetId));
 
             // Verify it's gone
-            var getResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(getResp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            var resp = graphql(token, """
+                    query { budget(budgetId: "%s") { id } }
+                    """.formatted(budgetId));
+            assertThat(resp.get("errors")).isNotNull();
         }
 
         @Test
         void createBudget_duplicateName_returns409() {
             createMonthlyBudget();
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets", HttpMethod.POST,
-                    new HttpEntity<>("""
-                            {"name":"Monthly Budget","anchorDay1":1,"accountIds":["%s"]}
-                            """.formatted(accountId), authHeaders(token)),
-                    Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            var resp = graphql(token, """
+                    mutation {
+                        createBudget(input: { name: "Monthly Budget", anchorDay1: 1, accountIds: ["%s"] }) {
+                            id
+                        }
+                    }
+                    """.formatted(accountId));
+            assertThat(resp.get("errors")).isNotNull();
         }
     }
 
@@ -245,48 +310,38 @@ class BudgetIT extends BaseIntegrationTest {
         @Test
         @SuppressWarnings("unchecked")
         void updateCategoryConfig_sameCategoryAndBack() {
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, expenseCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"SAME_CATEGORY"}
-                            """, authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resp.getBody().get("rolloverType")).isEqualTo("SAME_CATEGORY");
+            var data = graphqlData(token, """
+                    mutation {
+                        updateBudgetCategoryConfig(budgetId: "%s", categoryId: "%s", input: { rolloverType: SAME_CATEGORY }) {
+                            id categoryId rolloverType
+                        }
+                    }
+                    """.formatted(budgetId, expenseCategoryId));
+            var body = (Map<String, Object>) data.get("updateBudgetCategoryConfig");
+            assertThat(body.get("rolloverType")).isEqualTo("SAME_CATEGORY");
 
-            var resp2 = restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, expenseCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"NONE"}
-                            """, authHeaders(token)), Map.class);
-            assertThat(resp2.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resp2.getBody().get("rolloverType")).isEqualTo("NONE");
+            var data2 = graphqlData(token, """
+                    mutation {
+                        updateBudgetCategoryConfig(budgetId: "%s", categoryId: "%s", input: { rolloverType: NONE }) {
+                            id categoryId rolloverType
+                        }
+                    }
+                    """.formatted(budgetId, expenseCategoryId));
+            var body2 = (Map<String, Object>) data2.get("updateBudgetCategoryConfig");
+            assertThat(body2.get("rolloverType")).isEqualTo("NONE");
         }
 
         @Test
         void setExpectedAmount_andClear() {
             LocalDate periodStart = LocalDate.now().withDayOfMonth(1);
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "500");
 
             // Verify it shows in the period view
-            var periodResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(periodResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
+            assertThat(body.get("periodStart")).isNotNull();
 
-            var delResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":null}
-                            """, authHeaders(token)), Void.class);
-            assertThat(delResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "null");
         }
 
         @Test
@@ -294,24 +349,11 @@ class BudgetIT extends BaseIntegrationTest {
         void setExpectedAmount_updateExisting() {
             LocalDate periodStart = LocalDate.now().withDayOfMonth(1);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "500");
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "750");
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":750.00}
-                            """, authHeaders(token)), Void.class);
-
-            var periodResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(periodResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
+            assertThat(body.get("periodStart")).isNotNull();
         }
     }
 
@@ -330,19 +372,9 @@ class BudgetIT extends BaseIntegrationTest {
 
             createTransaction("-42.50", childCategoryId, txnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":200.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "200");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-            var body = resp.getBody();
+            var body = getBudgetView(budgetId, 0);
             assertThat(body.get("periodStart")).isEqualTo(periodStart.toString());
 
             var outflow = (Map<String, Object>) body.get("outflow");
@@ -365,28 +397,19 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("-50.00", childCategoryId, txnDate);
 
             // Only set expected on child — parent rolls up from children
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":200.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "200");
 
             // Setting expected on parent should be rejected
-            var parentResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, expenseCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":100.00}
-                            """, authHeaders(token)), Map.class);
-            assertThat(parentResp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            var parentResp = graphql(token, """
+                    mutation {
+                        setBudgetExpectedAmount(budgetId: "%s", categoryId: "%s", periodStart: "%s", input: { expectedAmount: 100 })
+                    }
+                    """.formatted(budgetId, expenseCategoryId, periodStart));
+            assertThat(parentResp.get("errors")).isNotNull();
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
 
             var foodCat = categories.stream()
@@ -411,18 +434,11 @@ class BudgetIT extends BaseIntegrationTest {
 
             createTransaction("3000.00", incomeCategoryId, txnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, incomeCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":5000.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, incomeCategoryId, periodStart, "5000");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var inflow = (Map<String, Object>) resp.getBody().get("inflow");
+            var inflow = (Map<String, Object>) body.get("inflow");
             var categories = (List<Map<String, Object>>) inflow.get("categories");
 
             var salary = categories.stream()
@@ -440,11 +456,9 @@ class BudgetIT extends BaseIntegrationTest {
 
             createCategoryExcludedFromBudget(token, "ExcludedCat");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             assertThat(categories.stream().noneMatch(c -> "ExcludedCat".equals(c.get("name")))).isTrue();
         }
@@ -466,19 +480,11 @@ class BudgetIT extends BaseIntegrationTest {
             // Transaction on budgeted account
             createTransaction("-50.00", childCategoryId, txnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, periodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":200.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, periodStart, "200");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             var foodCat = categories.stream()
                     .filter(c -> "Food".equals(c.get("name")))
@@ -498,13 +504,10 @@ class BudgetIT extends BaseIntegrationTest {
         void getPeriodView_previousPeriodViaOffset() {
             String budgetId = createMonthlyBudget();
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=-1".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, -1);
 
             LocalDate expectedPrevStart = LocalDate.now().withDayOfMonth(1).minusMonths(1);
-            assertThat(resp.getBody().get("periodStart")).isEqualTo(expectedPrevStart.toString());
+            assertThat(body.get("periodStart")).isEqualTo(expectedPrevStart.toString());
         }
     }
 
@@ -527,34 +530,16 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate currentPeriodStart = LocalDate.now().withDayOfMonth(1);
             String prevTxnDate = prevPeriodStart.plusDays(14).format(DateTimeFormatter.ISO_DATE);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, childCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"SAME_CATEGORY"}
-                            """, authHeaders(token)), Map.class);
-
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setCategoryConfig(budgetId, childCategoryId, "SAME_CATEGORY");
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "500");
 
             createTransaction("-300.00", childCategoryId, prevTxnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, currentPeriodStart, "500");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             var foodCat = categories.stream()
                     .filter(c -> "Food".equals(c.get("name")))
@@ -576,32 +561,16 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate currentPeriodStart = LocalDate.now().withDayOfMonth(1);
             String prevTxnDate = prevPeriodStart.plusDays(14).format(DateTimeFormatter.ISO_DATE);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, childCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"SAME_CATEGORY"}
-                            """, authHeaders(token)), Map.class);
+            setCategoryConfig(budgetId, childCategoryId, "SAME_CATEGORY");
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "200");
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":200.00}
-                            """, authHeaders(token)), Void.class);
             createTransaction("-500.00", childCategoryId, prevTxnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, currentPeriodStart, "500");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             var foodCat = categories.stream()
                     .filter(c -> "Food".equals(c.get("name")))
@@ -621,26 +590,15 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate currentPeriodStart = LocalDate.now().withDayOfMonth(1);
             String prevTxnDate = prevPeriodStart.plusDays(14).format(DateTimeFormatter.ISO_DATE);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "500");
+
             createTransaction("-300.00", childCategoryId, prevTxnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, currentPeriodStart, "500");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             var foodCat = categories.stream()
                     .filter(c -> "Food".equals(c.get("name")))
@@ -659,25 +617,14 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate prevPeriodStart = LocalDate.now().withDayOfMonth(1).minusMonths(1);
             String prevTxnDate = prevPeriodStart.plusDays(14).format(DateTimeFormatter.ISO_DATE);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, childCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"AVAILABLE_POOL"}
-                            """, authHeaders(token)), Map.class);
+            setCategoryConfig(budgetId, childCategoryId, "AVAILABLE_POOL");
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "500");
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":500.00}
-                            """, authHeaders(token)), Void.class);
             createTransaction("-300.00", childCategoryId, prevTxnDate);
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var outflow = (Map<String, Object>) resp.getBody().get("outflow");
+            var outflow = (Map<String, Object>) body.get("outflow");
             var categories = (List<Map<String, Object>>) outflow.get("categories");
             var foodCat = categories.stream()
                     .filter(c -> "Food".equals(c.get("name")))
@@ -688,7 +635,7 @@ class BudgetIT extends BaseIntegrationTest {
                     .findFirst().orElse(null);
             assertThat(((Number) groceriesCat.get("rolledOver")).doubleValue()).isEqualTo(0.0);
 
-            assertThat(((Number) resp.getBody().get("availablePool")).doubleValue()).isEqualTo(200.0);
+            assertThat(((Number) body.get("availablePool")).doubleValue()).isEqualTo(200.0);
         }
     }
 
@@ -703,12 +650,9 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate anchor = LocalDate.now().minusDays(7);
             String budgetId = createFixedIntervalBudget(anchor, 14);
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            LocalDate periodStart = LocalDate.parse((String) resp.getBody().get("periodStart"));
-            LocalDate periodEnd = LocalDate.parse((String) resp.getBody().get("periodEnd"));
+            var body = getBudgetView(budgetId, 0);
+            LocalDate periodStart = LocalDate.parse((String) body.get("periodStart"));
+            LocalDate periodEnd = LocalDate.parse((String) body.get("periodEnd"));
             assertThat(LocalDate.now()).isBetween(periodStart, periodEnd);
         }
 
@@ -718,16 +662,11 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate anchor = LocalDate.now().minusDays(7);
             String budgetId = createFixedIntervalBudget(anchor, 14);
 
-            var currentResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            LocalDate currentStart = LocalDate.parse((String) currentResp.getBody().get("periodStart"));
+            var currentBody = getBudgetView(budgetId, 0);
+            LocalDate currentStart = LocalDate.parse((String) currentBody.get("periodStart"));
 
-            var prevResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=-1".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(prevResp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            LocalDate prevEnd = LocalDate.parse((String) prevResp.getBody().get("periodEnd"));
+            var prevBody = getBudgetView(budgetId, -1);
+            LocalDate prevEnd = LocalDate.parse((String) prevBody.get("periodEnd"));
 
             assertThat(prevEnd).isEqualTo(currentStart.minusDays(1));
         }
@@ -738,16 +677,11 @@ class BudgetIT extends BaseIntegrationTest {
             LocalDate anchor = LocalDate.now().minusDays(7);
             String budgetId = createFixedIntervalBudget(anchor, 14);
 
-            var currentResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            String currentStart = (String) currentResp.getBody().get("periodStart");
+            var currentBody = getBudgetView(budgetId, 0);
+            String currentStart = (String) currentBody.get("periodStart");
 
-            var directResp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?date=%s".formatted(budgetId, currentStart), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(directResp.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(directResp.getBody().get("periodStart")).isEqualTo(currentStart);
+            var directBody = getBudgetViewByDate(budgetId, currentStart);
+            assertThat(directBody.get("periodStart")).isEqualTo(currentStart);
         }
     }
 
@@ -803,13 +737,10 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("3000.00", incomeCategoryId, txnDate);
             createTransaction("-500.00", childCategoryId, txnDate);
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+            var body = getBudgetView(budgetId, 0);
 
             // AccountResponse balance = 5000 + 3000 - 500 = 7500
-            double netTotal = ((Number) resp.getBody().get("netTotalAvailable")).doubleValue();
+            double netTotal = ((Number) body.get("netTotalAvailable")).doubleValue();
             assertThat(netTotal).isEqualTo(7500.0);
         }
 
@@ -821,24 +752,11 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("-400.00", childCategoryId, txnDate);
 
             // Set expected amounts
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":600.00}
-                            """, authHeaders(token)), Void.class);
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, incomeCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":5000.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, currentPeriodStart, "600");
+            setExpectedAmount(budgetId, incomeCategoryId, currentPeriodStart, "5000");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            var body = resp.getBody();
             double netTotal = ((Number) body.get("netTotalAvailable")).doubleValue();
             double budgetable = ((Number) body.get("budgetable")).doubleValue();
             double totalBudgeted = ((Number) body.get("totalBudgeted")).doubleValue();
@@ -868,36 +786,19 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("-400.00", childCategoryId, prevTxnDate);
 
             // Set rollover on groceries
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, childCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"SAME_CATEGORY"}
-                            """, authHeaders(token)), Map.class);
+            setCategoryConfig(budgetId, childCategoryId, "SAME_CATEGORY");
 
             // Set expected for previous period
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":600.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "600");
 
             // Current period: earn $3500, budget $600, spend $550
             String curTxnDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
             createTransaction("3500.00", incomeCategoryId, curTxnDate);
             createTransaction("-550.00", childCategoryId, curTxnDate);
 
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, currentPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":600.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, currentPeriodStart, "600");
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            var body = resp.getBody();
+            var body = getBudgetView(budgetId, 0);
 
             double netTotal = ((Number) body.get("netTotalAvailable")).doubleValue();
             double leftToBudget = ((Number) body.get("leftToBudget")).doubleValue();
@@ -934,37 +835,15 @@ class BudgetIT extends BaseIntegrationTest {
             createTransaction("-1400.00", rentCategoryId, prevTxnDate);
 
             // Set expected for Period 1
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, childCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":600.00}
-                            """, authHeaders(token)), Void.class);
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, rentCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":1400.00}
-                            """, authHeaders(token)), Void.class);
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/expected?periodStart=%s".formatted(budgetId, incomeCategoryId, prevPeriodStart),
-                    HttpMethod.PUT,
-                    new HttpEntity<>("""
-                            {"expectedAmount":5000.00}
-                            """, authHeaders(token)), Void.class);
+            setExpectedAmount(budgetId, childCategoryId, prevPeriodStart, "600");
+            setExpectedAmount(budgetId, rentCategoryId, prevPeriodStart, "1400");
+            setExpectedAmount(budgetId, incomeCategoryId, prevPeriodStart, "5000");
 
             // Set groceries to AVAILABLE_POOL rollover
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s/categories/%s/config".formatted(budgetId, childCategoryId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"rolloverType":"AVAILABLE_POOL"}
-                            """, authHeaders(token)), Map.class);
+            setCategoryConfig(budgetId, childCategoryId, "AVAILABLE_POOL");
 
             // ── Verify Period 1 (offset -1)
-            var p1Resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=-1".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            var p1 = p1Resp.getBody();
+            var p1 = getBudgetView(budgetId, -1);
 
             // AccountResponse balance = 5000(starting) + 5000 - 400 - 1400 = 8200
             assertThat(((Number) p1.get("netTotalAvailable")).doubleValue()).isEqualTo(8200.0);
@@ -979,10 +858,7 @@ class BudgetIT extends BaseIntegrationTest {
             assertThat(((Number) p1Outflow.get("available")).doubleValue()).isEqualTo(200.0);
 
             // ── Verify Period 2 (offset 0) — no expected set yet
-            var p2Resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view?periodOffset=0".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
-            var p2 = p2Resp.getBody();
+            var p2 = getBudgetView(budgetId, 0);
 
             // availablePool gets groceries' $200 surplus
             assertThat(((Number) p2.get("availablePool")).doubleValue()).isEqualTo(200.0);
@@ -1010,23 +886,22 @@ class BudgetIT extends BaseIntegrationTest {
             String acct2Id = createAccount(token, "Savings", "CASH", "SAVINGS", "2000");
 
             // Update budget to include both accounts
-            restTemplate.exchange(
-                    "/api/v1/budgets/%s".formatted(budgetId), HttpMethod.PATCH,
-                    new HttpEntity<>("""
-                            {"accountIds":["%s","%s"]}
-                            """.formatted(accountId, acct2Id), authHeaders(token)),
-                    Map.class);
+            graphqlData(token, """
+                    mutation {
+                        updateBudget(budgetId: "%s", input: { accountIds: ["%s", "%s"] }) {
+                            id accountIds
+                        }
+                    }
+                    """.formatted(budgetId, accountId, acct2Id));
 
             // Create transactions on different accounts
             String txnDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
             createTransaction("2000.00", incomeCategoryId, txnDate);
             createTransactionOnAccount("-300.00", childCategoryId, txnDate, acct2Id);
 
-            var resp = restTemplate.exchange(
-                    "/api/v1/budgets/%s/view".formatted(budgetId), HttpMethod.GET,
-                    new HttpEntity<>(authHeaders(token)), Map.class);
+            var body = getBudgetView(budgetId, 0);
 
-            double netTotal = ((Number) resp.getBody().get("netTotalAvailable")).doubleValue();
+            double netTotal = ((Number) body.get("netTotalAvailable")).doubleValue();
 
             // AccountResponse 1: 5000 + 2000 = 7000
             // AccountResponse 2: 2000 - 300 = 1700

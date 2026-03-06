@@ -32,7 +32,7 @@ graphql:
       }
     variables: |-
       {
-        "accountId": "00000000-0000-0000-0000-000000000000"
+        "accountId": "a4b64e2d-fab1-4e72-a39e-0714ba13499d"
       }
   auth: inherit
 

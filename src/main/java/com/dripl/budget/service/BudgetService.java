@@ -1,8 +1,8 @@
 package com.dripl.budget.service;
 
 import com.dripl.account.repository.AccountRepository;
-import com.dripl.budget.dto.CreateBudgetDto;
-import com.dripl.budget.dto.UpdateBudgetDto;
+import com.dripl.budget.dto.CreateBudgetInput;
+import com.dripl.budget.dto.UpdateBudgetInput;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.entity.BudgetAccount;
 import com.dripl.budget.repository.BudgetAccountRepository;
@@ -50,7 +50,7 @@ public class BudgetService {
     }
 
     @Transactional
-    public Budget createBudget(UUID workspaceId, CreateBudgetDto dto) {
+    public Budget createBudget(UUID workspaceId, CreateBudgetInput dto) {
         if (budgetRepository.existsByWorkspaceIdAndName(workspaceId, dto.getName())) {
             throw new BadRequestException("A budget with name '%s' already exists".formatted(dto.getName()));
         }
@@ -77,7 +77,7 @@ public class BudgetService {
     }
 
     @Transactional
-    public Budget updateBudget(UUID workspaceId, UUID budgetId, UpdateBudgetDto dto) {
+    public Budget updateBudget(UUID workspaceId, UUID budgetId, UpdateBudgetInput dto) {
         Budget budget = findBudget(workspaceId, budgetId);
 
         if (dto.getName() != null) {

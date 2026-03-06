@@ -1,0 +1,32 @@
+info:
+  name: updateBudgetCategoryConfig
+  type: graphql
+  seq: 7
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateBudgetCategoryConfig($budgetId: ID!, $categoryId: ID!, $input: UpdateBudgetCategoryConfigInput!) {
+        updateBudgetCategoryConfig(budgetId: $budgetId, categoryId: $categoryId, input: $input) {
+          id
+          categoryId
+          rolloverType
+        }
+      }
+    variables: |-
+      {
+        "budgetId": "00000000-0000-0000-0000-000000000000",
+        "categoryId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "rolloverType": "SAME_CATEGORY"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

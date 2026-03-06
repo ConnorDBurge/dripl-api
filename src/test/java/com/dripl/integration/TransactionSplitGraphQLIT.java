@@ -395,17 +395,18 @@ class TransactionSplitGraphQLIT extends BaseIntegrationTest {
                 """);
         List<String> childIds = (List<String>) split.get("transactionIds");
 
-        // Create a recurring item with same account (still REST)
-        var riResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Netflix","accountId":"%s","merchantName":"Netflix",
-                         "amount":-15.00,"currencyCode":"USD",
-                         "frequencyGranularity":"MONTH","frequencyQuantity":1,
-                         "anchorDates":["2025-07-01T00:00:00"],"startDate":"2025-01-01T00:00:00"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String riId = (String) riResp.getBody().get("id");
+        // Create a recurring item with same account via GraphQL
+        @SuppressWarnings("unchecked")
+        var riData = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Netflix", accountId: "%s", merchantName: "Netflix",
+                        amount: -15.00, frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-01T00:00:00"], startDate: "2025-01-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId)).get("createRecurringItem");
+        String riId = (String) riData.get("id");
 
         // Link RI to split child via GraphQL
         var result = graphql("""
@@ -432,17 +433,18 @@ class TransactionSplitGraphQLIT extends BaseIntegrationTest {
 
         String account2Id = createAccount(token, "Savings", "CASH", "SAVINGS", "10000");
 
-        // Create RI with different account (still REST)
-        var riResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Netflix Savings","accountId":"%s","merchantName":"Netflix",
-                         "amount":-15.00,"currencyCode":"USD",
-                         "frequencyGranularity":"MONTH","frequencyQuantity":1,
-                         "anchorDates":["2025-07-01T00:00:00"],"startDate":"2025-01-01T00:00:00"}
-                        """.formatted(account2Id), authHeaders(token)),
-                Map.class);
-        String riId = (String) riResp.getBody().get("id");
+        // Create RI with different account via GraphQL
+        @SuppressWarnings("unchecked")
+        var riData2 = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Netflix Savings", accountId: "%s", merchantName: "Netflix",
+                        amount: -15.00, frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-01T00:00:00"], startDate: "2025-01-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(account2Id)).get("createRecurringItem");
+        String riId = (String) riData2.get("id");
 
         // Try to link RI to split child — account mismatch
         var result = graphql("""

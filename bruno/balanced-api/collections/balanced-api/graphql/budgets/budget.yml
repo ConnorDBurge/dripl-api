@@ -1,0 +1,38 @@
+info:
+  name: budget
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Budget($budgetId: ID!) {
+        budget(budgetId: $budgetId) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          name
+          anchorDay1
+          anchorDay2
+          intervalDays
+          anchorDate
+          accountIds
+          currentPeriodStart
+          currentPeriodEnd
+        }
+      }
+    variables: |-
+      {
+        "budgetId": "6ad9cbd8-f4c5-40f0-b426-0170311dddad"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

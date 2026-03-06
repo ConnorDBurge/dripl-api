@@ -2,9 +2,9 @@ package com.dripl.recurring;
 
 import com.dripl.account.enums.CurrencyCode;
 import com.dripl.common.exception.BadRequestException;
-import com.dripl.recurring.dto.RecurringItemMonthViewDto;
-import com.dripl.recurring.dto.RecurringItemViewDto;
-import com.dripl.recurring.dto.RecurringOccurrenceDto;
+import com.dripl.recurring.dto.RecurringItemMonthViewResponse;
+import com.dripl.recurring.dto.RecurringItemViewResponse;
+import com.dripl.recurring.dto.RecurringOccurrenceResponse;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.FrequencyGranularity;
@@ -92,7 +92,7 @@ class RecurringItemViewServiceTest {
         when(recurringItemRepository.findAllByWorkspaceId(WS))
                 .thenReturn(List.of(monthly, biweekly));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getMonthStart()).isEqualTo(LocalDate.of(2026, 3, 1));
         assertThat(result.getMonthEnd()).isEqualTo(LocalDate.of(2026, 3, 31));
@@ -100,7 +100,7 @@ class RecurringItemViewServiceTest {
         assertThat(result.getItems()).hasSize(2);
 
         // Sorted by first occurrence: biweekly first (Mar 14), then rent (Mar 15)
-        RecurringItemViewDto groceries = result.getItems().get(0);
+        RecurringItemViewResponse groceries = result.getItems().get(0);
         assertThat(groceries.getDescription()).isEqualTo("Groceries");
         assertThat(groceries.getFrequencyGranularity()).isEqualTo(FrequencyGranularity.WEEK);
         assertThat(groceries.getFrequencyQuantity()).isEqualTo(2);
@@ -109,7 +109,7 @@ class RecurringItemViewServiceTest {
         assertThat(groceries.getOccurrences().get(0).getExpectedAmount()).isEqualByComparingTo("200.00");
         assertThat(groceries.getTotalExpected()).isEqualByComparingTo("400.00");
 
-        RecurringItemViewDto rent = result.getItems().get(1);
+        RecurringItemViewResponse rent = result.getItems().get(1);
         assertThat(rent.getDescription()).isEqualTo("Rent");
         assertThat(rent.getFrequencyGranularity()).isEqualTo(FrequencyGranularity.MONTH);
         assertThat(rent.getFrequencyQuantity()).isEqualTo(1);
@@ -136,7 +136,7 @@ class RecurringItemViewServiceTest {
         when(recurringItemRepository.findAllByWorkspaceId(WS))
                 .thenReturn(List.of(active, paused, cancelled));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItemCount()).isEqualTo(1);
         assertThat(result.getItems().get(0).getDescription()).isEqualTo("Netflix");
@@ -150,7 +150,7 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(yearly));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItems()).isEmpty();
         assertThat(result.getItemCount()).isZero();
@@ -171,17 +171,17 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(item1, item2));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         // Both items are positive → all income
         BigDecimal item1Total = result.getItems().stream()
                 .filter(i -> i.getDescription().equals("A"))
-                .map(RecurringItemViewDto::getTotalExpected)
+                .map(RecurringItemViewResponse::getTotalExpected)
                 .findFirst().orElse(BigDecimal.ZERO);
         assertThat(item1Total).isEqualByComparingTo(new BigDecimal("100.00"));
 
         BigDecimal summedTotal = result.getItems().stream()
-                .map(RecurringItemViewDto::getTotalExpected)
+                .map(RecurringItemViewResponse::getTotalExpected)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         assertThat(result.getExpectedIncome()).isEqualByComparingTo(summedTotal);
         assertThat(result.getExpectedExpenses()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -201,7 +201,7 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(late, early));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItems()).hasSize(2);
         assertThat(result.getItems().get(0).getDescription()).isEqualTo("Early");
@@ -217,7 +217,7 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(ended));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItems()).isEmpty();
     }
@@ -230,13 +230,13 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(bimonthly));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItems()).hasSize(1);
-        RecurringItemViewDto item = result.getItems().get(0);
-        assertThat(item.getOccurrences()).extracting(RecurringOccurrenceDto::getDate)
+        RecurringItemViewResponse item = result.getItems().get(0);
+        assertThat(item.getOccurrences()).extracting(RecurringOccurrenceResponse::getDate)
                 .containsExactly(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 15));
-        assertThat(item.getOccurrences()).extracting(RecurringOccurrenceDto::getExpectedAmount)
+        assertThat(item.getOccurrences()).extracting(RecurringOccurrenceResponse::getExpectedAmount)
                 .containsExactly(new BigDecimal("3000.00"), new BigDecimal("3000.00"));
         assertThat(item.getTotalExpected()).isEqualByComparingTo(new BigDecimal("6000.00"));
         assertThat(result.getOccurrenceCount()).isEqualTo(2);
@@ -246,7 +246,7 @@ class RecurringItemViewServiceTest {
     void getMonthView_noItemsInWorkspace() {
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of());
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getItems()).isEmpty();
         assertThat(result.getItemCount()).isZero();
@@ -259,7 +259,7 @@ class RecurringItemViewServiceTest {
     void getMonthView_defaultsToCurrentMonth() {
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of());
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, null, null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, null, null);
 
         YearMonth now = YearMonth.now();
         assertThat(result.getMonthStart()).isEqualTo(now.atDay(1));
@@ -270,7 +270,7 @@ class RecurringItemViewServiceTest {
     void getMonthView_periodOffsetResolvesRelativeMonth() {
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of());
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, null, -2);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, null, -2);
 
         YearMonth expected = YearMonth.now().minusMonths(2);
         assertThat(result.getMonthStart()).isEqualTo(expected.atDay(1));
@@ -298,7 +298,7 @@ class RecurringItemViewServiceTest {
         when(overrideRepository.findByWorkspaceIdAndOccurrenceDateBetween(any(), any(), any()))
                 .thenReturn(List.of());
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         assertThat(result.getExpectedExpenses()).isEqualByComparingTo(new BigDecimal("-1500.00"));
         assertThat(result.getExpectedIncome()).isEqualByComparingTo(new BigDecimal("5000.00"));
@@ -324,9 +324,9 @@ class RecurringItemViewServiceTest {
                 LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31)))
                 .thenReturn(List.of(override));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
-        RecurringOccurrenceDto occ = result.getItems().get(0).getOccurrences().get(0);
+        RecurringOccurrenceResponse occ = result.getItems().get(0).getOccurrences().get(0);
         assertThat(occ.getExpectedAmount()).isEqualByComparingTo("-1700.00");
         assertThat(occ.getOverrideId()).isNotNull();
         assertThat(occ.getNotes()).isEqualTo("Rent increase");
@@ -356,7 +356,7 @@ class RecurringItemViewServiceTest {
         when(overrideRepository.findByWorkspaceIdAndOccurrenceDateBetween(any(), any(), any()))
                 .thenReturn(List.of(override));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
         // A uses override: -150, B uses default: -200 → total expenses = -350
         assertThat(result.getExpectedExpenses()).isEqualByComparingTo("-350.00");
@@ -372,9 +372,9 @@ class RecurringItemViewServiceTest {
         when(overrideRepository.findByWorkspaceIdAndOccurrenceDateBetween(any(), any(), any()))
                 .thenReturn(List.of());
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
-        RecurringOccurrenceDto occ = result.getItems().get(0).getOccurrences().get(0);
+        RecurringOccurrenceResponse occ = result.getItems().get(0).getOccurrences().get(0);
         assertThat(occ.getOverrideId()).isNull();
         assertThat(occ.getTransaction()).isNull();
         assertThat(occ.getNotes()).isNull();
@@ -401,9 +401,9 @@ class RecurringItemViewServiceTest {
         when(transactionRepository.findLinkedToRecurringItemsInDateRange(any(), any(), any()))
                 .thenReturn(List.of(txn));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
-        RecurringOccurrenceDto occ = result.getItems().get(0).getOccurrences().get(0);
+        RecurringOccurrenceResponse occ = result.getItems().get(0).getOccurrences().get(0);
         assertThat(occ.getTransaction()).isNotNull();
         assertThat(occ.getTransaction().getId()).isEqualTo(txnId);
         assertThat(occ.getTransaction().getAmount()).isEqualByComparingTo("-1550.00");
@@ -441,9 +441,9 @@ class RecurringItemViewServiceTest {
         when(transactionRepository.findLinkedToRecurringItemsInDateRange(any(), any(), any()))
                 .thenReturn(List.of(txn));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
-        RecurringOccurrenceDto occ = result.getItems().get(0).getOccurrences().get(0);
+        RecurringOccurrenceResponse occ = result.getItems().get(0).getOccurrences().get(0);
         assertThat(occ.getTransaction()).isNotNull();
         assertThat(occ.getOverrideId()).isNotNull();
         assertThat(occ.getExpectedAmount()).isEqualByComparingTo("-150.00"); // override amount
@@ -459,9 +459,9 @@ class RecurringItemViewServiceTest {
 
         when(recurringItemRepository.findAllByWorkspaceId(WS)).thenReturn(List.of(item));
 
-        RecurringItemMonthViewDto result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
+        RecurringItemMonthViewResponse result = viewService.getMonthView(WS, YearMonth.of(2026, 3), null);
 
-        RecurringOccurrenceDto occ = result.getItems().get(0).getOccurrences().get(0);
+        RecurringOccurrenceResponse occ = result.getItems().get(0).getOccurrences().get(0);
         assertThat(occ.getTransaction()).isNull();
         assertThat(occ.getExpectedAmount()).isEqualByComparingTo("-14.99");
     }

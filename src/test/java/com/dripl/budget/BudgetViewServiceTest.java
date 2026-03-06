@@ -1,7 +1,7 @@
 package com.dripl.budget;
 
 import com.dripl.account.repository.AccountRepository;
-import com.dripl.budget.dto.BudgetPeriodViewDto;
+import com.dripl.budget.dto.BudgetPeriodViewResponse;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.entity.BudgetAccount;
 import com.dripl.budget.entity.BudgetCategoryConfig;
@@ -151,7 +151,7 @@ class BudgetViewServiceTest {
                     eq(currentPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("4500"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getPeriodStart()).isEqualTo(currentPeriodStart);
             assertThat(result.getPeriodEnd()).isEqualTo(currentPeriodEnd);
@@ -183,7 +183,7 @@ class BudgetViewServiceTest {
                     .thenReturn(List.of(expenseCategory, excluded));
             when(configRepository.findAllByBudgetId(budgetId)).thenReturn(List.of());
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories()).hasSize(1);
             assertThat(result.getOutflow().getCategories().get(0).getName()).isEqualTo("Groceries");
@@ -218,7 +218,7 @@ class BudgetViewServiceTest {
                     eq(prevPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("-350"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRolledOver())
                     .isEqualByComparingTo("50");
@@ -255,7 +255,7 @@ class BudgetViewServiceTest {
                     eq(prevPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("-250"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRolledOver())
                     .isEqualByComparingTo("-50");
@@ -278,7 +278,7 @@ class BudgetViewServiceTest {
                     eq(currentPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("-100"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRolledOver())
                     .isEqualByComparingTo("0");
@@ -313,7 +313,7 @@ class BudgetViewServiceTest {
                     eq(prevPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("-300"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRolledOver())
                     .isEqualByComparingTo("0");
@@ -351,7 +351,7 @@ class BudgetViewServiceTest {
                     eq(currentPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("-150"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories()).hasSize(1);
             var parentView = result.getOutflow().getCategories().get(0);
@@ -386,7 +386,7 @@ class BudgetViewServiceTest {
                                     .expectedAmount(new BigDecimal("200")).build()
                     ));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             var parentView = result.getOutflow().getCategories().get(0);
             // Parent expected should only be child rollup (200), not 500 + 200
@@ -400,7 +400,7 @@ class BudgetViewServiceTest {
                     .thenReturn(List.of(expenseCategory));
             when(configRepository.findAllByBudgetId(budgetId)).thenReturn(List.of());
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, currentPeriodStart);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, currentPeriodStart);
 
             assertThat(result.getPeriodStart()).isEqualTo(currentPeriodStart);
             assertThat(result.getPeriodEnd()).isEqualTo(currentPeriodEnd);
@@ -420,7 +420,7 @@ class BudgetViewServiceTest {
             when(accountRepository.sumBalancesByIds(any()))
                     .thenReturn(new BigDecimal("5500.00"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getNetTotalAvailable()).isEqualByComparingTo("5500.00");
         }
@@ -431,7 +431,7 @@ class BudgetViewServiceTest {
                     .thenReturn(List.of(expenseCategory));
             when(configRepository.findAllByBudgetId(budgetId)).thenReturn(List.of());
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getNetTotalAvailable()).isEqualByComparingTo("0");
         }
@@ -462,7 +462,7 @@ class BudgetViewServiceTest {
                     eq(currentPeriodStart.atStartOfDay()), any()))
                     .thenReturn(new BigDecimal("4500"));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             // budgetable = inflowExpected = 5000
             // totalBudgeted = outflowExpected = 300
@@ -526,7 +526,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("14.99");
@@ -561,7 +561,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri1, ri2));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("80.00");
@@ -587,7 +587,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("50.00");
@@ -610,7 +610,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("0");
@@ -634,7 +634,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("0");
@@ -657,7 +657,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("0");
@@ -690,7 +690,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             var parentView = result.getOutflow().getCategories().get(0);
             assertThat(parentView.getRecurringExpected()).isEqualByComparingTo("79.99");
@@ -716,7 +716,7 @@ class BudgetViewServiceTest {
                     .build();
             when(recurringItemRepository.findAllByWorkspaceId(workspaceId)).thenReturn(List.of(ri));
 
-            BudgetPeriodViewDto result = service.getView(workspaceId, budgetId, 0);
+            BudgetPeriodViewResponse result = service.getView(workspaceId, budgetId, 0);
 
             assertThat(result.getOutflow().getCategories().get(0).getRecurringExpected())
                     .isEqualByComparingTo("0");

@@ -1,0 +1,41 @@
+info:
+  name: updateBudget
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateBudget($budgetId: ID!, $input: UpdateBudgetInput!) {
+        updateBudget(budgetId: $budgetId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          name
+          anchorDay1
+          anchorDay2
+          intervalDays
+          anchorDate
+          accountIds
+          currentPeriodStart
+          currentPeriodEnd
+        }
+      }
+    variables: |-
+      {
+        "budgetId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "name": "Updated Budget"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

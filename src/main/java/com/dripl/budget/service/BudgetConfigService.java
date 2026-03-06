@@ -1,7 +1,7 @@
 package com.dripl.budget.service;
 
-import com.dripl.budget.dto.SetExpectedAmountDto;
-import com.dripl.budget.dto.UpdateBudgetCategoryConfigDto;
+import com.dripl.budget.dto.SetExpectedAmountInput;
+import com.dripl.budget.dto.UpdateBudgetCategoryConfigInput;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.entity.BudgetCategoryConfig;
 import com.dripl.budget.entity.BudgetPeriodEntry;
@@ -34,7 +34,7 @@ public class BudgetConfigService {
 
     @Transactional
     public BudgetCategoryConfig updateConfig(UUID workspaceId, UUID budgetId, UUID categoryId,
-                                             UpdateBudgetCategoryConfigDto dto) {
+                                             UpdateBudgetCategoryConfigInput dto) {
         categoryService.getCategory(categoryId, workspaceId);
 
         BudgetCategoryConfig config = configRepository.findByBudgetIdAndCategoryId(budgetId, categoryId)
@@ -53,7 +53,7 @@ public class BudgetConfigService {
 
     @Transactional
     public void setExpectedAmount(UUID workspaceId, UUID budgetId, UUID categoryId, LocalDate periodStart,
-                                   SetExpectedAmountDto dto) {
+                                   SetExpectedAmountInput dto) {
         categoryService.getCategory(categoryId, workspaceId);
 
         if (categoryRepository.existsByParentId(categoryId)) {

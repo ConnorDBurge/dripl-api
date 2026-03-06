@@ -1,7 +1,7 @@
 package com.dripl.budget;
 
-import com.dripl.budget.dto.SetExpectedAmountDto;
-import com.dripl.budget.dto.UpdateBudgetCategoryConfigDto;
+import com.dripl.budget.dto.SetExpectedAmountInput;
+import com.dripl.budget.dto.UpdateBudgetCategoryConfigInput;
 import com.dripl.budget.entity.Budget;
 import com.dripl.budget.entity.BudgetCategoryConfig;
 import com.dripl.budget.entity.BudgetPeriodEntry;
@@ -63,7 +63,7 @@ class BudgetConfigServiceTest {
                 return c;
             });
 
-            UpdateBudgetCategoryConfigDto dto = UpdateBudgetCategoryConfigDto.builder()
+            UpdateBudgetCategoryConfigInput dto = UpdateBudgetCategoryConfigInput.builder()
                     .rolloverType(RolloverType.SAME_CATEGORY).build();
 
             BudgetCategoryConfig result = service.updateConfig(workspaceId, budgetId, categoryId, dto);
@@ -87,7 +87,7 @@ class BudgetConfigServiceTest {
                     .thenReturn(Optional.of(existing));
             when(configRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            UpdateBudgetCategoryConfigDto dto = UpdateBudgetCategoryConfigDto.builder()
+            UpdateBudgetCategoryConfigInput dto = UpdateBudgetCategoryConfigInput.builder()
                     .rolloverType(RolloverType.AVAILABLE_POOL).build();
 
             BudgetCategoryConfig result = service.updateConfig(workspaceId, budgetId, categoryId, dto);
@@ -99,7 +99,7 @@ class BudgetConfigServiceTest {
             when(categoryService.getCategory(categoryId, workspaceId))
                     .thenThrow(new ResourceNotFoundException("Category not found"));
 
-            UpdateBudgetCategoryConfigDto dto = UpdateBudgetCategoryConfigDto.builder()
+            UpdateBudgetCategoryConfigInput dto = UpdateBudgetCategoryConfigInput.builder()
                     .rolloverType(RolloverType.SAME_CATEGORY).build();
 
             assertThatThrownBy(() -> service.updateConfig(workspaceId, budgetId, categoryId, dto))
@@ -123,7 +123,7 @@ class BudgetConfigServiceTest {
                     .thenReturn(Optional.empty());
             when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder()
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder()
                     .expectedAmount(new BigDecimal("500.00")).build();
             LocalDate periodStart = LocalDate.of(2026, 2, 1);
 
@@ -150,7 +150,7 @@ class BudgetConfigServiceTest {
                     .thenReturn(Optional.of(existing));
             when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder()
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder()
                     .expectedAmount(new BigDecimal("750.00")).build();
 
             service.setExpectedAmount(workspaceId, budgetId, categoryId, LocalDate.of(2026, 2, 1), dto);
@@ -165,7 +165,7 @@ class BudgetConfigServiceTest {
             when(categoryService.getCategory(categoryId, workspaceId))
                     .thenThrow(new ResourceNotFoundException("Category not found"));
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder()
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder()
                     .expectedAmount(new BigDecimal("100")).build();
 
             assertThatThrownBy(() -> service.setExpectedAmount(workspaceId, budgetId, categoryId, LocalDate.now(), dto))
@@ -179,7 +179,7 @@ class BudgetConfigServiceTest {
             when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
             when(budgetService.findBudget(workspaceId, budgetId)).thenReturn(budget);
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder().expectedAmount(null).build();
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder().expectedAmount(null).build();
             LocalDate periodStart = LocalDate.of(2026, 2, 1);
 
             service.setExpectedAmount(workspaceId, budgetId, categoryId, periodStart, dto);
@@ -194,7 +194,7 @@ class BudgetConfigServiceTest {
             when(categoryRepository.existsByParentId(categoryId)).thenReturn(false);
             when(budgetService.findBudget(workspaceId, budgetId)).thenReturn(budget);
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder()
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder()
                     .expectedAmount(new BigDecimal("100")).build();
             LocalDate badStart = LocalDate.of(2026, 2, 15);
 
@@ -209,7 +209,7 @@ class BudgetConfigServiceTest {
             when(categoryService.getCategory(categoryId, workspaceId)).thenReturn(cat);
             when(categoryRepository.existsByParentId(categoryId)).thenReturn(true);
 
-            SetExpectedAmountDto dto = SetExpectedAmountDto.builder()
+            SetExpectedAmountInput dto = SetExpectedAmountInput.builder()
                     .expectedAmount(new BigDecimal("500")).build();
 
             assertThatThrownBy(() -> service.setExpectedAmount(workspaceId, budgetId, categoryId, LocalDate.of(2026, 2, 1), dto))

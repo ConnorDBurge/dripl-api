@@ -1,0 +1,55 @@
+info:
+  name: recurringItemMonthView
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query RecurringItemMonthView($month: String) {
+        recurringItemMonthView(month: $month) {
+          monthStart
+          monthEnd
+          expectedExpenses
+          expectedIncome
+          occurrenceCount
+          itemCount
+          items {
+            recurringItemId
+            description
+            merchantId
+            accountId
+            categoryId
+            amount
+            currencyCode
+            status
+            frequencyGranularity
+            frequencyQuantity
+            totalExpected
+            occurrences {
+              date
+              expectedAmount
+              overrideId
+              notes
+              transaction {
+                id
+                date
+                amount
+              }
+            }
+          }
+        }
+      }
+    variables: |-
+      {
+        "month": "2026-03"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

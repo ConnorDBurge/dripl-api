@@ -10,10 +10,10 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.common.enums.Status;
 import com.dripl.merchant.entity.Merchant;
 import com.dripl.merchant.service.MerchantService;
-import com.dripl.recurring.dto.CreateRecurringItemDto;
-import com.dripl.recurring.dto.SetOccurrenceOverrideDto;
-import com.dripl.recurring.dto.UpdateOccurrenceOverrideDto;
-import com.dripl.recurring.dto.UpdateRecurringItemDto;
+import com.dripl.recurring.dto.CreateRecurringItemInput;
+import com.dripl.recurring.dto.SetOccurrenceOverrideInput;
+import com.dripl.recurring.dto.UpdateOccurrenceOverrideInput;
+import com.dripl.recurring.dto.UpdateRecurringItemInput;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.entity.RecurringItemOverride;
 import com.dripl.recurring.enums.FrequencyGranularity;
@@ -155,7 +155,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_success_existingMerchant() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .categoryId(categoryId)
@@ -182,7 +182,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_success_autoCreatesMerchant() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("New Service")
                 .description("New Service Subscription")
@@ -204,7 +204,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_merchantLookup_caseInsensitive() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("NETFLIX")
                 .description("Netflix Subscription")
@@ -227,7 +227,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_withTags() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .description("Netflix Subscription")
@@ -251,7 +251,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_withCurrencyCode() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .description("Netflix Subscription")
@@ -274,7 +274,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_accountNotInWorkspace_throws() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .description("Netflix Subscription")
@@ -295,7 +295,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_categoryNotInWorkspace_throws() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .categoryId(categoryId)
@@ -319,7 +319,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_tagNotInWorkspace_throws() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .description("Netflix Subscription")
@@ -343,7 +343,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_groupCategory_throws() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .categoryId(categoryId)
@@ -368,7 +368,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_noCategoryId_success() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .description("Netflix Subscription")
@@ -400,7 +400,7 @@ class RecurringItemServiceTest {
                 .thenReturn(Account.builder().id(newAccountId).workspaceId(workspaceId).build());
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().accountId(newAccountId).build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().accountId(newAccountId).build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getAccountId()).isEqualTo(newAccountId);
@@ -416,7 +416,7 @@ class RecurringItemServiceTest {
         when(merchantService.resolveMerchant("Spotify", workspaceId)).thenReturn(existingMerchant);
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().merchantName("Spotify").build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().merchantName("Spotify").build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -432,7 +432,7 @@ class RecurringItemServiceTest {
         when(merchantService.resolveMerchant("New Service", workspaceId)).thenReturn(newMerchant);
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().merchantName("New Service").build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().merchantName("New Service").build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -449,7 +449,7 @@ class RecurringItemServiceTest {
                 .thenReturn(Category.builder().id(newCategoryId).workspaceId(workspaceId).build());
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignCategoryId(newCategoryId);
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -467,7 +467,7 @@ class RecurringItemServiceTest {
         doThrow(new BadRequestException("Cannot assign a parent category group"))
                 .when(categoryService).validateNotGroup(groupCategoryId);
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignCategoryId(groupCategoryId);
 
         assertThatThrownBy(() -> recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto))
@@ -481,7 +481,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignCategoryId(null);
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -494,7 +494,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getCategoryId()).isEqualTo(categoryId);
@@ -506,7 +506,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().description("Spotify Premium").build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().description("Spotify Premium").build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getDescription()).isEqualTo("Spotify Premium");
@@ -518,7 +518,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().amount(new BigDecimal("-99.99")).build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().amount(new BigDecimal("-99.99")).build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-99.99"));
@@ -530,7 +530,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignNotes("Monthly streaming");
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -544,7 +544,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignNotes(null);
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -558,7 +558,7 @@ class RecurringItemServiceTest {
         when(tagService.getTag(tagId, workspaceId)).thenReturn(buildTag());
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignTagIds(Set.of(tagId));
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -572,7 +572,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignTagIds(Set.of());
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -586,7 +586,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().build();
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
         assertThat(result.getTagIds()).containsExactly(tagId);
@@ -599,7 +599,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         LocalDateTime endDate = LocalDateTime.of(2026, 1, 1, 0, 0);
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignEndDate(endDate);
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -613,7 +613,7 @@ class RecurringItemServiceTest {
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(item));
         when(recurringItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignEndDate(null);
         RecurringItem result = recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -655,7 +655,7 @@ class RecurringItemServiceTest {
 
     @Test
     void createRecurringItem_polarityMismatch_throws() {
-        CreateRecurringItemDto dto = CreateRecurringItemDto.builder()
+        CreateRecurringItemInput dto = CreateRecurringItemInput.builder()
                 .accountId(accountId)
                 .merchantName("Netflix")
                 .amount(new BigDecimal("-15.99"))
@@ -682,7 +682,7 @@ class RecurringItemServiceTest {
         UUID newCatId = UUID.randomUUID();
         RecurringItem ri = buildRecurringItem();
 
-        UpdateRecurringItemDto dto = new UpdateRecurringItemDto();
+        UpdateRecurringItemInput dto = new UpdateRecurringItemInput();
         dto.assignCategoryId(newCatId);
 
         Category newCat = Category.builder().id(newCatId).workspaceId(workspaceId).name("Salary").income(true).build();
@@ -702,7 +702,7 @@ class RecurringItemServiceTest {
         RecurringItem ri = buildRecurringItem();
         ri.setCategoryId(categoryId);
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().amount(new BigDecimal("100.00")).build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().amount(new BigDecimal("100.00")).build();
 
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
         doThrow(new BadRequestException("Positive amounts must use an income category"))
@@ -734,7 +734,7 @@ class RecurringItemServiceTest {
                 .thenReturn(List.of(txn1, txn2));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().build();
         dto.assignCategoryId(newCategoryId);
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -766,7 +766,7 @@ class RecurringItemServiceTest {
                 .thenReturn(List.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder()
                 .accountId(newAccountId)
                 .merchantName("NewMerch")
                 .currencyCode(CurrencyCode.EUR)
@@ -791,7 +791,7 @@ class RecurringItemServiceTest {
         when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
                 .thenReturn(List.of());
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder().build();
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder().build();
         dto.assignNotes("updated");
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
 
@@ -807,7 +807,7 @@ class RecurringItemServiceTest {
         when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
                 .thenReturn(List.of());
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder()
                 .frequencyGranularity(FrequencyGranularity.WEEK)
                 .build();
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
@@ -824,7 +824,7 @@ class RecurringItemServiceTest {
         when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
                 .thenReturn(List.of());
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder()
                 .anchorDates(List.of(LocalDateTime.of(2025, 1, 20, 0, 0)))
                 .build();
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
@@ -841,7 +841,7 @@ class RecurringItemServiceTest {
         when(transactionRepository.findAllByRecurringItemIdAndWorkspaceId(recurringItemId, workspaceId))
                 .thenReturn(List.of());
 
-        UpdateRecurringItemDto dto = UpdateRecurringItemDto.builder()
+        UpdateRecurringItemInput dto = UpdateRecurringItemInput.builder()
                 .description("Updated name")
                 .build();
         recurringItemService.updateRecurringItem(recurringItemId, workspaceId, dto);
@@ -861,7 +861,7 @@ class RecurringItemServiceTest {
                 .thenReturn(Optional.empty());
         when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+        SetOccurrenceOverrideInput dto = SetOccurrenceOverrideInput.builder()
                 .occurrenceDate(occurrenceDate)
                 .amount(new BigDecimal("250.00"))
                 .notes("Higher this month")
@@ -893,7 +893,7 @@ class RecurringItemServiceTest {
         when(overrideRepository.findByRecurringItemIdAndOccurrenceDate(recurringItemId, occurrenceDate))
                 .thenReturn(Optional.of(existing));
 
-        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+        SetOccurrenceOverrideInput dto = SetOccurrenceOverrideInput.builder()
                 .occurrenceDate(occurrenceDate)
                 .amount(new BigDecimal("300.00"))
                 .build();
@@ -910,7 +910,7 @@ class RecurringItemServiceTest {
 
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.of(ri));
 
-        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+        SetOccurrenceOverrideInput dto = SetOccurrenceOverrideInput.builder()
                 .occurrenceDate(invalidDate)
                 .amount(new BigDecimal("100.00"))
                 .build();
@@ -925,7 +925,7 @@ class RecurringItemServiceTest {
         LocalDate date = LocalDate.of(2025, 2, 15);
         when(recurringItemRepository.findByIdAndWorkspaceId(recurringItemId, workspaceId)).thenReturn(Optional.empty());
 
-        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+        SetOccurrenceOverrideInput dto = SetOccurrenceOverrideInput.builder()
                 .occurrenceDate(date)
                 .amount(new BigDecimal("100.00"))
                 .build();
@@ -944,7 +944,7 @@ class RecurringItemServiceTest {
                 .thenReturn(Optional.empty());
         when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SetOccurrenceOverrideDto dto = SetOccurrenceOverrideDto.builder()
+        SetOccurrenceOverrideInput dto = SetOccurrenceOverrideInput.builder()
                 .occurrenceDate(occurrenceDate)
                 .notes("Reminder note")
                 .build();
@@ -970,7 +970,7 @@ class RecurringItemServiceTest {
         when(overrideRepository.findById(overrideId)).thenReturn(Optional.of(existing));
         when(overrideRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+        UpdateOccurrenceOverrideInput dto = UpdateOccurrenceOverrideInput.builder()
                 .amount(new BigDecimal("300.00"))
                 .notes("Updated")
                 .build();
@@ -986,7 +986,7 @@ class RecurringItemServiceTest {
         UUID overrideId = UUID.randomUUID();
         when(overrideRepository.findById(overrideId)).thenReturn(Optional.empty());
 
-        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+        UpdateOccurrenceOverrideInput dto = UpdateOccurrenceOverrideInput.builder()
                 .amount(new BigDecimal("100.00"))
                 .build();
 
@@ -1007,7 +1007,7 @@ class RecurringItemServiceTest {
 
         when(overrideRepository.findById(overrideId)).thenReturn(Optional.of(existing));
 
-        UpdateOccurrenceOverrideDto dto = UpdateOccurrenceOverrideDto.builder()
+        UpdateOccurrenceOverrideInput dto = UpdateOccurrenceOverrideInput.builder()
                 .amount(new BigDecimal("100.00"))
                 .build();
 

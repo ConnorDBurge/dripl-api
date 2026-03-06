@@ -4,9 +4,6 @@ import com.dripl.auth.service.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +21,9 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     private String accountId;
     private String categoryId;
     private String tagId;
+
+    private static final String RECURRING_ITEM_FIELDS =
+            "id description amount status frequencyGranularity frequencyQuantity merchantId categoryId anchorDates tagIds endDate";
 
     @BeforeEach
     void setUp() {
@@ -44,21 +44,26 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void createRecurringItem_withExistingMerchant_returns201() {
         // Pre-create merchant
         createMerchant(token, "Netflix");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Netflix","merchantName":"Netflix","accountId":"%s","categoryId":"%s","amount":-15.99,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01","tagIds":["%s"]}
-                        """.formatted(accountId, categoryId, tagId), authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Netflix", merchantName: "Netflix",
+                        accountId: "%s", categoryId: "%s", amount: -15.99,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00",
+                        tagIds: ["%s"]
+                    }) { %s }
+                }
+                """.formatted(accountId, categoryId, tagId, RECURRING_ITEM_FIELDS));
+        var body = (Map<String, Object>) data.get("createRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        var body = response.getBody();
         assertThat(body.get("description")).isEqualTo("Netflix");
-        assertThat(body.get("amount")).isEqualTo(-15.99);
+        assertThat(((Number) body.get("amount")).doubleValue()).isEqualTo(-15.99);
         assertThat(body.get("status")).isEqualTo("ACTIVE");
         assertThat(body.get("frequencyGranularity")).isEqualTo("MONTH");
         assertThat(body.get("frequencyQuantity")).isEqualTo(1);
@@ -69,16 +74,21 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void createRecurringItem_autoCreatesMerchant_returns201() {
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"New Service","merchantName":"New Service","accountId":"%s","amount":-9.99,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "New Service", merchantName: "New Service",
+                        accountId: "%s", amount: -9.99,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id merchantId }
+                }
+                """.formatted(accountId));
+        var body = (Map<String, Object>) data.get("createRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().get("merchantId")).isNotNull();
+        assertThat(body.get("merchantId")).isNotNull();
 
         // Verify the merchant was actually created
         List<Map<String, Object>> merchants = listMerchants(token);
@@ -86,19 +96,25 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void createRecurringItem_merchantLookup_caseInsensitive() {
         // Create "Netflix"
         createMerchant(token, "Netflix");
 
         // Create recurring item with "NETFLIX" — should find existing, not create new
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Netflix","merchantName":"NETFLIX","accountId":"%s","amount":-15.99,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Netflix", merchantName: "NETFLIX",
+                        accountId: "%s", amount: -15.99,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id merchantId }
+                }
+                """.formatted(accountId));
+        var body = (Map<String, Object>) data.get("createRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(body.get("id")).isNotNull();
 
         // Verify no duplicate merchant
         long netflixCount = listMerchants(token).stream()
@@ -108,267 +124,332 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void listRecurringItems_returnsAll() {
         // Create two recurring items
-        restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Service A","merchantName":"Service A","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Service B","merchantName":"Service B","accountId":"%s","amount":-20.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
+        graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Service A", merchantName: "Service A",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
+        graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Service B", merchantName: "Service B",
+                        accountId: "%s", amount: -20.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
+        var data = graphqlData(token, """
+                { recurringItems { id } }
+                """);
+        var items = (List<?>) data.get("recurringItems");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(items).hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void getRecurringItem_byId_returns200() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Spotify","merchantName":"Spotify","accountId":"%s","amount":-9.99,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Spotify", merchantName: "Spotify",
+                        accountId: "%s", amount: -9.99,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                { recurringItem(recurringItemId: "%s") { id amount } }
+                """.formatted(itemId));
+        var body = (Map<String, Object>) data.get("recurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("amount")).isEqualTo(-9.99);
+        assertThat(((Number) body.get("amount")).doubleValue()).isEqualTo(-9.99);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void updateRecurringItem_partialFields_returns200() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Spotify","merchantName":"Spotify","accountId":"%s","amount":-9.99,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Spotify", merchantName: "Spotify",
+                        accountId: "%s", amount: -9.99,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"amount":-25.99,"description":"Updated"}
-                        """, authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        amount: -25.99, description: "Updated"
+                    }) { id amount description }
+                }
+                """.formatted(itemId));
+        var body = (Map<String, Object>) data.get("updateRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("amount")).isEqualTo(-25.99);
-        assertThat(response.getBody().get("description")).isEqualTo("Updated");
+        assertThat(((Number) body.get("amount")).doubleValue()).isEqualTo(-25.99);
+        assertThat(body.get("description")).isEqualTo("Updated");
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void updateRecurringItem_changeMerchant_autoCreatesNew() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"OldService","merchantName":"OldService","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
-        String oldMerchantId = (String) createResp.getBody().get("merchantId");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "OldService", merchantName: "OldService",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id merchantId }
+                }
+                """.formatted(accountId));
+        var created = (Map<String, Object>) createData.get("createRecurringItem");
+        String itemId = (String) created.get("id");
+        String oldMerchantId = (String) created.get("merchantId");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"merchantName":"NewService"}
-                        """, authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        merchantName: "NewService"
+                    }) { id merchantId }
+                }
+                """.formatted(itemId));
+        var body = (Map<String, Object>) data.get("updateRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("merchantId")).isNotEqualTo(oldMerchantId);
+        assertThat(body.get("merchantId")).isNotEqualTo(oldMerchantId);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void updateRecurringItem_setCategoryToNull() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"WithCategory","merchantName":"WithCategory","accountId":"%s","categoryId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId, categoryId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "WithCategory", merchantName: "WithCategory",
+                        accountId: "%s", categoryId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id categoryId }
+                }
+                """.formatted(accountId, categoryId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"categoryId":null}
-                        """, authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        categoryId: null
+                    }) { id categoryId }
+                }
+                """.formatted(itemId));
+        var body = (Map<String, Object>) data.get("updateRecurringItem");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("categoryId")).isNull();
+        assertThat(body.get("categoryId")).isNull();
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void updateRecurringItem_setAndClearTags() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"TagTest","merchantName":"TagTest","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "TagTest", merchantName: "TagTest",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id tagIds }
+                }
+                """.formatted(accountId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
         // Set tags
-        var setResp = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"tagIds":["%s"]}
-                        """.formatted(tagId), authHeaders(token)),
-                Map.class);
-        assertThat((List<?>) setResp.getBody().get("tagIds")).hasSize(1);
+        var setData = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        tagIds: ["%s"]
+                    }) { id tagIds }
+                }
+                """.formatted(itemId, tagId));
+        var setBody = (Map<String, Object>) setData.get("updateRecurringItem");
+        assertThat((List<?>) setBody.get("tagIds")).hasSize(1);
 
         // Clear tags
-        var clearResp = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"tagIds":[]}
-                        """, authHeaders(token)),
-                Map.class);
-        assertThat((List<?>) clearResp.getBody().get("tagIds")).isEmpty();
+        var clearData = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        tagIds: []
+                    }) { id tagIds }
+                }
+                """.formatted(itemId));
+        var clearBody = (Map<String, Object>) clearData.get("updateRecurringItem");
+        assertThat((List<?>) clearBody.get("tagIds")).isEmpty();
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void updateRecurringItem_endDate_setAndClear() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"EndDateTest","merchantName":"EndDateTest","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
-        assertThat(createResp.getBody().get("endDate")).isNull();
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "EndDateTest", merchantName: "EndDateTest",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id endDate }
+                }
+                """.formatted(accountId));
+        var created = (Map<String, Object>) createData.get("createRecurringItem");
+        String itemId = (String) created.get("id");
+        assertThat(created.get("endDate")).isNull();
 
         // Set endDate
-        var setResp = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"endDate":"2025-12-31"}
-                        """, authHeaders(token)),
-                Map.class);
-        assertThat(setResp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(setResp.getBody().get("endDate")).isNotNull();
+        var setData = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        endDate: "2025-12-31T00:00:00"
+                    }) { id endDate }
+                }
+                """.formatted(itemId));
+        var setBody = (Map<String, Object>) setData.get("updateRecurringItem");
+        assertThat(setBody.get("endDate")).isNotNull();
 
         // Clear endDate
-        var clearResp = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"endDate":null}
-                        """, authHeaders(token)),
-                Map.class);
-        assertThat(clearResp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(clearResp.getBody().get("endDate")).isNull();
+        var clearData = graphqlData(token, """
+                mutation {
+                    updateRecurringItem(recurringItemId: "%s", input: {
+                        endDate: null
+                    }) { id endDate }
+                }
+                """.formatted(itemId));
+        var clearBody = (Map<String, Object>) clearData.get("updateRecurringItem");
+        assertThat(clearBody.get("endDate")).isNull();
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void deleteRecurringItem_returns204() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"ToDelete","merchantName":"ToDelete","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "ToDelete", merchantName: "ToDelete",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.DELETE,
-                new HttpEntity<>(authHeaders(token)),
-                Void.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        var deleteData = graphqlData(token, """
+                mutation {
+                    deleteRecurringItem(recurringItemId: "%s")
+                }
+                """.formatted(itemId));
+        assertThat(deleteData.get("deleteRecurringItem")).isEqualTo(true);
 
         // Verify gone
-        var getResp = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
-        assertThat(getResp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        var resp = graphql(token, """
+                { recurringItem(recurringItemId: "%s") { id } }
+                """.formatted(itemId));
+        assertThat(resp.get("errors")).isNotNull();
     }
 
     @Test
     void getRecurringItem_notFound_returns404() {
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + UUID.randomUUID(), HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
+        var resp = graphql(token, """
+                { recurringItem(recurringItemId: "%s") { id } }
+                """.formatted(UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(resp.get("errors")).isNotNull();
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void workspaceIsolation_cannotAccessOtherWorkspaceRecurringItem() {
-        var createResp = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"Isolated","merchantName":"Isolated","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId), authHeaders(token)),
-                Map.class);
-        String itemId = (String) createResp.getBody().get("id");
+        var createData = graphqlData(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "Isolated", merchantName: "Isolated",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId));
+        String itemId = (String) ((Map<String, Object>) createData.get("createRecurringItem")).get("id");
 
         // Switch to different workspace
         String token2 = tokenService.mintToken(userId, UUID.randomUUID());
 
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items/" + itemId, HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token2)),
-                Map.class);
+        var resp = graphql(token2, """
+                { recurringItem(recurringItemId: "%s") { id } }
+                """.formatted(itemId));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(resp.get("errors")).isNotNull();
     }
 
     @Test
     void createRecurringItem_accountNotInWorkspace_returns404() {
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"BadAccount","merchantName":"BadAccount","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(UUID.randomUUID()), authHeaders(token)),
-                Map.class);
+        var resp = graphql(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "BadAccount", merchantName: "BadAccount",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().get("detail")).toString().contains("Account not found");
+        assertThat(resp.get("errors")).isNotNull();
     }
 
     @Test
     void createRecurringItem_categoryNotInWorkspace_returns404() {
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"BadCategory","merchantName":"BadCategory","accountId":"%s","categoryId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01"}
-                        """.formatted(accountId, UUID.randomUUID()), authHeaders(token)),
-                Map.class);
+        var resp = graphql(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "BadCategory", merchantName: "BadCategory",
+                        accountId: "%s", categoryId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00"
+                    }) { id }
+                }
+                """.formatted(accountId, UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().get("detail")).toString().contains("Category not found");
+        assertThat(resp.get("errors")).isNotNull();
     }
 
     @Test
     void createRecurringItem_tagNotInWorkspace_returns404() {
-        var response = restTemplate.exchange(
-                "/api/v1/recurring-items", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"description":"BadTag","merchantName":"BadTag","accountId":"%s","amount":-10.00,"frequencyGranularity":"MONTH","frequencyQuantity":1,"anchorDates":["2025-07-15"],"startDate":"2025-07-01","tagIds":["%s"]}
-                        """.formatted(accountId, UUID.randomUUID()), authHeaders(token)),
-                Map.class);
+        var resp = graphql(token, """
+                mutation {
+                    createRecurringItem(input: {
+                        description: "BadTag", merchantName: "BadTag",
+                        accountId: "%s", amount: -10.00,
+                        frequencyGranularity: MONTH, frequencyQuantity: 1,
+                        anchorDates: ["2025-07-15T00:00:00"], startDate: "2025-07-01T00:00:00",
+                        tagIds: ["%s"]
+                    }) { id }
+                }
+                """.formatted(accountId, UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().get("detail")).toString().contains("Tag");
+        assertThat(resp.get("errors")).isNotNull();
     }
 }
