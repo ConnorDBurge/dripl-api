@@ -31,7 +31,7 @@ graphql:
           "name": "Bi-Weekly Budget",
           "anchorDate": "2026-03-06",
           "intervalDays": 14,
-          "accountIds": ["a4b64e2d-fab1-4e72-a39e-0714ba13499d"]
+          "accountIds": ["50179f7b-92f3-480e-a767-3783307c80f8"]
         }
       }
   auth: inherit

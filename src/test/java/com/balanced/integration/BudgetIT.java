@@ -83,6 +83,20 @@ class BudgetIT extends BaseIntegrationTest {
         return (String) data.get("id");
     }
 
+    private String createUncategorizedTransaction(String amount, String date) {
+        String dateTime = date.contains("T") ? date : date + "T00:00:00";
+        @SuppressWarnings("unchecked")
+        var data = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createTransaction(input: {
+                        accountId: "%s", merchantName: "Store",
+                        amount: %s, date: "%s"
+                    }) { id }
+                }
+                """.formatted(accountId, amount, dateTime)).get("createTransaction");
+        return (String) data.get("id");
+    }
+
     private String createTransactionOnAccount(String amount, String categoryId, String date, String acctId) {
         String dateTime = date.contains("T") ? date : date + "T00:00:00";
         @SuppressWarnings("unchecked")
@@ -508,6 +522,43 @@ class BudgetIT extends BaseIntegrationTest {
 
             LocalDate expectedPrevStart = LocalDate.now().withDayOfMonth(1).minusMonths(1);
             assertThat(body.get("periodStart")).isEqualTo(expectedPrevStart.toString());
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void getPeriodView_uncategorizedTransactionsAppearInView() {
+            String budgetId = createMonthlyBudget();
+            String txnDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
+
+            // Create uncategorized expense (negative)
+            createUncategorizedTransaction("-42.00", txnDate);
+            // Create uncategorized income (positive)
+            createUncategorizedTransaction("100.00", txnDate);
+
+            var body = getBudgetView(budgetId, 0);
+
+            // Outflow should have an "Uncategorized" row with activity = -42.00
+            var outflow = (Map<String, Object>) body.get("outflow");
+            var outflowCats = (List<Map<String, Object>>) outflow.get("categories");
+            var uncatOutflow = outflowCats.stream()
+                    .filter(c -> "Uncategorized".equals(c.get("name")))
+                    .findFirst().orElse(null);
+            assertThat(uncatOutflow).isNotNull();
+            assertThat(uncatOutflow.get("categoryId")).isNull();
+            assertThat(((Number) uncatOutflow.get("activity")).doubleValue()).isEqualTo(-42.0);
+            assertThat(((Number) uncatOutflow.get("available")).doubleValue()).isEqualTo(-42.0);
+            assertThat(((Number) uncatOutflow.get("expected")).doubleValue()).isEqualTo(0.0);
+            assertThat(((Number) outflow.get("activity")).doubleValue()).isEqualTo(-42.0);
+
+            // Inflow should have an "Uncategorized" row with activity = 100.00
+            var inflow = (Map<String, Object>) body.get("inflow");
+            var inflowCats = (List<Map<String, Object>>) inflow.get("categories");
+            var uncatInflow = inflowCats.stream()
+                    .filter(c -> "Uncategorized".equals(c.get("name")))
+                    .findFirst().orElse(null);
+            assertThat(uncatInflow).isNotNull();
+            assertThat(((Number) uncatInflow.get("activity")).doubleValue()).isEqualTo(100.0);
+            assertThat(((Number) inflow.get("activity")).doubleValue()).isEqualTo(100.0);
         }
     }
 

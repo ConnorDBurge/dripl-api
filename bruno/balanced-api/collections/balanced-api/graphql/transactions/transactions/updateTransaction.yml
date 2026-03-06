@@ -36,9 +36,9 @@ graphql:
       }
     variables: |-
       {
-        "transactionId": "063eb8bc-9b0f-4526-9418-a462b126fde3",
+        "transactionId": "a3db28af-a934-4089-b9c4-62ef325b90d1",
         "input": {
-          "categoryId": "c859274f-ece1-4098-8b4d-cdea5c1fea6a"
+          "categoryId": "a5c1d20c-862b-4439-9e1b-25fe38515dba"
         }
       }
   auth: inherit

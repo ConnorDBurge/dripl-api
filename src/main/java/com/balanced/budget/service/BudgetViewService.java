@@ -175,8 +175,27 @@ public class BudgetViewService {
         // Compute available pool from AVAILABLE_POOL rollovers in previous period
         BigDecimal availablePool = computeAvailablePool(budget, period, budgetCategories, rolloverMap);
 
-        BudgetSectionResponse inflowSection = buildSection(inflowRoots);
-        BudgetSectionResponse outflowSection = buildSection(outflowRoots);
+        BudgetSectionResponse inflowSection = buildSection(new ArrayList<>(inflowRoots));
+        BudgetSectionResponse outflowSection = buildSection(new ArrayList<>(outflowRoots));
+
+        // Inject uncategorized transaction rows
+        BigDecimal uncategorizedInflow = transactionRepository.sumPositiveUncategorizedByBudgetIdAndDateBetween(
+                budgetId, period.start().atStartOfDay(), period.end().atTime(LocalTime.MAX));
+        BigDecimal uncategorizedOutflow = transactionRepository.sumNegativeUncategorizedByBudgetIdAndDateBetween(
+                budgetId, period.start().atStartOfDay(), period.end().atTime(LocalTime.MAX));
+
+        if (uncategorizedInflow.signum() != 0) {
+            BudgetCategoryViewResponse uncatInflow = buildUncategorizedRow(uncategorizedInflow);
+            inflowSection.getCategories().add(uncatInflow);
+            inflowSection.setActivity(inflowSection.getActivity().add(uncategorizedInflow));
+            inflowSection.setAvailable(inflowSection.getAvailable().add(uncategorizedInflow));
+        }
+        if (uncategorizedOutflow.signum() != 0) {
+            BudgetCategoryViewResponse uncatOutflow = buildUncategorizedRow(uncategorizedOutflow);
+            outflowSection.getCategories().add(uncatOutflow);
+            outflowSection.setActivity(outflowSection.getActivity().add(uncategorizedOutflow));
+            outflowSection.setAvailable(outflowSection.getAvailable().add(uncategorizedOutflow));
+        }
 
         BigDecimal totalRolledOver = roots.stream()
                 .map(BudgetCategoryViewResponse::getRolledOver)
@@ -359,5 +378,21 @@ public class BudgetViewService {
         if (!budget.isBudgetConfigured()) {
             throw new BadRequestException("Budget period is not configured.");
         }
+    }
+
+    private BudgetCategoryViewResponse buildUncategorizedRow(BigDecimal activity) {
+        return BudgetCategoryViewResponse.builder()
+                .categoryId(null)
+                .name("Uncategorized")
+                .parentId(null)
+                .displayOrder(Integer.MAX_VALUE)
+                .expected(BigDecimal.ZERO)
+                .recurringExpected(BigDecimal.ZERO)
+                .activity(activity)
+                .available(activity)
+                .rolledOver(BigDecimal.ZERO)
+                .rolloverType(RolloverType.NONE)
+                .children(new ArrayList<>())
+                .build();
     }
 }

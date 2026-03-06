@@ -56,7 +56,7 @@ type BudgetSectionResponse {
 }
 
 type BudgetCategoryViewResponse {
-    categoryId: ID!
+    categoryId: ID
     name: String!
     parentId: ID
     displayOrder: Int!

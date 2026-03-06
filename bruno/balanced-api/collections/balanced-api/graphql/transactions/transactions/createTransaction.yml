@@ -37,10 +37,10 @@ graphql:
     variables: |-
       {
         "input": {
-          "accountId": "a4b64e2d-fab1-4e72-a39e-0714ba13499d",
+          "accountId": "50179f7b-92f3-480e-a767-3783307c80f8",
           "merchantName": "Whole Foods",
           "date": "2026-03-06T00:00:00",
-          "amount": "-75.50",
+          "amount": "-100.00",
           "currencyCode": "USD",
           "notes": "Weekly groceries",
           "tagIds": []

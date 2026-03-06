@@ -124,6 +124,10 @@ class BudgetViewServiceTest {
             lenient().when(recurringItemRepository.findAllByWorkspaceId(any())).thenReturn(List.of());
             lenient().when(budgetAccountRepository.findAllByBudgetId(any())).thenReturn(List.of());
             lenient().when(accountRepository.sumBalancesByIds(any())).thenReturn(BigDecimal.ZERO);
+            lenient().when(transactionRepository.sumPositiveUncategorizedByBudgetIdAndDateBetween(
+                    any(), any(), any())).thenReturn(BigDecimal.ZERO);
+            lenient().when(transactionRepository.sumNegativeUncategorizedByBudgetIdAndDateBetween(
+                    any(), any(), any())).thenReturn(BigDecimal.ZERO);
         }
 
         @Test
@@ -505,6 +509,10 @@ class BudgetViewServiceTest {
             lenient().when(budgetAccountRepository.findAllByBudgetId(budgetId))
                     .thenReturn(List.of(BudgetAccount.builder().budgetId(budgetId).accountId(includedAccountId).build()));
             lenient().when(accountRepository.sumBalancesByIds(any())).thenReturn(BigDecimal.ZERO);
+            lenient().when(transactionRepository.sumPositiveUncategorizedByBudgetIdAndDateBetween(
+                    any(), any(), any())).thenReturn(BigDecimal.ZERO);
+            lenient().when(transactionRepository.sumNegativeUncategorizedByBudgetIdAndDateBetween(
+                    any(), any(), any())).thenReturn(BigDecimal.ZERO);
         }
 
         @Test

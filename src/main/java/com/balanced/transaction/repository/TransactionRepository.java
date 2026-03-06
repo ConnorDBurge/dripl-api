@@ -58,4 +58,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
            "AND t.date >= :startDate AND t.date <= :endDate")
     BigDecimal sumAmountByBudgetIdAndCategoryIdAndDateBetween(
             UUID budgetId, UUID categoryId, LocalDateTime startDate, LocalDateTime endDate);
+
+    // Sum uncategorized transaction amounts (positive only) scoped to a budget's included accounts
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "JOIN BudgetAccount ba ON t.accountId = ba.accountId " +
+           "WHERE ba.budgetId = :budgetId AND t.categoryId IS NULL " +
+           "AND t.amount > 0 AND t.date >= :startDate AND t.date <= :endDate")
+    BigDecimal sumPositiveUncategorizedByBudgetIdAndDateBetween(
+            UUID budgetId, LocalDateTime startDate, LocalDateTime endDate);
+
+    // Sum uncategorized transaction amounts (negative only) scoped to a budget's included accounts
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "JOIN BudgetAccount ba ON t.accountId = ba.accountId " +
+           "WHERE ba.budgetId = :budgetId AND t.categoryId IS NULL " +
+           "AND t.amount < 0 AND t.date >= :startDate AND t.date <= :endDate")
+    BigDecimal sumNegativeUncategorizedByBudgetIdAndDateBetween(
+            UUID budgetId, LocalDateTime startDate, LocalDateTime endDate);
 }
