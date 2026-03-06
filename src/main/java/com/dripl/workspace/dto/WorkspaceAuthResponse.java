@@ -9,6 +9,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
-public class WorkspaceAuthResponse extends WorkspaceDto {
+public class WorkspaceAuthResponse extends WorkspaceResponse {
     private String token;
 }

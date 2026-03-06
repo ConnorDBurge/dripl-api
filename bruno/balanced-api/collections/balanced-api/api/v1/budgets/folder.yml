@@ -1,7 +1,7 @@
 info:
   name: budgets
   type: folder
-  seq: 12
+  seq: 3
 
 request:
   auth: inherit

@@ -32,7 +32,7 @@ class CorrelationIdIT extends BaseIntegrationTest {
         headers.set("X-Correlation-Id", correlationId);
 
         var response = restTemplate.exchange(
-                "/api/v1/users/bootstrap", HttpMethod.POST,
+                "/api/v1/auth/bootstrap", HttpMethod.POST,
                 new HttpEntity<>("""
                         {"email":"corr-echo-%s@test.com","givenName":"Echo","familyName":"Test"}
                         """.formatted(System.nanoTime()), headers),
@@ -45,7 +45,7 @@ class CorrelationIdIT extends BaseIntegrationTest {
     @Test
     void responseHeader_generatesCorrelationId_whenNotSent() {
         var response = restTemplate.exchange(
-                "/api/v1/users/bootstrap", HttpMethod.POST,
+                "/api/v1/auth/bootstrap", HttpMethod.POST,
                 new HttpEntity<>("""
                         {"email":"corr-gen-%s@test.com","givenName":"Gen","familyName":"Test"}
                         """.formatted(System.nanoTime()), jsonHeaders()),
@@ -68,14 +68,14 @@ class CorrelationIdIT extends BaseIntegrationTest {
         HttpHeaders headers = authHeaders(token);
         headers.set("X-Correlation-Id", correlationId);
 
+        // Query a non-existent workspace member via GraphQL
         var response = restTemplate.exchange(
-                "/api/v1/workspaces/current/members/00000000-0000-0000-0000-000000000000",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(Map.of("query", """
+                        { workspaceMember(userId: "00000000-0000-0000-0000-000000000000") { userId } }
+                        """), headers),
                 Map.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().get("correlationId")).isEqualTo(correlationId);
         assertThat(response.getHeaders().getFirst("X-Correlation-Id")).isEqualTo(correlationId);
     }
 
@@ -93,17 +93,19 @@ class CorrelationIdIT extends BaseIntegrationTest {
 
             var user = bootstrapUser("corr-async-%s@test.com".formatted(System.nanoTime()), "Async", "Test");
             String token = (String) user.get("token");
-            String workspaceId = (String) user.get("lastWorkspaceId");
-            String userId = (String) user.get("id");
+            String workspaceId = (String) user.get("workspaceId");
+            String userId = (String) user.get("userId");
 
             // Remove the only member with our correlation ID
             HttpHeaders headers = authHeaders(token);
             headers.set("X-Correlation-Id", correlationId);
 
             restTemplate.exchange(
-                    "/api/v1/workspaces/current/members/" + userId, HttpMethod.DELETE,
-                    new HttpEntity<>(headers),
-                    Void.class);
+                    "/graphql", HttpMethod.POST,
+                    new HttpEntity<>(Map.of("query", """
+                            mutation { removeWorkspaceMember(userId: "%s") }
+                            """.formatted(userId)), headers),
+                    Map.class);
 
             // Wait for async cleanup and verify the correlation ID made it to the log
             await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {

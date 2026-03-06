@@ -4,9 +4,6 @@ import com.dripl.auth.utils.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("unchecked")
 class RoleBasedAccessIT extends BaseIntegrationTest {
 
     @Autowired
@@ -31,16 +29,13 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         // Create a second user and add as READ-only member
         Map<String, Object> reader = bootstrapUser(
                 "rbac-reader-%s@test.com".formatted(System.nanoTime()), "RBAC", "Reader");
-        String readerId = (String) reader.get("id");
-        String ownerWorkspaceId = (String) owner.get("lastWorkspaceId");
+        String readerId = (String) reader.get("userId");
+        String ownerWorkspaceId = (String) owner.get("workspaceId");
 
         // Add a reader to the owner's workspace
-        restTemplate.exchange(
-                "/api/v1/workspaces/current/members", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"userId":"%s","roles":["READ"]}
-                        """.formatted(readerId), authHeaders(ownerToken)),
-                Map.class);
+        graphqlData(ownerToken, """
+                mutation { addWorkspaceMember(input: { userId: "%s", roles: [READ] }) { userId } }
+                """.formatted(readerId));
 
         // Mint a token for the reader in the owner's workspace
         readOnlyToken = jwtUtil.generateToken(
@@ -52,72 +47,58 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
 
     @Test
     void readOnly_canGetCurrentWorkspace() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(readOnlyToken)),
-                Map.class);
+        var data = graphqlData(readOnlyToken, "{ currentWorkspace { id name } }");
+        var ws = (Map<String, Object>) data.get("currentWorkspace");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ws).isNotNull();
     }
 
     @Test
     void readOnly_canGetMembers() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current/members", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(readOnlyToken)),
-                List.class);
+        var data = graphqlData(readOnlyToken, "{ workspaceMembers { userId } }");
+        var members = (List<Map<String, Object>>) data.get("workspaceMembers");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(members).isNotNull();
     }
 
     @Test
     void readOnly_cannotUpdateWorkspace() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"name":"Hijacked"}
-                        """, authHeaders(readOnlyToken)),
-                Map.class);
+        var response = graphql(readOnlyToken, """
+                mutation { updateCurrentWorkspace(input: { name: "Hijacked" }) { id name } }
+                """);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void readOnly_cannotAddMembers() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current/members", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"userId":"%s","roles":["READ"]}
-                        """.formatted(UUID.randomUUID()), authHeaders(readOnlyToken)),
-                Map.class);
+        var response = graphql(readOnlyToken, """
+                mutation { addWorkspaceMember(input: { userId: "%s", roles: [READ] }) { userId } }
+                """.formatted(UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void readOnly_cannotUpdateMembers() {
-        String ownerId = (String) owner.get("id");
+        String ownerId = (String) owner.get("userId");
 
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current/members/" + ownerId, HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"roles":["READ"]}
-                        """, authHeaders(readOnlyToken)),
-                Map.class);
+        var response = graphql(readOnlyToken, """
+                mutation { updateWorkspaceMember(userId: "%s", input: { roles: [READ] }) { userId } }
+                """.formatted(ownerId));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void readOnly_cannotRemoveMembers() {
-        String ownerId = (String) owner.get("id");
+        String ownerId = (String) owner.get("userId");
 
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current/members/" + ownerId, HttpMethod.DELETE,
-                new HttpEntity<>(authHeaders(readOnlyToken)),
-                Map.class);
+        var response = graphql(readOnlyToken, """
+                mutation { removeWorkspaceMember(userId: "%s") }
+                """.formatted(ownerId));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
@@ -126,33 +107,25 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         String merchantId = createMerchant(ownerToken, "Test Merchant");
 
         // READ-only user cannot delete it
-        @SuppressWarnings("unchecked")
-        var response = restTemplate.exchange(
-                "/graphql", HttpMethod.POST,
-                new HttpEntity<>(Map.of("query", """
-                        mutation { deleteMerchant(merchantId: "%s") }
-                        """.formatted(merchantId)), authHeaders(readOnlyToken)),
-                Map.class);
+        var response = graphql(readOnlyToken, """
+                mutation { deleteMerchant(merchantId: "%s") }
+                """.formatted(merchantId));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("errors")).isNotNull();
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void writeOnly_cannotDeleteResource() {
-        String ownerWorkspaceId = (String) owner.get("lastWorkspaceId");
+        String ownerWorkspaceId = (String) owner.get("workspaceId");
 
         // Create a WRITE-only user (no DELETE)
         Map<String, Object> writer = bootstrapUser(
                 "rbac-writer-%s@test.com".formatted(System.nanoTime()), "RBAC", "Writer");
-        String writerId = (String) writer.get("id");
+        String writerId = (String) writer.get("userId");
 
-        restTemplate.exchange(
-                "/api/v1/workspaces/current/members", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"userId":"%s","roles":["READ","WRITE"]}
-                        """.formatted(writerId), authHeaders(ownerToken)),
-                Map.class);
+        graphqlData(ownerToken, """
+                mutation { addWorkspaceMember(input: { userId: "%s", roles: [READ, WRITE] }) { userId } }
+                """.formatted(writerId));
 
         String writeOnlyToken = jwtUtil.generateToken(
                 UUID.fromString(writerId),
@@ -164,38 +137,27 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         String merchantId = createMerchant(writeOnlyToken, "Writer Merchant");
 
         // Writer cannot delete it (no DELETE role)
-        @SuppressWarnings("unchecked")
-        var response = restTemplate.exchange(
-                "/graphql", HttpMethod.POST,
-                new HttpEntity<>(Map.of("query", """
-                        mutation { deleteMerchant(merchantId: "%s") }
-                        """.formatted(merchantId)), authHeaders(writeOnlyToken)),
-                Map.class);
+        var response = graphql(writeOnlyToken, """
+                mutation { deleteMerchant(merchantId: "%s") }
+                """.formatted(merchantId));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("errors")).isNotNull();
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void owner_canDoEverything() {
-        // GET current
-        assertThat(restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(ownerToken)), Map.class)
-                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        // GET current workspace
+        var currentData = graphqlData(ownerToken, "{ currentWorkspace { id name } }");
+        assertThat(currentData.get("currentWorkspace")).isNotNull();
 
-        // PATCH current
-        assertThat(restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"name":"Owner Renamed"}
-                        """, authHeaders(ownerToken)), Map.class)
-                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        // Update current workspace
+        var updateData = graphqlData(ownerToken, """
+                mutation { updateCurrentWorkspace(input: { name: "Owner Renamed" }) { id name } }
+                """);
+        assertThat(updateData.get("updateCurrentWorkspace")).isNotNull();
 
         // GET members
-        assertThat(restTemplate.exchange(
-                "/api/v1/workspaces/current/members", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(ownerToken)), List.class)
-                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        var membersData = graphqlData(ownerToken, "{ workspaceMembers { userId } }");
+        assertThat(membersData.get("workspaceMembers")).isNotNull();
     }
 }

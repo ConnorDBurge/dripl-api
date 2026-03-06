@@ -5,8 +5,8 @@ import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.entity.User;
 import com.dripl.user.repository.UserRepository;
-import com.dripl.workspace.dto.CreateWorkspaceDto;
-import com.dripl.workspace.dto.UpdateWorkspaceDto;
+import com.dripl.workspace.dto.CreateWorkspaceInput;
+import com.dripl.workspace.dto.UpdateWorkspaceInput;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.enums.WorkspaceStatus;
 import com.dripl.workspace.membership.service.MembershipService;
@@ -50,7 +50,7 @@ public class WorkspaceService {
     }
 
     @Transactional
-    public Workspace updateWorkspace(UUID workspaceId, UUID userId, UpdateWorkspaceDto dto) {
+    public Workspace updateWorkspace(UUID workspaceId, UUID userId, UpdateWorkspaceInput dto) {
         Workspace workspace = getWorkspace(workspaceId);
 
         if (dto.getName() != null) {
@@ -65,7 +65,7 @@ public class WorkspaceService {
     }
 
     @Transactional
-    public Workspace provisionWorkspace(UUID userId, CreateWorkspaceDto dto) {
+    public Workspace provisionWorkspace(UUID userId, CreateWorkspaceInput dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 

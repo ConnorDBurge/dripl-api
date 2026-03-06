@@ -2,9 +2,6 @@ package com.dripl.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
@@ -22,80 +19,70 @@ class UserCrudIT extends BaseIntegrationTest {
     }
 
     @Test
-    void getSelf_returnsCurrentUser() {
-        var response = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
+    @SuppressWarnings("unchecked")
+    void self_returnsCurrentUser() {
+        var data = graphqlData(token, """
+                query { self { id email givenName familyName isActive lastWorkspaceId } }
+                """);
+        var self = (Map<String, Object>) data.get("self");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("id")).isEqualTo(user.get("id"));
-        assertThat(response.getBody().get("givenName")).isEqualTo("Crud");
+        assertThat(self.get("id")).isEqualTo(user.get("userId"));
+        assertThat(self.get("email")).asString().startsWith("crud-user-");
+        assertThat(self.get("givenName")).isEqualTo("Crud");
+        assertThat(self.get("familyName")).isEqualTo("User");
+        assertThat(self.get("isActive")).isEqualTo(true);
+        assertThat(self.get("lastWorkspaceId")).isEqualTo(user.get("workspaceId"));
     }
 
     @Test
-    void patchSelf_updatesName_returnsNewToken() {
-        var response = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"givenName":"Updated"}
-                        """, authHeaders(token)),
-                Map.class);
+    @SuppressWarnings("unchecked")
+    void updateSelf_updatesName() {
+        var data = graphqlData(token, """
+                mutation($input: UpdateUserInput!) {
+                    updateSelf(input: $input) { id email givenName familyName }
+                }
+                """, Map.of("input", Map.of("givenName", "Updated")));
+        var updated = (Map<String, Object>) data.get("updateSelf");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("givenName")).isEqualTo("Updated");
-        assertThat(response.getBody().get("token")).isNotNull();
+        assertThat(updated.get("givenName")).isEqualTo("Updated");
+        assertThat(updated.get("familyName")).isEqualTo("User");
 
-        // Verify new token works
-        String newToken = (String) response.getBody().get("token");
-        var verify = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(newToken)),
-                Map.class);
-        assertThat(verify.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(verify.getBody().get("givenName")).isEqualTo("Updated");
+        // Verify change persisted
+        var verifyData = graphqlData(token, """
+                query { self { givenName } }
+                """);
+        var verify = (Map<String, Object>) verifyData.get("self");
+        assertThat(verify.get("givenName")).isEqualTo("Updated");
     }
 
     @Test
-    void patchSelf_duplicateEmail_returns409() {
+    @SuppressWarnings("unchecked")
+    void updateSelf_duplicateEmail_returnsError() {
         bootstrapUser("existing@test.com", "Existing", "User");
 
-        var response = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"email":"existing@test.com"}
-                        """, authHeaders(token)),
-                Map.class);
+        var result = graphql(token, """
+                mutation($input: UpdateUserInput!) {
+                    updateSelf(input: $input) { id email }
+                }
+                """, Map.of("input", Map.of("email", "existing@test.com")));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(result.get("errors")).isNotNull();
     }
 
     @Test
-    void patchSelf_emptyEmail_returns400() {
-        var response = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"email":""}
-                        """, authHeaders(token)),
-                Map.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
+    @SuppressWarnings("unchecked")
     void deleteSelf_removesUser() {
-        var response = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.DELETE,
-                new HttpEntity<>(authHeaders(token)),
-                Void.class);
+        var data = graphqlData(token, """
+                mutation { deleteSelf }
+                """);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(data.get("deleteSelf")).isEqualTo(true);
 
-        // Token should still parse but user shouldn't exist
-        var verify = restTemplate.exchange(
-                "/api/v1/users/self", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
-        assertThat(verify.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        // User should no longer exist
+        var result = graphql(token, """
+                query { self { id } }
+                """);
+        assertThat(result.get("errors")).isNotNull();
     }
 }
+

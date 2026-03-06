@@ -1,0 +1,20 @@
+info:
+  name: deleteSelf
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |
+      mutation DeleteSelf {
+        deleteSelf
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

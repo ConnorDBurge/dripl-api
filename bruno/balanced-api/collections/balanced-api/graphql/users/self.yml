@@ -1,0 +1,31 @@
+info:
+  name: self
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |
+      query Self {
+        self {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          email
+          givenName
+          familyName
+          isActive
+          lastWorkspaceId
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -2,12 +2,12 @@ package com.dripl.user;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.user.dto.UpdateUserDto;
+import com.dripl.user.dto.UpdateUserInput;
 import com.dripl.user.entity.User;
 import com.dripl.user.mapper.UserMapper;
 import com.dripl.user.repository.UserRepository;
 import com.dripl.user.service.UserService;
-import com.dripl.workspace.dto.CreateWorkspaceDto;
+import com.dripl.workspace.dto.CreateWorkspaceInput;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.service.WorkspaceService;
 import com.dripl.workspace.enums.WorkspaceStatus;
@@ -90,7 +90,7 @@ class UserServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        UpdateUserDto dto = UpdateUserDto.builder()
+        UpdateUserInput dto = UpdateUserInput.builder()
                 .givenName("Updated")
                 .familyName("Name")
                 .build();
@@ -107,7 +107,7 @@ class UserServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.findByEmail("taken@test.com")).thenReturn(Optional.of(otherUser));
 
-        UpdateUserDto dto = UpdateUserDto.builder().email("taken@test.com").build();
+        UpdateUserInput dto = UpdateUserInput.builder().email("taken@test.com").build();
 
         assertThatThrownBy(() -> userService.updateUser(userId, dto))
                 .isInstanceOf(ConflictException.class)
@@ -120,7 +120,7 @@ class UserServiceTest {
         when(userRepository.findByEmail("connor@test.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        UpdateUserDto dto = UpdateUserDto.builder().email("connor@test.com").build();
+        UpdateUserInput dto = UpdateUserInput.builder().email("connor@test.com").build();
 
         User result = userService.updateUser(userId, dto);
         assertThat(result).isNotNull();
@@ -159,14 +159,14 @@ class UserServiceTest {
                     u.setUpdatedAt(LocalDateTime.now());
                     return u;
                 });
-        when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class)))
+        when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceInput.class)))
                 .thenReturn(workspace);
 
         User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
         assertThat(result.getEmail()).isEqualTo("connor@test.com");
         assertThat(result.getLastWorkspaceId()).isEqualTo(workspaceId);
-        verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class));
+        verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceInput.class));
     }
 
     @Test
@@ -190,14 +190,14 @@ class UserServiceTest {
                 .build();
 
         when(userRepository.findByEmail("connor@test.com")).thenReturn(Optional.of(testUser));
-        when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class)))
+        when(workspaceService.provisionWorkspace(eq(userId), any(CreateWorkspaceInput.class)))
                 .thenReturn(workspace);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         User result = userService.bootstrapUser("connor@test.com", "Connor", "Burge");
 
         assertThat(result.getLastWorkspaceId()).isEqualTo(workspaceId);
-        verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceDto.class));
+        verify(workspaceService).provisionWorkspace(eq(userId), any(CreateWorkspaceInput.class));
     }
 
     @Test
@@ -237,7 +237,7 @@ class UserServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateUserDto dto = UpdateUserDto.builder().givenName("NewFirst").build();
+        UpdateUserInput dto = UpdateUserInput.builder().givenName("NewFirst").build();
 
         User result = userService.updateUser(userId, dto);
 
@@ -252,7 +252,7 @@ class UserServiceTest {
         when(userRepository.findByEmail("new@test.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateUserDto dto = UpdateUserDto.builder().email("new@test.com").build();
+        UpdateUserInput dto = UpdateUserInput.builder().email("new@test.com").build();
 
         User result = userService.updateUser(userId, dto);
 

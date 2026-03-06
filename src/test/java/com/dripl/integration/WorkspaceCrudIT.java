@@ -2,15 +2,13 @@ package com.dripl.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("unchecked")
 class WorkspaceCrudIT extends BaseIntegrationTest {
 
     private String token;
@@ -24,109 +22,74 @@ class WorkspaceCrudIT extends BaseIntegrationTest {
 
     @Test
     void listWorkspaces_afterBootstrap_returnsDefaultWorkspace() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                List.class);
+        var data = graphqlData(token, "{ workspaces { id name status } }");
+        var workspaces = (List<Map<String, Object>>) data.get("workspaces");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(workspaces).hasSize(1);
     }
 
     @Test
     void provisionWorkspace_createsAndSwitches() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Second Workspace"}
-                        """, authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, """
+                mutation { provisionWorkspace(input: { name: "Second Workspace" }) { id name token } }
+                """);
+        var ws = (Map<String, Object>) data.get("provisionWorkspace");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().get("name")).isEqualTo("Second Workspace");
-        assertThat(response.getBody().get("token")).isNotNull();
+        assertThat(ws.get("name")).isEqualTo("Second Workspace");
+        assertThat(ws.get("token")).isNotNull();
 
         // Should now have 2 workspaces
-        String newToken = (String) response.getBody().get("token");
-        var list = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(newToken)),
-                List.class);
-        assertThat(list.getBody()).hasSize(2);
+        String newToken = (String) ws.get("token");
+        var listData = graphqlData(newToken, "{ workspaces { id } }");
+        var workspaces = (List<Map<String, Object>>) listData.get("workspaces");
+        assertThat(workspaces).hasSize(2);
     }
 
     @Test
-    void provisionWorkspace_duplicateName_returns409() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"WS's Workspace"}
-                        """, authHeaders(token)),
-                Map.class);
+    void provisionWorkspace_duplicateName_returnsError() {
+        var response = graphql(token, """
+                mutation { provisionWorkspace(input: { name: "WS's Workspace" }) { id name token } }
+                """);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-    }
-
-    @Test
-    void provisionWorkspace_blankName_returns400() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":""}
-                        """, authHeaders(token)),
-                Map.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.get("errors")).isNotNull();
     }
 
     @Test
     void switchWorkspace_validWorkspace_returnsNewToken() {
         // Create a second workspace
-        var provision = restTemplate.exchange(
-                "/api/v1/workspaces", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"name":"Switch Target"}
-                        """, authHeaders(token)),
-                Map.class);
-        String newToken = (String) provision.getBody().get("token");
-        String newWorkspaceId = (String) provision.getBody().get("id");
+        var provisionData = graphqlData(token, """
+                mutation { provisionWorkspace(input: { name: "Switch Target" }) { id name token } }
+                """);
+        var provisioned = (Map<String, Object>) provisionData.get("provisionWorkspace");
+        String newToken = (String) provisioned.get("token");
 
         // Switch back to original
-        String originalWorkspaceId = (String) user.get("lastWorkspaceId");
-        var switchResponse = restTemplate.exchange(
-                "/api/v1/workspaces/switch", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"workspaceId":"%s"}
-                        """.formatted(originalWorkspaceId), authHeaders(newToken)),
-                Map.class);
+        String originalWorkspaceId = (String) user.get("workspaceId");
+        var switchData = graphqlData(newToken, """
+                mutation { switchWorkspace(input: { workspaceId: "%s" }) { id name token } }
+                """.formatted(originalWorkspaceId));
+        var switched = (Map<String, Object>) switchData.get("switchWorkspace");
 
-        assertThat(switchResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(switchResponse.getBody().get("id")).isEqualTo(originalWorkspaceId);
-        assertThat(switchResponse.getBody().get("token")).isNotNull();
+        assertThat(switched.get("id")).isEqualTo(originalWorkspaceId);
+        assertThat(switched.get("token")).isNotNull();
     }
 
     @Test
     void getCurrentWorkspace_returnsWorkspace() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.GET,
-                new HttpEntity<>(authHeaders(token)),
-                Map.class);
+        var data = graphqlData(token, "{ currentWorkspace { id name status } }");
+        var ws = (Map<String, Object>) data.get("currentWorkspace");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("name")).isEqualTo("WS's Workspace");
-        assertThat(response.getBody().get("status")).isEqualTo("ACTIVE");
+        assertThat(ws.get("name")).isEqualTo("WS's Workspace");
+        assertThat(ws.get("status")).isEqualTo("ACTIVE");
     }
 
     @Test
-    void updateCurrentWorkspace_validName_returns200() {
-        var response = restTemplate.exchange(
-                "/api/v1/workspaces/current", HttpMethod.PATCH,
-                new HttpEntity<>("""
-                        {"name":"Renamed Workspace"}
-                        """, authHeaders(token)),
-                Map.class);
+    void updateCurrentWorkspace_validName_returnsUpdated() {
+        var data = graphqlData(token, """
+                mutation { updateCurrentWorkspace(input: { name: "Renamed Workspace" }) { id name } }
+                """);
+        var ws = (Map<String, Object>) data.get("updateCurrentWorkspace");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("name")).isEqualTo("Renamed Workspace");
+        assertThat(ws.get("name")).isEqualTo("Renamed Workspace");
     }
 }

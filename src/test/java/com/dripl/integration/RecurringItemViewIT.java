@@ -28,7 +28,7 @@ class RecurringItemViewIT extends BaseIntegrationTest {
         String email = "riview-user-%s@test.com".formatted(System.nanoTime());
         var bootstrap = bootstrapUser(email, "RIView", "User");
         token = (String) bootstrap.get("token");
-        workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
+        workspaceId = UUID.fromString((String) bootstrap.get("workspaceId"));
 
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "5000");
 

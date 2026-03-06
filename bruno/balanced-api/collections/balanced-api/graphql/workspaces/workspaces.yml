@@ -1,0 +1,28 @@
+info:
+  name: workspaces
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Workspaces {
+        workspaces {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          name
+          status
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

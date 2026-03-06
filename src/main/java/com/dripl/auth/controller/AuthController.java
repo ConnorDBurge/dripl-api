@@ -4,6 +4,7 @@ import com.dripl.auth.dto.AuthResponse;
 import com.dripl.auth.dto.GoogleLoginRequest;
 import com.dripl.auth.service.GoogleOAuthService;
 import com.dripl.auth.service.TokenService;
+import com.dripl.user.dto.BootstrapUserDto;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
 import com.dripl.workspace.membership.enums.Role;
@@ -32,6 +33,12 @@ public class AuthController {
     private final TokenService tokenService;
     private final MembershipService membershipService;
 
+    @PostMapping("/bootstrap")
+    public ResponseEntity<AuthResponse> bootstrap(@Valid @RequestBody BootstrapUserDto dto) {
+        User user = userService.bootstrapUser(dto.getEmail(), dto.getGivenName(), dto.getFamilyName());
+        return ResponseEntity.ok(buildAuthResponse(user));
+    }
+
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
         GoogleIdToken.Payload payload = googleOAuthService.verifyIdToken(request.getIdToken());
@@ -44,22 +51,27 @@ public class AuthController {
         String familyName = (String) payload.get("family_name");
 
         User user = userService.bootstrapUser(email, givenName, familyName);
+
+        log.info("Google login successful for user {} ({})", user.getId(), email);
+
+        return ResponseEntity.ok(buildAuthResponse(user));
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
         String token = tokenService.mintToken(user.getId(), user.getLastWorkspaceId());
 
         List<String> roles = membershipService.findMembership(user.getId(), user.getLastWorkspaceId())
                 .map(m -> m.getRoles().stream().map(Role::name).collect(Collectors.toList()))
                 .orElse(List.of());
 
-        log.info("Google login successful for user {} ({})", user.getId(), email);
-
-        return ResponseEntity.ok(AuthResponse.builder()
+        return AuthResponse.builder()
                 .token(token)
                 .userId(user.getId())
                 .workspaceId(user.getLastWorkspaceId())
-                .email(email)
+                .email(user.getEmail())
                 .givenName(user.getGivenName())
                 .familyName(user.getFamilyName())
                 .roles(roles)
-                .build());
+                .build();
     }
 }

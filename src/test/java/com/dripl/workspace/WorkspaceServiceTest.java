@@ -5,8 +5,8 @@ import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.user.entity.User;
 import com.dripl.user.repository.UserRepository;
-import com.dripl.workspace.dto.CreateWorkspaceDto;
-import com.dripl.workspace.dto.UpdateWorkspaceDto;
+import com.dripl.workspace.dto.CreateWorkspaceInput;
+import com.dripl.workspace.dto.UpdateWorkspaceInput;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.enums.WorkspaceStatus;
 import com.dripl.workspace.membership.service.MembershipService;
@@ -114,7 +114,7 @@ class WorkspaceServiceTest {
         when(membershipService.createMembership(eq(userId), eq(workspaceId), any()))
                 .thenReturn(WorkspaceMembership.builder().build());
 
-        CreateWorkspaceDto dto = CreateWorkspaceDto.builder().name("New Workspace").build();
+        CreateWorkspaceInput dto = CreateWorkspaceInput.builder().name("New Workspace").build();
         Workspace result = workspaceService.provisionWorkspace(userId, dto);
 
         assertThat(result).isNotNull();
@@ -128,7 +128,7 @@ class WorkspaceServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(membershipService.existsByUserAndWorkspaceName(userId, "Test Workspace")).thenReturn(true);
 
-        CreateWorkspaceDto dto = CreateWorkspaceDto.builder().name("Test Workspace").build();
+        CreateWorkspaceInput dto = CreateWorkspaceInput.builder().name("Test Workspace").build();
 
         assertThatThrownBy(() -> workspaceService.provisionWorkspace(userId, dto))
                 .isInstanceOf(ConflictException.class)
@@ -211,7 +211,7 @@ class WorkspaceServiceTest {
 
     @Test
     void updateWorkspace_validName_updatesWorkspace() {
-        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().name("Renamed").build();
+        UpdateWorkspaceInput dto = UpdateWorkspaceInput.builder().name("Renamed").build();
 
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
         when(membershipService.existsByUserAndWorkspaceName(userId, "Renamed")).thenReturn(false);
@@ -225,7 +225,7 @@ class WorkspaceServiceTest {
 
     @Test
     void updateWorkspace_duplicateName_throwsConflict() {
-        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().name("Existing Name").build();
+        UpdateWorkspaceInput dto = UpdateWorkspaceInput.builder().name("Existing Name").build();
 
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
         when(membershipService.existsByUserAndWorkspaceName(userId, "Existing Name")).thenReturn(true);
@@ -238,7 +238,7 @@ class WorkspaceServiceTest {
 
     @Test
     void updateWorkspace_nullName_savesWithoutNameChange() {
-        UpdateWorkspaceDto dto = UpdateWorkspaceDto.builder().build();
+        UpdateWorkspaceInput dto = UpdateWorkspaceInput.builder().build();
 
         when(workspaceRepository.findById(workspaceId)).thenReturn(Optional.of(testWorkspace));
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);

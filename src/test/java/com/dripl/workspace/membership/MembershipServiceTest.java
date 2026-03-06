@@ -6,7 +6,7 @@ import com.dripl.user.repository.UserRepository;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.repository.WorkspaceRepository;
 import com.dripl.workspace.enums.WorkspaceStatus;
-import com.dripl.workspace.membership.dto.UpdateMembershipDto;
+import com.dripl.workspace.membership.dto.UpdateMembershipInput;
 import com.dripl.workspace.membership.entity.WorkspaceMembership;
 import com.dripl.workspace.membership.enums.MembershipStatus;
 import com.dripl.workspace.membership.enums.Role;
@@ -86,7 +86,7 @@ class MembershipServiceTest {
     @Test
     void updateMembership_existing_updatesRoles() {
         Set<Role> newRoles = Set.of(Role.READ);
-        UpdateMembershipDto dto = UpdateMembershipDto.builder().roles(newRoles).build();
+        UpdateMembershipInput dto = UpdateMembershipInput.builder().roles(newRoles).build();
 
         when(membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId))
                 .thenReturn(Optional.of(testMembership));
@@ -100,7 +100,7 @@ class MembershipServiceTest {
 
     @Test
     void updateMembership_notFound_throwsException() {
-        UpdateMembershipDto dto = UpdateMembershipDto.builder().roles(Set.of(Role.READ)).build();
+        UpdateMembershipInput dto = UpdateMembershipInput.builder().roles(Set.of(Role.READ)).build();
 
         when(membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId))
                 .thenReturn(Optional.empty());

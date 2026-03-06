@@ -1,0 +1,33 @@
+info:
+  name: updateSelf
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |
+      mutation UpdateSelf($input: UpdateUserInput!) {
+        updateSelf(input: $input) {
+          id
+          email
+          givenName
+          familyName
+          isActive
+          lastWorkspaceId
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "givenName": "Updated"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

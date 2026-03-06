@@ -34,7 +34,7 @@ request:
 
         try {
             const resp = await require("axios").post(
-              `${baseUrl}/api/v1/users/bootstrap`,
+              `${baseUrl}/api/v1/auth/bootstrap`,
               { email: user },
               { headers: { "X-API-KEY": apiKey } }
             );

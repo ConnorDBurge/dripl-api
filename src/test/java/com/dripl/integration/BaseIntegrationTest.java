@@ -62,7 +62,7 @@ public abstract class BaseIntegrationTest {
                 {"email":"%s","givenName":"%s","familyName":"%s"}
                 """.formatted(email, givenName, familyName);
         var response = restTemplate.postForEntity(
-                "/api/v1/users/bootstrap",
+                "/api/v1/auth/bootstrap",
                 new HttpEntity<>(body, jsonHeaders()),
                 Map.class);
         return response.getBody();

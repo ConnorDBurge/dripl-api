@@ -33,8 +33,8 @@ class TransactionGraphQLIT extends BaseIntegrationTest {
         String email = "txn-gql-%s@test.com".formatted(System.nanoTime());
         var bootstrap = bootstrapUser(email, "Txn", "User");
         token = (String) bootstrap.get("token");
-        workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
-        userId = UUID.fromString((String) bootstrap.get("id"));
+        workspaceId = UUID.fromString((String) bootstrap.get("workspaceId"));
+        userId = UUID.fromString((String) bootstrap.get("userId"));
 
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");
         categoryId = createCategory(token, "Groceries");

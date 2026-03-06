@@ -1,0 +1,27 @@
+extend type Query {
+    self: UserResponse
+}
+
+extend type Mutation {
+    updateSelf(input: UpdateUserInput!): UserResponse!
+    deleteSelf: Boolean!
+}
+
+type UserResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    email: String!
+    givenName: String!
+    familyName: String!
+    isActive: Boolean!
+    lastWorkspaceId: ID
+}
+
+input UpdateUserInput {
+    email: String
+    givenName: String
+    familyName: String
+}

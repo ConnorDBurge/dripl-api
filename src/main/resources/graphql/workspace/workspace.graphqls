@@ -1,0 +1,80 @@
+extend type Query {
+    workspaces: [WorkspaceResponse!]!
+    currentWorkspace: WorkspaceResponse
+    workspaceMembers: [WorkspaceMembershipResponse!]!
+    workspaceMember(userId: ID!): WorkspaceMembershipResponse
+}
+
+extend type Mutation {
+    provisionWorkspace(input: CreateWorkspaceInput!): WorkspaceAuthResponse!
+    switchWorkspace(input: SwitchWorkspaceInput!): WorkspaceAuthResponse!
+    updateCurrentWorkspace(input: UpdateWorkspaceInput!): WorkspaceResponse!
+    addWorkspaceMember(input: CreateMembershipInput!): WorkspaceMembershipResponse!
+    updateWorkspaceMember(userId: ID!, input: UpdateMembershipInput!): WorkspaceMembershipResponse!
+    removeWorkspaceMember(userId: ID!): Boolean!
+}
+
+type WorkspaceResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    name: String!
+    status: String!
+}
+
+type WorkspaceAuthResponse {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    name: String!
+    status: String!
+    token: String!
+}
+
+type WorkspaceMembershipResponse {
+    userId: ID!
+    workspaceId: ID!
+    givenName: String!
+    familyName: String!
+    email: String!
+    roles: [Role!]!
+    status: MembershipStatus!
+    joinedAt: LocalDateTime!
+}
+
+input CreateWorkspaceInput {
+    name: String!
+}
+
+input SwitchWorkspaceInput {
+    workspaceId: ID!
+}
+
+input UpdateWorkspaceInput {
+    name: String
+}
+
+input CreateMembershipInput {
+    userId: ID!
+    roles: [Role!]!
+}
+
+input UpdateMembershipInput {
+    roles: [Role!]!
+}
+
+enum Role {
+    OWNER
+    WRITE
+    DELETE
+    READ
+}
+
+enum MembershipStatus {
+    ACTIVE
+    DEACTIVATED
+}

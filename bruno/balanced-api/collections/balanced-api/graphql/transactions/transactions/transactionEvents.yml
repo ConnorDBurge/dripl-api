@@ -7,7 +7,7 @@ graphql:
   method: POST
   url: "{{balanced-base-url}}/graphql"
   body:
-    query: |-
+    query: |
       query TransactionEvents($transactionId: ID!) {
         transactionEvents(transactionId: $transactionId) {
           id

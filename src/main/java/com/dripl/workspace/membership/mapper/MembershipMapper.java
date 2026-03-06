@@ -1,6 +1,6 @@
 package com.dripl.workspace.membership.mapper;
 
-import com.dripl.workspace.membership.dto.WorkspaceMembershipDto;
+import com.dripl.workspace.membership.dto.WorkspaceMembershipResponse;
 import com.dripl.workspace.membership.entity.WorkspaceMembership;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,7 +15,7 @@ public interface MembershipMapper {
     @Mapping(target = "givenName", source = "user.givenName")
     @Mapping(target = "familyName", source = "user.familyName")
     @Mapping(target = "email", source = "user.email")
-    WorkspaceMembershipDto toDto(WorkspaceMembership membership);
+    WorkspaceMembershipResponse toDto(WorkspaceMembership membership);
 
-    List<WorkspaceMembershipDto> toDtos(List<WorkspaceMembership> memberships);
+    List<WorkspaceMembershipResponse> toDtos(List<WorkspaceMembership> memberships);
 }

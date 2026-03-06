@@ -1,0 +1,36 @@
+info:
+  name: addWorkspaceMember
+  type: graphql
+  seq: 6
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation AddWorkspaceMember($input: CreateMembershipInput!) {
+        addWorkspaceMember(input: $input) {
+          userId
+          workspaceId
+          givenName
+          familyName
+          email
+          roles
+          status
+          joinedAt
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "userId": "00000000-0000-0000-0000-000000000000",
+          "roles": ["READ"]
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

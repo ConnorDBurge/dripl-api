@@ -7,38 +7,38 @@ graphql:
   method: POST
   url: "{{balanced-base-url}}/graphql"
   body:
-    query: |-
+    query: |
       query Transactions {
         transactions {
-          content {
-          id
-          createdAt
-          createdBy
-          updatedAt
-          updatedBy
-          workspaceId
-          accountId
-          merchantId
-          categoryId
-          date
-          amount
-          currencyCode
-          notes
-          status
-          source
-          pendingAt
-          postedAt
-          recurringItemId
-          occurrenceDate
-          groupId
-          splitId
-          tagIds
-          }
           page {
             number
             size
             totalElements
             totalPages
+          }
+          content {
+            id
+            createdAt
+            createdBy
+            updatedAt
+            updatedBy
+            workspaceId
+            accountId
+            merchantId
+            categoryId
+            date
+            amount
+            currencyCode
+            notes
+            status
+            source
+            pendingAt
+            postedAt
+            recurringItemId
+            occurrenceDate
+            groupId
+            splitId
+            tagIds
           }
         }
       }

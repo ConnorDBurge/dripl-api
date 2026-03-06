@@ -2,11 +2,11 @@ package com.dripl.user.service;
 
 import com.dripl.common.exception.ConflictException;
 import com.dripl.common.exception.ResourceNotFoundException;
-import com.dripl.user.dto.UpdateUserDto;
+import com.dripl.user.dto.UpdateUserInput;
 import com.dripl.user.entity.User;
 import com.dripl.user.mapper.UserMapper;
 import com.dripl.user.repository.UserRepository;
-import com.dripl.workspace.dto.CreateWorkspaceDto;
+import com.dripl.workspace.dto.CreateWorkspaceInput;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.service.WorkspaceService;
 import com.dripl.workspace.membership.service.MembershipService;
@@ -37,7 +37,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(UUID userId, UpdateUserDto dto) {
+    public User updateUser(UUID userId, UpdateUserInput dto) {
         User user = getUser(userId);
         log.info("Updating user {}", user.getEmail());
 
@@ -95,7 +95,7 @@ public class UserService {
         if (user.getLastWorkspaceId() == null) {
             String workspaceName = String.format("%s's Workspace", user.getGivenName());
             Workspace workspace = workspaceService.provisionWorkspace(user.getId(),
-                    CreateWorkspaceDto.builder().name(workspaceName).build());
+                    CreateWorkspaceInput.builder().name(workspaceName).build());
             user.setLastWorkspaceId(workspace.getId());
             user = userRepository.save(user);
         }

@@ -1,7 +1,7 @@
 info:
   name: recurring-items
   type: folder
-  seq: 8
+  seq: 2
 
 request:
   auth: inherit

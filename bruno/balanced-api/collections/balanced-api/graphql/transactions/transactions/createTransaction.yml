@@ -7,7 +7,7 @@ graphql:
   method: POST
   url: "{{balanced-base-url}}/graphql"
   body:
-    query: |-
+    query: |
       mutation CreateTransaction($input: CreateTransactionInput!) {
         createTransaction(input: $input) {
           id

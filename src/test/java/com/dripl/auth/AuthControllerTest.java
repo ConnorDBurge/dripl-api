@@ -71,6 +71,74 @@ class AuthControllerTest {
                 .build();
     }
 
+    // --- Bootstrap ---
+
+    @Test
+    void bootstrap_validRequest_returns200() throws Exception {
+        when(userService.bootstrapUser("connor@test.com", "Connor", "Burge")).thenReturn(testUser);
+        when(tokenService.mintToken(userId, workspaceId)).thenReturn("jwt-token");
+
+        WorkspaceMembership membership = WorkspaceMembership.builder()
+                .roles(Set.of(Role.OWNER, Role.WRITE, Role.DELETE, Role.READ))
+                .build();
+        when(membershipService.findMembership(userId, workspaceId))
+                .thenReturn(Optional.of(membership));
+
+        mockMvc.perform(post("/api/v1/auth/bootstrap")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"connor@test.com","givenName":"Connor","familyName":"Burge"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("connor@test.com"))
+                .andExpect(jsonPath("$.token").value("jwt-token"))
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.workspaceId").value(workspaceId.toString()))
+                .andExpect(jsonPath("$.roles", hasSize(4)));
+    }
+
+    @Test
+    void bootstrap_missingEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/bootstrap")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"givenName":"Connor","familyName":"Burge"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0].field").value("email"));
+    }
+
+    @Test
+    void bootstrap_blankEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/bootstrap")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"","givenName":"Connor","familyName":"Burge"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void bootstrap_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/bootstrap")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"not-an-email","givenName":"Connor","familyName":"Burge"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void bootstrap_emptyBody_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/bootstrap")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- Google Login ---
+
     @Test
     void googleLogin_validToken_returns200WithRoles() throws Exception {
         GoogleIdToken.Payload payload = new GoogleIdToken.Payload();

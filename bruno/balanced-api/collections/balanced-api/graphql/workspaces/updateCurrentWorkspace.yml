@@ -1,0 +1,34 @@
+info:
+  name: updateCurrentWorkspace
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateCurrentWorkspace($input: UpdateWorkspaceInput!) {
+        updateCurrentWorkspace(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          name
+          status
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "Renamed Workspace"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

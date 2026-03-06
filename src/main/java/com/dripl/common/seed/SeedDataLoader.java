@@ -35,7 +35,7 @@ import com.dripl.transaction.split.dto.SplitChildInput;
 import com.dripl.transaction.split.service.TransactionSplitService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
-import com.dripl.workspace.dto.CreateWorkspaceDto;
+import com.dripl.workspace.dto.CreateWorkspaceInput;
 import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.membership.enums.Role;
 import com.dripl.workspace.membership.service.MembershipService;
@@ -156,7 +156,7 @@ public class SeedDataLoader implements CommandLineRunner {
                 defaultRenamed.add(ownerEmail);
             } else {
                 Workspace workspace = workspaceService.provisionWorkspace(
-                        owner.getId(), CreateWorkspaceDto.builder().name(workspaceName).build());
+                        owner.getId(), CreateWorkspaceInput.builder().name(workspaceName).build());
                 workspaceId = workspace.getId();
             }
 

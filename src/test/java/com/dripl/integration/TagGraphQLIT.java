@@ -27,8 +27,8 @@ class TagGraphQLIT extends BaseIntegrationTest {
         String email = "gql-tag-%s@test.com".formatted(System.nanoTime());
         var bootstrap = bootstrapUser(email, "Tag", "User");
         token = (String) bootstrap.get("token");
-        workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
-        userId = UUID.fromString((String) bootstrap.get("id"));
+        workspaceId = UUID.fromString((String) bootstrap.get("workspaceId"));
+        userId = UUID.fromString((String) bootstrap.get("userId"));
     }
 
     private Map<String, Object> graphql(String query) {

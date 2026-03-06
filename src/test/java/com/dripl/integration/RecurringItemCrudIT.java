@@ -30,8 +30,8 @@ class RecurringItemCrudIT extends BaseIntegrationTest {
         String email = "recurring-user-%s@test.com".formatted(System.nanoTime());
         var bootstrap = bootstrapUser(email, "Recurring", "User");
         token = (String) bootstrap.get("token");
-        workspaceId = UUID.fromString((String) bootstrap.get("lastWorkspaceId"));
-        userId = UUID.fromString((String) bootstrap.get("id"));
+        workspaceId = UUID.fromString((String) bootstrap.get("workspaceId"));
+        userId = UUID.fromString((String) bootstrap.get("userId"));
 
         // Create an account
         accountId = createAccount(token, "Checking", "CASH", "CHECKING", "1000");

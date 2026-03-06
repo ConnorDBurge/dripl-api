@@ -7,7 +7,7 @@ import com.dripl.workspace.entity.Workspace;
 import com.dripl.workspace.repository.WorkspaceRepository;
 import com.dripl.workspace.membership.entity.WorkspaceMembership;
 import com.dripl.workspace.membership.repository.WorkspaceMembershipRepository;
-import com.dripl.workspace.membership.dto.UpdateMembershipDto;
+import com.dripl.workspace.membership.dto.UpdateMembershipInput;
 import com.dripl.workspace.membership.enums.MembershipStatus;
 import com.dripl.workspace.membership.enums.Role;
 import com.dripl.workspace.membership.event.MembershipDeletedEvent;
@@ -74,7 +74,7 @@ public class MembershipService {
     }
 
     @Transactional
-    public WorkspaceMembership updateMembership(UUID userId, UUID workspaceId, UpdateMembershipDto dto) {
+    public WorkspaceMembership updateMembership(UUID userId, UUID workspaceId, UpdateMembershipInput dto) {
         WorkspaceMembership membership = membershipRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
         membership.setRoles(dto.getRoles());
