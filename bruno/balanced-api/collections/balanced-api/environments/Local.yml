@@ -1,0 +1,9 @@
+name: Local
+color: "#2E8A54"
+variables:
+  - secret: true
+    name: balanced-base-url
+  - secret: true
+    name: x-api-key
+  - secret: true
+    name: user

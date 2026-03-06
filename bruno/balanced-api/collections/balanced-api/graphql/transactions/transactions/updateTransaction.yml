@@ -1,0 +1,52 @@
+info:
+  name: updateTransaction
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateTransaction($transactionId: ID!, $input: UpdateTransactionInput!) {
+        updateTransaction(transactionId: $transactionId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          merchantId
+          categoryId
+          date
+          amount
+          currencyCode
+          notes
+          status
+          source
+          pendingAt
+          postedAt
+          recurringItemId
+          occurrenceDate
+          groupId
+          splitId
+          tagIds
+        }
+      }
+    variables: |-
+      {
+        "transactionId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "amount": "-80.00",
+          "notes": "Updated notes",
+          "status": "POSTED"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

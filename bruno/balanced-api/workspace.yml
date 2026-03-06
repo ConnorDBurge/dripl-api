@@ -1,0 +1,12 @@
+opencollection: 1.0.0
+info:
+  name: "balanced-api"
+  type: workspace
+
+collections:
+  - name: "balanced-api"
+    path: "collections/balanced-api"
+
+specs:
+
+docs: ''

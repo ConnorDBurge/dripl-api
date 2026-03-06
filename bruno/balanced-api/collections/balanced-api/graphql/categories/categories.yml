@@ -1,0 +1,35 @@
+info:
+  name: categories
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Categories {
+        categories {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          parentId
+          name
+          description
+          status
+          income
+          excludeFromBudget
+          excludeFromTotals
+          displayOrder
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

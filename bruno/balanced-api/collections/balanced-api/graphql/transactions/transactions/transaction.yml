@@ -1,0 +1,47 @@
+info:
+  name: transaction
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Transaction($transactionId: ID!) {
+        transaction(transactionId: $transactionId) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          merchantId
+          categoryId
+          date
+          amount
+          currencyCode
+          notes
+          status
+          source
+          pendingAt
+          postedAt
+          recurringItemId
+          occurrenceDate
+          groupId
+          splitId
+          tagIds
+        }
+      }
+    variables: |-
+      {
+        "transactionId": "00000000-0000-0000-0000-000000000000"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

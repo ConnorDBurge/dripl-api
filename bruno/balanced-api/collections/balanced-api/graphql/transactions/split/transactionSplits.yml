@@ -1,0 +1,32 @@
+info:
+  name: transactionSplits
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query TransactionSplits {
+        transactionSplits {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          totalAmount
+          currencyCode
+          date
+          transactionIds
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

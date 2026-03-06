@@ -1,0 +1,19 @@
+info:
+  name: CREATE
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{dripl-base-url}}/api/v1/recurring-items/:recurringItemId/overrides"
+  params:
+    - name: recurringItemId
+      value: 4648439a-b891-4121-87fa-e2491d0ce1ed
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

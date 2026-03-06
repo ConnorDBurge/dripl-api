@@ -1,0 +1,38 @@
+info:
+  name: updateTag
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateTag($tagId: ID!, $input: UpdateTagInput!) {
+        updateTag(tagId: $tagId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          description
+          status
+        }
+      }
+    variables: |-
+      {
+        "tagId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "name": "Updated Tag",
+          "description": "Updated description"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

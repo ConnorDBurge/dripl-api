@@ -1,0 +1,56 @@
+info:
+  name: createTransaction
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateTransaction($input: CreateTransactionInput!) {
+        createTransaction(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          merchantId
+          categoryId
+          date
+          amount
+          currencyCode
+          notes
+          status
+          source
+          pendingAt
+          postedAt
+          recurringItemId
+          occurrenceDate
+          groupId
+          splitId
+          tagIds
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "accountId": "00000000-0000-0000-0000-000000000000",
+          "merchantName": "Whole Foods",
+          "categoryId": "00000000-0000-0000-0000-000000000000",
+          "date": "2026-01-01T00:00:00",
+          "amount": "-75.50",
+          "currencyCode": "USD",
+          "notes": "Weekly groceries",
+          "tagIds": []
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

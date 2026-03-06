@@ -1,0 +1,34 @@
+info:
+  name: tag
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Tag($tagId: ID!) {
+        tag(tagId: $tagId) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          description
+          status
+        }
+      }
+    variables: |-
+      {
+        "tagId": "00000000-0000-0000-0000-000000000000"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

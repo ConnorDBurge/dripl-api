@@ -17,5 +17,3 @@ target/
 
 # Secrets
 .env
-postman/
-bruno/

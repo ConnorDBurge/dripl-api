@@ -1,0 +1,46 @@
+info:
+  name: createTransactionGroup
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateTransactionGroup($input: CreateTransactionGroupInput!) {
+        createTransactionGroup(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          categoryId
+          notes
+          tagIds
+          totalAmount
+          transactionIds
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "January Utilities",
+          "transactionIds": [
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002"
+          ],
+          "categoryId": "00000000-0000-0000-0000-000000000000",
+          "notes": "All utility bills for January",
+          "tagIds": []
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

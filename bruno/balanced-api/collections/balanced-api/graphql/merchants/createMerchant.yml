@@ -1,0 +1,35 @@
+info:
+  name: createMerchant
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateMerchant($input: CreateMerchantInput!) {
+        createMerchant(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          status
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "Whole Foods"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,51 @@
+info:
+  name: updateTransactionSplit
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateTransactionSplit($transactionSplitId: ID!, $input: UpdateTransactionSplitInput!) {
+        updateTransactionSplit(transactionSplitId: $transactionSplitId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          totalAmount
+          currencyCode
+          date
+          transactionIds
+        }
+      }
+    variables: |-
+      {
+        "transactionSplitId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "children": [
+            {
+              "id": "00000000-0000-0000-0000-000000000001",
+              "amount": "-40.00",
+              "merchantName": "Whole Foods",
+              "notes": "Updated split portion"
+            },
+            {
+              "id": "00000000-0000-0000-0000-000000000002",
+              "amount": "-35.50",
+              "notes": "Updated other portion"
+            }
+          ]
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

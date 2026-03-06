@@ -1,0 +1,43 @@
+info:
+  name: account
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query Account($accountId: ID!) {
+        account(accountId: $accountId) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          type
+          subType
+          startingBalance
+          balance
+          currency
+          institutionName
+          source
+          status
+          balanceLastUpdated
+          closedAt
+          externalId
+        }
+      }
+    variables: |-
+      {
+        "accountId": "00000000-0000-0000-0000-000000000000"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

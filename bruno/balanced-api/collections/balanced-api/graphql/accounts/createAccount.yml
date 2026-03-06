@@ -1,0 +1,51 @@
+info:
+  name: createAccount
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateAccount($input: CreateAccountInput!) {
+        createAccount(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          type
+          subType
+          startingBalance
+          balance
+          currency
+          institutionName
+          source
+          status
+          balanceLastUpdated
+          closedAt
+          externalId
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "My Checking Account",
+          "type": "DEPOSITORY",
+          "subType": "CHECKING",
+          "startingBalance": "1000.00",
+          "currency": "USD",
+          "institutionName": "Chase",
+          "source": "MANUAL"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,43 @@
+info:
+  name: updateCategory
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateCategory($categoryId: ID!, $input: UpdateCategoryInput!) {
+        updateCategory(categoryId: $categoryId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          parentId
+          name
+          description
+          status
+          income
+          excludeFromBudget
+          excludeFromTotals
+          displayOrder
+        }
+      }
+    variables: |-
+      {
+        "categoryId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "name": "Updated Category",
+          "description": "Updated description"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

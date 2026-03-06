@@ -1,0 +1,48 @@
+info:
+  name: updateAccount
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation UpdateAccount($accountId: ID!, $input: UpdateAccountInput!) {
+        updateAccount(accountId: $accountId, input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          type
+          subType
+          startingBalance
+          balance
+          currency
+          institutionName
+          source
+          status
+          balanceLastUpdated
+          closedAt
+          externalId
+        }
+      }
+    variables: |-
+      {
+        "accountId": "00000000-0000-0000-0000-000000000000",
+        "input": {
+          "name": "Updated Account Name",
+          "type": "DEPOSITORY",
+          "subType": "SAVINGS"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

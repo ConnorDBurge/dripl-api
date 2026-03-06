@@ -1,0 +1,21 @@
+info:
+  name: PATCH
+  type: http
+  seq: 2
+
+http:
+  method: PATCH
+  url: "{{dripl-base-url}}/api/v1/users/self"
+  body:
+    type: json
+    data: |-
+      {
+          "email": "connor.burge@email.com"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

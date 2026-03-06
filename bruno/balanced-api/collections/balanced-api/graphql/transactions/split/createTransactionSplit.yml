@@ -1,0 +1,53 @@
+info:
+  name: createTransactionSplit
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      mutation CreateTransactionSplit($input: CreateTransactionSplitInput!) {
+        createTransactionSplit(input: $input) {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          accountId
+          totalAmount
+          currencyCode
+          date
+          transactionIds
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "transactionId": "00000000-0000-0000-0000-000000000000",
+          "children": [
+            {
+              "amount": "-50.00",
+              "merchantName": "Whole Foods",
+              "categoryId": "00000000-0000-0000-0000-000000000000",
+              "notes": "Groceries portion",
+              "tagIds": []
+            },
+            {
+              "amount": "-25.50",
+              "merchantName": "Whole Foods",
+              "notes": "Household supplies portion",
+              "tagIds": []
+            }
+          ]
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

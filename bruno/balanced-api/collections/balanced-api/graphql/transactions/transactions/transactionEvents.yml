@@ -1,0 +1,35 @@
+info:
+  name: transactionEvents
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query TransactionEvents($transactionId: ID!) {
+        transactionEvents(transactionId: $transactionId) {
+          id
+          transactionId
+          eventType
+          changes {
+            field
+            oldValue
+            newValue
+          }
+          performedBy
+          performedAt
+        }
+      }
+    variables: |-
+      {
+        "transactionId": "00000000-0000-0000-0000-000000000000"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

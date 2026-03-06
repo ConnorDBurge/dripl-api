@@ -1,0 +1,56 @@
+opencollection: 1.0.0
+
+info:
+  name: balanced-api
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+request:
+  headers:
+    - name: X-API-KEY
+      value: "{{x-api-key}}"
+  auth:
+    type: bearer
+    token: "{{token}}"
+  variables:
+    - name: token
+      value: ""
+  scripts:
+    - type: before-request
+      code: |-
+        const token = bru.getVar("token");
+        const apiKey = bru.getEnvVar("x-api-key");
+        const baseUrl = bru.getEnvVar("balanced-base-url");
+        const user = bru.getEnvVar("user");
+
+        try {
+            const resp = await require("axios").post(
+              `${baseUrl}/api/v1/users/bootstrap`,
+              { email: user },
+              { headers: { "X-API-KEY": apiKey } }
+            );
+            bru.setVar("token", resp.data.token);
+          } catch (e) {}
+    - type: after-response
+      code: |-
+        if (res.getStatus() >= 200 && res.getStatus() < 300 && res.getBody().token) {
+               bru.setVar("token", res.getBody().token);
+           }
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git
+    presets:
+      request:
+        type: graphql

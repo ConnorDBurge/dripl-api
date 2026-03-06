@@ -1,0 +1,27 @@
+info:
+  name: CREATE
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{dripl-base-url}}/api/v1/budgets"
+  body:
+    type: json
+    data: |-
+      {
+          "name": "Connor's Fifth Budget",
+          "anchorDate": "2026-02-20",
+          "intervalDays": 14,
+          // "anchorDay1": "14"
+          // "anchorDay2": "1"
+          // "accountIds": [
+          // ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

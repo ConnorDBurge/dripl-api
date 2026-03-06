@@ -1,0 +1,33 @@
+info:
+  name: transactionGroups
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query TransactionGroups {
+        transactionGroups {
+          id
+          createdAt
+          createdBy
+          updatedAt
+          updatedBy
+          workspaceId
+          name
+          categoryId
+          notes
+          tagIds
+          totalAmount
+          transactionIds
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
