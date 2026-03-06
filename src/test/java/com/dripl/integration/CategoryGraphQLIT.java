@@ -32,7 +32,7 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
     }
 
     private Map<String, Object> graphql(String query) {
-        return graphql(query, null);
+        return graphql(query, (Map<String, Object>) null);
     }
 
     @SuppressWarnings("unchecked")
@@ -221,10 +221,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String categoryId = (String) ((Map<String, Object>) data(createResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                query($id: ID!) {
-                    category(id: $id) { name description }
+                query($categoryId: ID!) {
+                    category(categoryId: $categoryId) { name description }
                 }
-                """, Map.of("id", categoryId));
+                """, Map.of("categoryId", categoryId));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("category");
@@ -273,10 +273,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String categoryId = (String) ((Map<String, Object>) data(createResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id name }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id name }
                 }
-                """, Map.of("id", categoryId, "input", Map.of("name", "Food & Drink")));
+                """, Map.of("categoryId", categoryId, "input", Map.of("name", "Food & Drink")));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");
@@ -297,10 +297,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String childId = (String) ((Map<String, Object>) data(childResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id parentId }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id parentId }
                 }
-                """, Map.of("id", childId, "input", Map.of("parentId", parentId)));
+                """, Map.of("categoryId", childId, "input", Map.of("parentId", parentId)));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");
@@ -326,10 +326,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         var input = new java.util.HashMap<String, Object>();
         input.put("parentId", null);
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id parentId }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id parentId }
                 }
-                """, Map.of("id", childId, "input", input));
+                """, Map.of("categoryId", childId, "input", input));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");
@@ -353,10 +353,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         // Update name only — parentId not included in input
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id name parentId }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id name parentId }
                 }
-                """, Map.of("id", childId, "input", Map.of("name", "Grocery Store")));
+                """, Map.of("categoryId", childId, "input", Map.of("name", "Grocery Store")));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");
@@ -373,10 +373,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String categoryId = (String) ((Map<String, Object>) data(createResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id }
                 }
-                """, Map.of("id", categoryId, "input", Map.of("parentId", categoryId)));
+                """, Map.of("categoryId", categoryId, "input", Map.of("parentId", categoryId)));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -403,10 +403,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String orphanId = (String) ((Map<String, Object>) data(orphanResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id }
                 }
-                """, Map.of("id", orphanId, "input", Map.of("parentId", childId)));
+                """, Map.of("categoryId", orphanId, "input", Map.of("parentId", childId)));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -433,10 +433,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         // Try to make Food (which has children) a child of Transport
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id }
                 }
-                """, Map.of("id", foodId, "input", Map.of("parentId", transportId)));
+                """, Map.of("categoryId", foodId, "input", Map.of("parentId", transportId)));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -451,10 +451,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         UUID fakeParentId = UUID.randomUUID();
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id }
                 }
-                """, Map.of("id", categoryId, "input", Map.of("parentId", fakeParentId.toString())));
+                """, Map.of("categoryId", categoryId, "input", Map.of("parentId", fakeParentId.toString())));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -468,16 +468,16 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String categoryId = (String) ((Map<String, Object>) data(createResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!) { deleteCategory(id: $id) }
-                """, Map.of("id", categoryId));
+                mutation($categoryId: ID!) { deleteCategory(categoryId: $categoryId) }
+                """, Map.of("categoryId", categoryId));
 
         assertThat(result.get("errors")).isNull();
         assertThat(data(result).get("deleteCategory")).isEqualTo(true);
 
         // Verify deleted
         var getResult = graphql("""
-                query($id: ID!) { category(id: $id) { id } }
-                """, Map.of("id", categoryId));
+                query($categoryId: ID!) { category(categoryId: $categoryId) { id } }
+                """, Map.of("categoryId", categoryId));
         assertThat(getResult.get("errors")).isNotNull();
     }
 
@@ -498,13 +498,13 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         // Delete parent
         graphql("""
-                mutation($id: ID!) { deleteCategory(id: $id) }
-                """, Map.of("id", parentId));
+                mutation($categoryId: ID!) { deleteCategory(categoryId: $categoryId) }
+                """, Map.of("categoryId", parentId));
 
         // Child should still exist with null parentId (ON DELETE SET NULL)
         var result = graphql("""
-                query($id: ID!) { category(id: $id) { name parentId } }
-                """, Map.of("id", childId));
+                query($categoryId: ID!) { category(categoryId: $categoryId) { name parentId } }
+                """, Map.of("categoryId", childId));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("category");
@@ -526,8 +526,8 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         // Try to access with different workspace token
         Map<String, Object> body = Map.of("query", """
-                query($id: ID!) { category(id: $id) { id } }
-                """, "variables", Map.of("id", categoryId));
+                query($categoryId: ID!) { category(categoryId: $categoryId) { id } }
+                """, "variables", Map.of("categoryId", categoryId));
         @SuppressWarnings("unchecked")
         var response = restTemplate.exchange(
                 "/graphql", HttpMethod.POST,
@@ -543,8 +543,8 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         UUID randomId = UUID.randomUUID();
 
         var result = graphql("""
-                query($id: ID!) { category(id: $id) { id } }
-                """, Map.of("id", randomId.toString()));
+                query($categoryId: ID!) { category(categoryId: $categoryId) { id } }
+                """, Map.of("categoryId", randomId.toString()));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -608,8 +608,8 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
 
         // Move Gamma (position 2) to position 0
         var moveResult = graphql("""
-                mutation($id: ID!) { moveCategory(id: $id, displayOrder: 0) }
-                """, Map.of("id", id3));
+                mutation($categoryId: ID!) { moveCategory(categoryId: $categoryId, displayOrder: 0) }
+                """, Map.of("categoryId", id3));
         assertThat(moveResult.get("errors")).isNull();
         assertThat(data(moveResult).get("moveCategory")).isEqualTo(true);
 
@@ -643,10 +643,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         String snacksId = (String) ((Map<String, Object>) data(standaloneResult).get("createCategory")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id displayOrder }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id displayOrder }
                 }
-                """, Map.of("id", snacksId, "input", Map.of("parentId", parentId)));
+                """, Map.of("categoryId", snacksId, "input", Map.of("parentId", parentId)));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");
@@ -678,10 +678,10 @@ class CategoryGraphQLIT extends BaseIntegrationTest {
         var input = new java.util.HashMap<String, Object>();
         input.put("parentId", null);
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateCategoryInput!) {
-                    updateCategory(id: $id, input: $input) { id displayOrder parentId }
+                mutation($categoryId: ID!, $input: UpdateCategoryInput!) {
+                    updateCategory(categoryId: $categoryId, input: $input) { id displayOrder parentId }
                 }
-                """, Map.of("id", childId, "input", input));
+                """, Map.of("categoryId", childId, "input", input));
 
         assertThat(result.get("errors")).isNull();
         var category = (Map<String, Object>) data(result).get("updateCategory");

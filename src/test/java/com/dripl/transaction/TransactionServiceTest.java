@@ -17,8 +17,8 @@ import com.dripl.recurring.enums.RecurringItemStatus;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
-import com.dripl.transaction.dto.CreateTransactionDto;
-import com.dripl.transaction.dto.UpdateTransactionDto;
+import com.dripl.transaction.dto.CreateTransactionInput;
+import com.dripl.transaction.dto.UpdateTransactionInput;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.enums.TransactionStatus;
@@ -184,7 +184,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_success_existingMerchant() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .categoryId(categoryId)
@@ -209,7 +209,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_success_autoCreatesMerchant() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("New Store")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -227,7 +227,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_merchantLookup_caseInsensitive() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("KROGER")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -246,7 +246,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_withTags() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -266,7 +266,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_withCurrencyCode() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -285,7 +285,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_accountNotInWorkspace_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -302,7 +302,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_categoryNotInWorkspace_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .categoryId(categoryId)
@@ -322,7 +322,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_categoryIsGroup_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .categoryId(categoryId)
@@ -343,7 +343,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_tagNotInWorkspace_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -363,7 +363,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_noCategoryId_success() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -391,7 +391,7 @@ class TransactionServiceTest {
                 .thenReturn(Account.builder().id(newAccountId).workspaceId(workspaceId).build());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(newAccountId).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().accountId(newAccountId).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getAccountId()).isEqualTo(newAccountId);
@@ -407,7 +407,7 @@ class TransactionServiceTest {
         when(merchantService.resolveMerchant("Target", workspaceId)).thenReturn(existingMerchant);
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("Target").build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().merchantName("Target").build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -423,7 +423,7 @@ class TransactionServiceTest {
         when(merchantService.resolveMerchant("New Place", workspaceId)).thenReturn(newMerchant);
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("New Place").build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().merchantName("New Place").build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -439,8 +439,8 @@ class TransactionServiceTest {
         when(merchantService.getMerchant(newMerchantId, workspaceId)).thenReturn(merchant);
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignMerchantId(newMerchantId);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setMerchantId(newMerchantId);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -454,8 +454,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignMerchantId(null);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setMerchantId(null);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isNull();
@@ -471,8 +471,8 @@ class TransactionServiceTest {
         when(merchantService.getMerchant(newMerchantId, workspaceId)).thenReturn(merchant);
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("Ignored Name").build();
-        dto.assignMerchantId(newMerchantId);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().merchantName("Ignored Name").build();
+        dto.setMerchantId(newMerchantId);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(newMerchantId);
@@ -486,7 +486,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getMerchantId()).isEqualTo(merchantId);
@@ -503,8 +503,8 @@ class TransactionServiceTest {
                 .thenReturn(Category.builder().id(newCategoryId).workspaceId(workspaceId).build());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignCategoryId(newCategoryId);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setCategoryId(newCategoryId);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getCategoryId()).isEqualTo(newCategoryId);
@@ -516,8 +516,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignCategoryId(null);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setCategoryId(null);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getCategoryId()).isNull();
@@ -529,7 +529,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getCategoryId()).isEqualTo(categoryId);
@@ -542,7 +542,7 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         LocalDateTime newDate = LocalDateTime.of(2025, 8, 1, 0, 0);
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().date(newDate).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().date(newDate).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getDate()).isEqualTo(newDate);
@@ -554,7 +554,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().amount(new BigDecimal("-99.99")).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().amount(new BigDecimal("-99.99")).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("-99.99"));
@@ -566,8 +566,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignNotes("Weekly groceries");
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setNotes("Weekly groceries");
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getNotes()).isEqualTo("Weekly groceries");
@@ -580,8 +580,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignNotes(null);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setNotes(null);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getNotes()).isNull();
@@ -594,8 +594,8 @@ class TransactionServiceTest {
         when(tagService.getTag(tagId, workspaceId)).thenReturn(buildTag());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignTagIds(Set.of(tagId));
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setTagIds(Set.of(tagId));
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getTagIds()).containsExactly(tagId);
@@ -608,8 +608,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignTagIds(Set.of());
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setTagIds(Set.of());
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getTagIds()).isEmpty();
@@ -622,7 +622,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getTagIds()).containsExactly(tagId);
@@ -638,7 +638,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().status(TransactionStatus.POSTED).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().status(TransactionStatus.POSTED).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(TransactionStatus.POSTED);
@@ -655,7 +655,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().status(TransactionStatus.PENDING).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().status(TransactionStatus.PENDING).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(TransactionStatus.PENDING);
@@ -670,7 +670,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().status(TransactionStatus.ARCHIVED).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().status(TransactionStatus.ARCHIVED).build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getStatus()).isEqualTo(TransactionStatus.ARCHIVED);
@@ -686,7 +686,7 @@ class TransactionServiceTest {
         when(accountService.getAccount(badAccountId, workspaceId))
                 .thenThrow(new ResourceNotFoundException("Account not found"));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(badAccountId).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().accountId(badAccountId).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -701,8 +701,8 @@ class TransactionServiceTest {
         when(categoryService.getCategory(badCategoryId, workspaceId))
                 .thenThrow(new ResourceNotFoundException("Category not found"));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignCategoryId(badCategoryId);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setCategoryId(badCategoryId);
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -719,8 +719,8 @@ class TransactionServiceTest {
         doThrow(new BadRequestException("Cannot assign a transaction to a parent category group"))
                 .when(categoryService).validateNotGroup(groupCategoryId);
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignCategoryId(groupCategoryId);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setCategoryId(groupCategoryId);
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -731,7 +731,7 @@ class TransactionServiceTest {
     void updateTransaction_notFound_throws() {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.empty());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -762,7 +762,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_withRecurringItem_inheritsDefaults() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .recurringItemId(recurringItemId)
                 .occurrenceDate(LocalDate.of(2025, 7, 15))
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -790,7 +790,7 @@ class TransactionServiceTest {
     void createTransaction_withRecurringItem_lockedFieldsFromRI() {
         UUID overrideAccountId = UUID.randomUUID();
 
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .recurringItemId(recurringItemId)
                 .occurrenceDate(LocalDate.of(2025, 7, 15))
                 .accountId(overrideAccountId)
@@ -822,7 +822,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_noRecurringItem_noAccount_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
                 .amount(new BigDecimal("-20.00"))
@@ -835,7 +835,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_noRecurringItem_noMerchant_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
                 .amount(new BigDecimal("-20.00"))
@@ -850,7 +850,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_noRecurringItem_noAmount_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Kroger")
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
@@ -866,7 +866,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_withOccurrenceDateButNoRecurringItem_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Target")
                 .amount(new BigDecimal("-20.00"))
@@ -881,7 +881,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_withRecurringItemButNoOccurrenceDate_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .recurringItemId(recurringItemId)
                 .date(LocalDateTime.of(2025, 7, 1, 0, 0))
                 .build();
@@ -905,9 +905,9 @@ class TransactionServiceTest {
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
@@ -933,9 +933,9 @@ class TransactionServiceTest {
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         // Locked fields come from RI, overwriting existing values
@@ -955,8 +955,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignRecurringItemId(null);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setRecurringItemId(null);
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getRecurringItemId()).isNull();
@@ -968,8 +968,8 @@ class TransactionServiceTest {
         Transaction txn = buildTransaction();
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -984,7 +984,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
 
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
@@ -998,8 +998,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignCategoryId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setCategoryId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1013,8 +1013,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignTagIds(Set.of(UUID.randomUUID()));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setTagIds(Set.of(UUID.randomUUID()));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1028,8 +1028,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignNotes("new notes");
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setNotes("new notes");
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1043,7 +1043,7 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("New Merchant").build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().merchantName("New Merchant").build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1057,8 +1057,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignMerchantId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setMerchantId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1072,8 +1072,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignOccurrenceDate(LocalDate.of(2025, 8, 15));
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setOccurrenceDate(LocalDate.of(2025, 8, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1086,7 +1086,7 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().accountId(UUID.randomUUID()).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1100,8 +1100,8 @@ class TransactionServiceTest {
         txn.setRecurringItemId(recurringItemId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).merchantName("X").build();
-        dto.assignCategoryId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().accountId(UUID.randomUUID()).merchantName("X").build();
+        dto.setCategoryId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1118,9 +1118,9 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(categoryService.getCategory(any(), eq(workspaceId))).thenReturn(buildCategory());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignRecurringItemId(null); // unlink
-        dto.assignCategoryId(UUID.randomUUID()); // allowed because unlinking
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setRecurringItemId(null); // unlink
+        dto.setCategoryId(UUID.randomUUID()); // allowed because unlinking
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getRecurringItemId()).isNull();
@@ -1133,7 +1133,7 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder()
+        UpdateTransactionInput dto = UpdateTransactionInput.builder()
                 .amount(new BigDecimal("-99.00"))
                 .status(TransactionStatus.POSTED)
                 .build();
@@ -1150,8 +1150,8 @@ class TransactionServiceTest {
         txn.setGroupId(UUID.randomUUID());
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignCategoryId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setCategoryId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1165,8 +1165,8 @@ class TransactionServiceTest {
         txn.setGroupId(UUID.randomUUID());
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignTagIds(Set.of(UUID.randomUUID()));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setTagIds(Set.of(UUID.randomUUID()));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1180,8 +1180,8 @@ class TransactionServiceTest {
         txn.setGroupId(UUID.randomUUID());
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignNotes("new notes");
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setNotes("new notes");
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1198,7 +1198,7 @@ class TransactionServiceTest {
         when(accountService.getAccount(any(), eq(workspaceId))).thenReturn(buildAccount());
         when(merchantService.resolveMerchant("New Place", workspaceId)).thenReturn(buildMerchant("New Place"));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder()
+        UpdateTransactionInput dto = UpdateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("New Place")
                 .amount(new BigDecimal("-99.00"))
@@ -1216,9 +1216,9 @@ class TransactionServiceTest {
         txn.setGroupId(UUID.randomUUID());
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1237,8 +1237,8 @@ class TransactionServiceTest {
         when(transactionRepository.countByGroupId(groupId)).thenReturn(3L);
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(null);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(null);
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getGroupId()).isNull();
@@ -1252,8 +1252,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.countByGroupId(groupId)).thenReturn(2L);
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(null);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(null);
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1270,9 +1270,9 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(categoryService.getCategory(any(), eq(workspaceId))).thenReturn(buildCategory());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(null);
-        dto.assignCategoryId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(null);
+        dto.setCategoryId(UUID.randomUUID());
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getGroupId()).isNull();
@@ -1283,8 +1283,8 @@ class TransactionServiceTest {
         Transaction txn = buildTransaction();
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1301,10 +1301,10 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(null);
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(null);
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getGroupId()).isNull();
@@ -1320,7 +1320,7 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().accountId(UUID.randomUUID()).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().accountId(UUID.randomUUID()).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1335,7 +1335,7 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().currencyCode(CurrencyCode.EUR).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().currencyCode(CurrencyCode.EUR).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1350,7 +1350,7 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().amount(new BigDecimal("99.99")).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().amount(new BigDecimal("99.99")).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1365,7 +1365,7 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().date(LocalDateTime.now()).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().date(LocalDateTime.now()).build();
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1382,7 +1382,7 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(merchantService.resolveMerchant("Walmart", workspaceId)).thenReturn(buildMerchant("Walmart"));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().merchantName("Walmart").build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().merchantName("Walmart").build();
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getMerchantId()).isEqualTo(merchantId);
@@ -1398,8 +1398,8 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(Category.builder().id(newCatId).build());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignCategoryId(newCatId);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setCategoryId(newCatId);
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getCategoryId()).isEqualTo(newCatId);
@@ -1414,8 +1414,8 @@ class TransactionServiceTest {
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(tagService.getTag(tagId, workspaceId)).thenReturn(buildTag());
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignTagIds(Set.of(tagId));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setTagIds(Set.of(tagId));
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getTagIds()).containsExactly(tagId);
@@ -1429,8 +1429,8 @@ class TransactionServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignNotes("Updated notes");
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setNotes("Updated notes");
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getNotes()).isEqualTo("Updated notes");
@@ -1445,8 +1445,8 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignSplitId(null);
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setSplitId(null);
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1458,8 +1458,8 @@ class TransactionServiceTest {
         Transaction txn = buildTransaction();
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignSplitId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setSplitId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1475,8 +1475,8 @@ class TransactionServiceTest {
         txn.setSplitId(splitId);
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignGroupId(UUID.randomUUID());
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setGroupId(UUID.randomUUID());
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1510,9 +1510,9 @@ class TransactionServiceTest {
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
         when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         Transaction result = transactionService.updateTransaction(transactionId, workspaceId, dto);
         assertThat(result.getRecurringItemId()).isEqualTo(recurringItemId);
@@ -1536,9 +1536,9 @@ class TransactionServiceTest {
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(buildRecurringItem());
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1567,9 +1567,9 @@ class TransactionServiceTest {
         when(recurringItemService.getRecurringItem(recurringItemId, workspaceId)).thenReturn(ri);
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().build();
-        dto.assignRecurringItemId(recurringItemId);
-        dto.assignOccurrenceDate(LocalDate.of(2025, 7, 15));
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().build();
+        dto.setRecurringItemId(recurringItemId);
+        dto.setOccurrenceDate(LocalDate.of(2025, 7, 15));
 
         assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, workspaceId, dto))
                 .isInstanceOf(BadRequestException.class)
@@ -1580,7 +1580,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_polarityMismatch_throws() {
-        CreateTransactionDto dto = CreateTransactionDto.builder()
+        CreateTransactionInput dto = CreateTransactionInput.builder()
                 .accountId(accountId)
                 .merchantName("Target")
                 .amount(new BigDecimal("100.00"))
@@ -1615,8 +1615,8 @@ class TransactionServiceTest {
 
         Category newCat = Category.builder().id(newCatId).workspaceId(workspaceId).name("Salary").income(true).build();
 
-        UpdateTransactionDto dto = new UpdateTransactionDto();
-        dto.assignCategoryId(newCatId);
+        UpdateTransactionInput dto = new UpdateTransactionInput();
+        dto.setCategoryId(newCatId);
 
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(newCat);
@@ -1642,7 +1642,7 @@ class TransactionServiceTest {
                 .source(TransactionSource.MANUAL)
                 .build();
 
-        UpdateTransactionDto dto = UpdateTransactionDto.builder().amount(new BigDecimal("100.00")).build();
+        UpdateTransactionInput dto = UpdateTransactionInput.builder().amount(new BigDecimal("100.00")).build();
 
         when(transactionRepository.findByIdAndWorkspaceId(transactionId, workspaceId)).thenReturn(Optional.of(txn));
         doThrow(new BadRequestException("Positive amounts must use an income category"))

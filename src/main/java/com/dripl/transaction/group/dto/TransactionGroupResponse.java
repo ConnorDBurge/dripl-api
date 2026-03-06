@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransactionGroupDto extends BaseDto {
+public class TransactionGroupResponse extends BaseDto {
 
     private UUID workspaceId;
     private String name;

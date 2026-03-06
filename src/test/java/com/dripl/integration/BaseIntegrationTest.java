@@ -190,4 +190,89 @@ public abstract class BaseIntegrationTest {
         var data = (Map<String, Object>) response.getBody().get("data");
         return (List<Map<String, Object>>) data.get("merchants");
     }
+
+    // -- GraphQL helper for transactions --
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> graphql(String token, String query) {
+        return graphql(token, query, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> graphql(String token, String query, Map<String, Object> variables) {
+        Map<String, Object> body = variables != null
+                ? Map.of("query", query, "variables", variables)
+                : Map.of("query", query);
+        var response = restTemplate.exchange(
+                "/graphql", HttpMethod.POST,
+                new HttpEntity<>(body, authHeaders(token)),
+                Map.class);
+        return response.getBody();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> graphqlData(String token, String query) {
+        return (Map<String, Object>) graphql(token, query).get("data");
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> graphqlData(String token, String query, Map<String, Object> variables) {
+        return (Map<String, Object>) graphql(token, query, variables).get("data");
+    }
+
+    /**
+     * Create a transaction via GraphQL and return its ID.
+     */
+    @SuppressWarnings("unchecked")
+    protected String createTransaction(String token, String accountId, String merchantName, String amount) {
+        String query = """
+                mutation {
+                    createTransaction(input: {
+                        accountId: "%s", merchantName: "%s",
+                        date: "2025-07-01T00:00:00", amount: %s
+                    }) { id }
+                }
+                """.formatted(accountId, merchantName, amount);
+        var data = graphqlData(token, query);
+        var txn = (Map<String, Object>) data.get("createTransaction");
+        return (String) txn.get("id");
+    }
+
+    /**
+     * Create a transaction split via GraphQL and return the full response map.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> createTransactionSplit(String token, String transactionId, String childrenJson) {
+        String query = """
+                mutation {
+                    createTransactionSplit(input: {
+                        transactionId: "%s", children: %s
+                    }) { id totalAmount accountId transactionIds currencyCode }
+                }
+                """.formatted(transactionId, childrenJson);
+        var data = graphqlData(token, query);
+        return (Map<String, Object>) data.get("createTransactionSplit");
+    }
+
+    /**
+     * Create a transaction group via GraphQL and return the full response map.
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> createTransactionGroup(String token, String name, String transactionIdsJson) {
+        return createTransactionGroup(token, name, transactionIdsJson, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> createTransactionGroup(String token, String name, String transactionIdsJson, String extraFields) {
+        String extra = extraFields != null ? ", " + extraFields : "";
+        String query = """
+                mutation {
+                    createTransactionGroup(input: {
+                        name: "%s", transactionIds: %s%s
+                    }) { id name categoryId notes tagIds totalAmount transactionIds }
+                }
+                """.formatted(name, transactionIdsJson, extra);
+        var data = graphqlData(token, query);
+        return (Map<String, Object>) data.get("createTransactionGroup");
+    }
 }

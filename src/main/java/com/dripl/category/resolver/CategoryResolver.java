@@ -53,9 +53,9 @@ public class CategoryResolver {
 
     @PreAuthorize("hasAuthority('READ')")
     @QueryMapping
-    public CategoryResponse category(@Argument UUID id) {
+    public CategoryResponse category(@Argument UUID categoryId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        Category cat = categoryService.getCategory(id, workspaceId);
+        Category cat = categoryService.getCategory(categoryId, workspaceId);
         return categoryMapper.toDto(cat);
     }
 
@@ -69,7 +69,7 @@ public class CategoryResolver {
     @PreAuthorize("hasAuthority('WRITE')")
     @MutationMapping
     @SuppressWarnings("unchecked")
-    public CategoryResponse updateCategory(@Argument UUID id, @Argument @Valid UpdateCategoryInput input,
+    public CategoryResponse updateCategory(@Argument UUID categoryId, @Argument @Valid UpdateCategoryInput input,
                                            DataFetchingEnvironment env) {
         UUID workspaceId = GraphQLContext.workspaceId();
         // GraphQL argument binder doesn't call setter for null values,
@@ -78,22 +78,22 @@ public class CategoryResolver {
         if (rawInput != null && rawInput.containsKey("parentId") && !input.isParentIdSpecified()) {
             input.setParentId(null);
         }
-        return categoryMapper.toDto(categoryService.updateCategory(id, workspaceId, input));
+        return categoryMapper.toDto(categoryService.updateCategory(categoryId, workspaceId, input));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
     @MutationMapping
-    public boolean moveCategory(@Argument UUID id, @Argument int displayOrder) {
+    public boolean moveCategory(@Argument UUID categoryId, @Argument int displayOrder) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        categoryService.moveCategory(id, workspaceId, displayOrder);
+        categoryService.moveCategory(categoryId, workspaceId, displayOrder);
         return true;
     }
 
     @PreAuthorize("hasAuthority('DELETE')")
     @MutationMapping
-    public boolean deleteCategory(@Argument UUID id) {
+    public boolean deleteCategory(@Argument UUID categoryId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        categoryService.deleteCategory(id, workspaceId);
+        categoryService.deleteCategory(categoryId, workspaceId);
         return true;
     }
 }

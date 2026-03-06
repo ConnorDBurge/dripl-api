@@ -1,14 +1,14 @@
 package com.dripl.transaction.dto;
 
 import com.dripl.account.enums.CurrencyCode;
-import com.dripl.common.config.FlexibleLocalDateTimeDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import com.dripl.common.dto.BaseDto;
+import com.dripl.transaction.enums.TransactionSource;
+import com.dripl.transaction.enums.TransactionStatus;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,30 +19,25 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class CreateTransactionDto {
+@SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
+public class TransactionResponse extends BaseDto {
 
+    private UUID workspaceId;
     private UUID accountId;
-
-    @Size(min = 1, max = 100, message = "Merchant name must be between 1 and 100 characters")
-    private String merchantName;
-
+    private UUID merchantId;
     private UUID categoryId;
-
-    @NotNull(message = "Date must be provided")
-    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime date;
-
     private BigDecimal amount;
-
     private CurrencyCode currencyCode;
-
-    @Size(max = 500, message = "Notes must be at most 500 characters")
     private String notes;
-
+    private TransactionStatus status;
+    private TransactionSource source;
+    private LocalDateTime pendingAt;
+    private LocalDateTime postedAt;
     private UUID recurringItemId;
-
     private LocalDate occurrenceDate;
-
+    private UUID groupId;
+    private UUID splitId;
     private Set<UUID> tagIds;
 }

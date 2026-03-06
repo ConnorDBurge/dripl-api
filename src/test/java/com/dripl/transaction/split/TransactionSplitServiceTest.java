@@ -141,11 +141,11 @@ class TransactionSplitServiceTest {
 
     @Test
     void createTransactionSplit_success() {
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("60.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("40.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("60.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("40.00")).build()))
                 .build();
 
         Transaction source = buildSourceTransaction();
@@ -173,17 +173,17 @@ class TransactionSplitServiceTest {
     @Test
     void createTransactionSplit_withCategoryAndMerchant() {
         UUID newMerchantId = UUID.randomUUID();
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder()
+                        SplitChildInput.builder()
                                 .amount(new BigDecimal("60.00"))
                                 .categoryId(categoryId)
                                 .merchantName("Target")
                                 .tagIds(Set.of(tagId))
                                 .notes("Groceries")
                                 .build(),
-                        SplitChildDto.builder().amount(new BigDecimal("40.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("40.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -209,11 +209,11 @@ class TransactionSplitServiceTest {
 
     @Test
     void createTransactionSplit_sourceNotFound_throws() {
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -229,11 +229,11 @@ class TransactionSplitServiceTest {
         Transaction source = buildSourceTransaction();
         source.setGroupId(UUID.randomUUID());
 
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -249,11 +249,11 @@ class TransactionSplitServiceTest {
         Transaction source = buildSourceTransaction();
         source.setSplitId(UUID.randomUUID());
 
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("50.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("50.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -266,11 +266,11 @@ class TransactionSplitServiceTest {
 
     @Test
     void createTransactionSplit_amountMismatch_throws() {
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("60.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("30.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("60.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("30.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -286,11 +286,11 @@ class TransactionSplitServiceTest {
     void createTransactionSplit_mixedSignChildren_throws() {
         Transaction source = buildSourceTransaction(); // amount = 100.00
 
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("150.00")).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("-50.00")).build()))
+                        SplitChildInput.builder().amount(new BigDecimal("150.00")).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("-50.00")).build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId))
@@ -304,10 +304,10 @@ class TransactionSplitServiceTest {
 
     @Test
     void updateTransactionSplit_mixedSignChildren_throws() {
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("150.00")).build(),
-                        UpdateSplitChildDto.builder().id(child2Id).amount(new BigDecimal("-50.00")).build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("150.00")).build(),
+                        UpdateSplitChildInput.builder().id(child2Id).amount(new BigDecimal("-50.00")).build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -326,10 +326,10 @@ class TransactionSplitServiceTest {
         Transaction child1 = buildChild(child1Id, new BigDecimal("60.00"));
         Transaction child2 = buildChild(child2Id, new BigDecimal("40.00"));
 
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("70.00")).build(),
-                        UpdateSplitChildDto.builder().id(child2Id).amount(new BigDecimal("30.00")).build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("70.00")).build(),
+                        UpdateSplitChildInput.builder().id(child2Id).amount(new BigDecimal("30.00")).build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -355,10 +355,10 @@ class TransactionSplitServiceTest {
         Transaction child2 = buildChild(child2Id, new BigDecimal("40.00"));
 
         UUID newMerchantId = UUID.randomUUID();
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
-                        UpdateSplitChildDto.builder().amount(new BigDecimal("50.00")).merchantName("Walmart").build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
+                        UpdateSplitChildInput.builder().amount(new BigDecimal("50.00")).merchantName("Walmart").build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -386,10 +386,10 @@ class TransactionSplitServiceTest {
         Transaction child1 = buildChild(child1Id, new BigDecimal("60.00"));
         Transaction child2 = buildChild(child2Id, new BigDecimal("40.00"));
 
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("70.00")).build(),
-                        UpdateSplitChildDto.builder().id(child2Id).amount(new BigDecimal("40.00")).build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("70.00")).build(),
+                        UpdateSplitChildInput.builder().id(child2Id).amount(new BigDecimal("40.00")).build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -406,10 +406,10 @@ class TransactionSplitServiceTest {
         Transaction child1 = buildChild(child1Id, new BigDecimal("60.00"));
         UUID foreignId = UUID.randomUUID();
 
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
-                        UpdateSplitChildDto.builder().id(foreignId).amount(new BigDecimal("50.00")).build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
+                        UpdateSplitChildInput.builder().id(foreignId).amount(new BigDecimal("50.00")).build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -447,10 +447,10 @@ class TransactionSplitServiceTest {
         Transaction child1 = buildChild(child1Id, new BigDecimal("60.00"));
         Transaction child2 = buildChild(child2Id, new BigDecimal("40.00"));
 
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
-                        UpdateSplitChildDto.builder().amount(new BigDecimal("50.00")).build())) // no merchantName
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("50.00")).build(),
+                        UpdateSplitChildInput.builder().amount(new BigDecimal("50.00")).build())) // no merchantName
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId))
@@ -476,11 +476,11 @@ class TransactionSplitServiceTest {
         Transaction source = buildSourceTransaction();
         source.setAmount(new BigDecimal("-100.00"));
 
-        CreateTransactionSplitDto dto = CreateTransactionSplitDto.builder()
+        CreateTransactionSplitInput dto = CreateTransactionSplitInput.builder()
                 .transactionId(txnId)
                 .children(List.of(
-                        SplitChildDto.builder().amount(new BigDecimal("-60.00")).merchantName("Target").categoryId(categoryId).build(),
-                        SplitChildDto.builder().amount(new BigDecimal("-40.00")).merchantName("Target").build()))
+                        SplitChildInput.builder().amount(new BigDecimal("-60.00")).merchantName("Target").categoryId(categoryId).build(),
+                        SplitChildInput.builder().amount(new BigDecimal("-40.00")).merchantName("Target").build()))
                 .build();
 
         when(transactionRepository.findByIdAndWorkspaceId(txnId, workspaceId)).thenReturn(Optional.of(source));
@@ -511,10 +511,10 @@ class TransactionSplitServiceTest {
         Transaction child2 = Transaction.builder().id(child2Id).workspaceId(workspaceId)
                 .splitId(splitId).amount(new BigDecimal("40.00")).merchantId(merchantId).build();
 
-        UpdateTransactionSplitDto dto = UpdateTransactionSplitDto.builder()
+        UpdateTransactionSplitInput dto = UpdateTransactionSplitInput.builder()
                 .children(List.of(
-                        UpdateSplitChildDto.builder().id(child1Id).amount(new BigDecimal("60.00")).categoryId(newCatId).build(),
-                        UpdateSplitChildDto.builder().id(child2Id).amount(new BigDecimal("40.00")).build()))
+                        UpdateSplitChildInput.builder().id(child1Id).amount(new BigDecimal("60.00")).categoryId(newCatId).build(),
+                        UpdateSplitChildInput.builder().id(child2Id).amount(new BigDecimal("40.00")).build()))
                 .build();
 
         when(transactionSplitRepository.findByIdAndWorkspaceId(splitId, workspaceId)).thenReturn(Optional.of(split));

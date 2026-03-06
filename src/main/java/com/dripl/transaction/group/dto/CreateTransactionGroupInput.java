@@ -1,27 +1,25 @@
 package com.dripl.transaction.group.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Set;
 import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateTransactionGroupDto {
+public class CreateTransactionGroupInput {
 
-    @NotBlank(message = "Name must be provided")
     @Size(max = 255, message = "Name must be at most 255 characters")
     private String name;
 
-    @NotEmpty(message = "At least 2 transaction IDs must be provided")
     @Size(min = 2, message = "At least 2 transaction IDs must be provided")
     private Set<UUID> transactionIds;
 

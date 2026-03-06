@@ -1,7 +1,7 @@
 package com.dripl.transaction.event.service;
 
 import com.dripl.common.event.DomainEvent;
-import com.dripl.transaction.event.dto.TransactionEventDto;
+import com.dripl.transaction.event.dto.TransactionEventResponse;
 import com.dripl.transaction.event.entity.TransactionEvent;
 import com.dripl.transaction.event.repository.TransactionEventRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +60,7 @@ public class TransactionEventService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionEventDto> getEventsForTransaction(UUID transactionId, UUID workspaceId) {
+    public List<TransactionEventResponse> getEventsForTransaction(UUID transactionId, UUID workspaceId) {
         return transactionEventRepository
                 .findAllByTransactionIdAndWorkspaceIdOrderByPerformedAtDesc(transactionId, workspaceId)
                 .stream()
@@ -68,8 +68,8 @@ public class TransactionEventService {
                 .toList();
     }
 
-    private TransactionEventDto toDto(TransactionEvent entity) {
-        return TransactionEventDto.builder()
+    private TransactionEventResponse toDto(TransactionEvent entity) {
+        return TransactionEventResponse.builder()
                 .id(entity.getId())
                 .transactionId(entity.getTransactionId())
                 .eventType(entity.getEventType())

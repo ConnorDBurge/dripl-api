@@ -1,20 +1,21 @@
 package com.dripl.transaction.group.dto;
 
-import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Set;
 import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateTransactionGroupDto {
+public class UpdateTransactionGroupInput {
 
     @Size(max = 255, message = "Name must be at most 255 characters")
     private String name;
@@ -34,20 +35,17 @@ public class UpdateTransactionGroupDto {
 
     private Set<UUID> transactionIds;
 
-    @JsonSetter("categoryId")
-    public void assignCategoryId(UUID categoryId) {
+    public void setCategoryId(UUID categoryId) {
         this.categoryId = categoryId;
         this.categoryIdSpecified = true;
     }
 
-    @JsonSetter("notes")
-    public void assignNotes(String notes) {
+    public void setNotes(String notes) {
         this.notes = notes;
         this.notesSpecified = true;
     }
 
-    @JsonSetter("tagIds")
-    public void assignTagIds(Set<UUID> tagIds) {
+    public void setTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
         this.tagIdsSpecified = true;
     }

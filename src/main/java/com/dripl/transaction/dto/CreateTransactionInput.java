@@ -1,14 +1,12 @@
 package com.dripl.transaction.dto;
 
 import com.dripl.account.enums.CurrencyCode;
-import com.dripl.common.dto.BaseDto;
-import com.dripl.transaction.enums.TransactionSource;
-import com.dripl.transaction.enums.TransactionStatus;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,27 +15,31 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder(toBuilder = true)
-@EqualsAndHashCode(callSuper = true)
-public class TransactionDto extends BaseDto {
+@Builder
+public class CreateTransactionInput {
 
-    private UUID workspaceId;
     private UUID accountId;
-    private UUID merchantId;
+
+    @Size(min = 1, max = 100, message = "Merchant name must be between 1 and 100 characters")
+    private String merchantName;
+
     private UUID categoryId;
+
     private LocalDateTime date;
+
     private BigDecimal amount;
+
     private CurrencyCode currencyCode;
+
+    @Size(max = 500, message = "Notes must be at most 500 characters")
     private String notes;
-    private TransactionStatus status;
-    private TransactionSource source;
-    private LocalDateTime pendingAt;
-    private LocalDateTime postedAt;
+
     private UUID recurringItemId;
+
     private LocalDate occurrenceDate;
-    private UUID groupId;
-    private UUID splitId;
+
     private Set<UUID> tagIds;
 }

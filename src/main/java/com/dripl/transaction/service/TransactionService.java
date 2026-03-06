@@ -10,8 +10,8 @@ import com.dripl.merchant.service.MerchantService;
 import com.dripl.recurring.entity.RecurringItem;
 import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.service.TagService;
-import com.dripl.transaction.dto.CreateTransactionDto;
-import com.dripl.transaction.dto.UpdateTransactionDto;
+import com.dripl.transaction.dto.CreateTransactionInput;
+import com.dripl.transaction.dto.UpdateTransactionInput;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionAction;
 import com.dripl.transaction.enums.TransactionSource;
@@ -65,7 +65,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction createTransaction(UUID workspaceId, CreateTransactionDto dto) {
+    public Transaction createTransaction(UUID workspaceId, CreateTransactionInput dto) {
         RecurringItem ri = dto.getRecurringItemId() != null
                 ? recurringItemService.getRecurringItem(dto.getRecurringItemId(), workspaceId)
                 : null;
@@ -140,7 +140,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction updateTransaction(UUID transactionId, UUID workspaceId, UpdateTransactionDto dto) {
+    public Transaction updateTransaction(UUID transactionId, UUID workspaceId, UpdateTransactionInput dto) {
         Transaction transaction = getTransaction(transactionId, workspaceId);
         UUID oldAccountId = transaction.getAccountId();
         BigDecimal oldAmount = transaction.getAmount();
@@ -333,15 +333,15 @@ public class TransactionService {
                 .orElse(defaultValue);
     }
 
-    private boolean isUnlinkingRecurringItem(UpdateTransactionDto dto) {
+    private boolean isUnlinkingRecurringItem(UpdateTransactionInput dto) {
         return dto.isRecurringItemIdSpecified() && dto.getRecurringItemId() == null;
     }
 
-    private boolean isUnlinkingGroup(UpdateTransactionDto dto) {
+    private boolean isUnlinkingGroup(UpdateTransactionInput dto) {
         return dto.isGroupIdSpecified() && dto.getGroupId() == null;
     }
 
-    private void rejectLockedFieldsForRecurringItem(UpdateTransactionDto dto) {
+    private void rejectLockedFieldsForRecurringItem(UpdateTransactionInput dto) {
         List<String> locked = new java.util.ArrayList<>();
         if (dto.getAccountId() != null) locked.add("accountId");
         if (dto.getMerchantName() != null || dto.isMerchantIdSpecified()) locked.add("merchantName");
@@ -356,7 +356,7 @@ public class TransactionService {
         }
     }
 
-    private void rejectLockedFieldsForGroup(UpdateTransactionDto dto) {
+    private void rejectLockedFieldsForGroup(UpdateTransactionInput dto) {
         List<String> locked = new java.util.ArrayList<>();
         if (dto.isCategoryIdSpecified()) locked.add("categoryId");
         if (dto.isTagIdsSpecified()) locked.add("tagIds");
@@ -367,7 +367,7 @@ public class TransactionService {
         }
     }
 
-    private void rejectLockedFieldsForSplit(UpdateTransactionDto dto) {
+    private void rejectLockedFieldsForSplit(UpdateTransactionInput dto) {
         List<String> locked = new java.util.ArrayList<>();
         if (dto.getAccountId() != null) locked.add("accountId");
         if (dto.getCurrencyCode() != null) locked.add("currencyCode");

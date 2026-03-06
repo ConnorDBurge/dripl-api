@@ -1,0 +1,214 @@
+extend type Query {
+    transactions(filter: TransactionFilter, sort: TransactionSort, page: Int, size: Int): TransactionConnection!
+    transaction(transactionId: ID!): TransactionResponse
+    transactionEvents(transactionId: ID!): [TransactionEvent!]!
+    transactionSplits: [TransactionSplit!]!
+    transactionSplit(transactionSplitId: ID!): TransactionSplit
+    transactionGroups: [TransactionGroup!]!
+    transactionGroup(transactionGroupId: ID!): TransactionGroup
+}
+
+extend type Mutation {
+    createTransaction(input: CreateTransactionInput!): TransactionResponse!
+    updateTransaction(transactionId: ID!, input: UpdateTransactionInput!): TransactionResponse!
+    deleteTransaction(transactionId: ID!): Boolean!
+
+    createTransactionSplit(input: CreateTransactionSplitInput!): TransactionSplit!
+    updateTransactionSplit(transactionSplitId: ID!, input: UpdateTransactionSplitInput!): TransactionSplit!
+    deleteTransactionSplit(transactionSplitId: ID!): Boolean!
+
+    createTransactionGroup(input: CreateTransactionGroupInput!): TransactionGroup!
+    updateTransactionGroup(transactionGroupId: ID!, input: UpdateTransactionGroupInput!): TransactionGroup!
+    deleteTransactionGroup(transactionGroupId: ID!): Boolean!
+}
+
+# --- Types ---
+
+type TransactionResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    accountId: ID!
+    merchantId: ID
+    categoryId: ID
+    date: LocalDateTime!
+    amount: BigDecimal!
+    currencyCode: CurrencyCode!
+    notes: String
+    status: TransactionStatus!
+    source: TransactionSource!
+    pendingAt: LocalDateTime
+    postedAt: LocalDateTime
+    recurringItemId: ID
+    occurrenceDate: String
+    groupId: ID
+    splitId: ID
+    tagIds: [ID!]
+}
+
+type TransactionConnection {
+    content: [TransactionResponse!]!
+    page: PageInfo!
+}
+
+type TransactionSplit implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    accountId: ID!
+    totalAmount: BigDecimal!
+    currencyCode: CurrencyCode!
+    date: LocalDateTime!
+    transactionIds: [ID!]!
+}
+
+type TransactionGroup implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    name: String!
+    categoryId: ID
+    notes: String
+    tagIds: [ID!]
+    totalAmount: BigDecimal!
+    transactionIds: [ID!]!
+}
+
+type TransactionEvent {
+    id: ID!
+    transactionId: ID!
+    eventType: String!
+    changes: [FieldChange!]!
+    performedBy: String!
+    performedAt: LocalDateTime!
+}
+
+type FieldChange {
+    field: String!
+    oldValue: String
+    newValue: String
+}
+
+# --- Enums ---
+
+enum TransactionStatus {
+    PENDING
+    POSTED
+    ARCHIVED
+}
+
+enum TransactionSource {
+    MANUAL
+}
+
+# --- Filter & Sort ---
+
+input TransactionFilter {
+    accountId: ID
+    merchantId: ID
+    categoryId: ID
+    groupId: ID
+    splitId: ID
+    recurringItemId: ID
+    status: TransactionStatus
+    source: TransactionSource
+    currencyCode: CurrencyCode
+    tagIds: [ID!]
+    startDate: String
+    endDate: String
+    minAmount: BigDecimal
+    maxAmount: BigDecimal
+    search: String
+}
+
+input TransactionSort {
+    sortBy: String
+    sortDirection: SortDirection
+}
+
+# --- Transaction Inputs ---
+
+input CreateTransactionInput {
+    accountId: ID
+    merchantName: String
+    categoryId: ID
+    date: LocalDateTime!
+    amount: BigDecimal
+    currencyCode: CurrencyCode
+    notes: String
+    recurringItemId: ID
+    occurrenceDate: String
+    tagIds: [ID!]
+}
+
+input UpdateTransactionInput {
+    accountId: ID
+    merchantName: String
+    merchantId: ID
+    categoryId: ID
+    date: LocalDateTime
+    amount: BigDecimal
+    currencyCode: CurrencyCode
+    notes: String
+    status: TransactionStatus
+    tagIds: [ID!]
+    groupId: ID
+    splitId: ID
+    recurringItemId: ID
+    occurrenceDate: String
+}
+
+# --- Split Inputs ---
+
+input CreateTransactionSplitInput {
+    transactionId: ID!
+    children: [SplitChildInput!]!
+}
+
+input SplitChildInput {
+    amount: BigDecimal!
+    merchantName: String
+    categoryId: ID
+    tagIds: [ID!]
+    notes: String
+}
+
+input UpdateTransactionSplitInput {
+    children: [UpdateSplitChildInput!]!
+}
+
+input UpdateSplitChildInput {
+    id: ID
+    amount: BigDecimal!
+    merchantName: String
+    categoryId: ID
+    tagIds: [ID!]
+    notes: String
+}
+
+# --- Group Inputs ---
+
+input CreateTransactionGroupInput {
+    name: String!
+    transactionIds: [ID!]!
+    categoryId: ID
+    notes: String
+    tagIds: [ID!]
+}
+
+input UpdateTransactionGroupInput {
+    name: String
+    categoryId: ID
+    notes: String
+    tagIds: [ID!]
+    transactionIds: [ID!]
+}

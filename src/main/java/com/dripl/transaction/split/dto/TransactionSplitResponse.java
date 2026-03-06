@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransactionSplitDto extends BaseDto {
+public class TransactionSplitResponse extends BaseDto {
 
     private UUID workspaceId;
     private UUID accountId;

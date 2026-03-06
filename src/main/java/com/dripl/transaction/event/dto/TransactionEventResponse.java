@@ -14,7 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TransactionEventDto {
+public class TransactionEventResponse {
 
     private UUID id;
     private UUID transactionId;

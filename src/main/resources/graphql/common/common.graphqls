@@ -9,6 +9,13 @@ interface Base {
     updatedBy: String
 }
 
+type PageInfo {
+    number: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
 enum CurrencyCode {
     USD
     EUR
@@ -22,4 +29,9 @@ enum Status {
     ACTIVE
     ARCHIVED
     CLOSED
+}
+
+enum SortDirection {
+    ASC
+    DESC
 }

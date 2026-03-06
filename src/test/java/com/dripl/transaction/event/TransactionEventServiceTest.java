@@ -2,7 +2,7 @@ package com.dripl.transaction.event;
 
 import com.dripl.common.event.DomainEvent;
 import com.dripl.common.event.FieldChange;
-import com.dripl.transaction.event.dto.TransactionEventDto;
+import com.dripl.transaction.event.dto.TransactionEventResponse;
 import com.dripl.transaction.event.entity.TransactionEvent;
 import com.dripl.transaction.event.repository.TransactionEventRepository;
 import com.dripl.transaction.event.service.TransactionEventService;
@@ -108,7 +108,7 @@ class TransactionEventServiceTest {
         when(transactionEventRepository.findAllByTransactionIdAndWorkspaceIdOrderByPerformedAtDesc(transactionId, workspaceId))
                 .thenReturn(List.of(event2, event1));
 
-        List<TransactionEventDto> result = transactionEventService.getEventsForTransaction(transactionId, workspaceId);
+        List<TransactionEventResponse> result = transactionEventService.getEventsForTransaction(transactionId, workspaceId);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getEventType()).isEqualTo("transaction.updated");
@@ -124,7 +124,7 @@ class TransactionEventServiceTest {
         when(transactionEventRepository.findAllByTransactionIdAndWorkspaceIdOrderByPerformedAtDesc(transactionId, workspaceId))
                 .thenReturn(List.of());
 
-        List<TransactionEventDto> result = transactionEventService.getEventsForTransaction(transactionId, workspaceId);
+        List<TransactionEventResponse> result = transactionEventService.getEventsForTransaction(transactionId, workspaceId);
 
         assertThat(result).isEmpty();
     }

@@ -32,7 +32,7 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
     }
 
     private Map<String, Object> graphql(String query) {
-        return graphql(query, null);
+        return graphql(query, (Map<String, Object>) null);
     }
 
     @SuppressWarnings("unchecked")
@@ -96,8 +96,8 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
         String merchantId = (String) ((Map<String, Object>) data(createResult).get("createMerchant")).get("id");
 
         var result = graphql("""
-                query($id: ID!) { merchant(id: $id) { id name status } }
-                """, Map.of("id", merchantId));
+                query($merchantId: ID!) { merchant(merchantId: $merchantId) { id name status } }
+                """, Map.of("merchantId", merchantId));
 
         @SuppressWarnings("unchecked")
         var merchant = (Map<String, Object>) data(result).get("merchant");
@@ -114,12 +114,12 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
         String merchantId = (String) ((Map<String, Object>) data(createResult).get("createMerchant")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!) {
-                    updateMerchant(id: $id, input: { name: "Kroger Supermarket" }) {
+                mutation($merchantId: ID!) {
+                    updateMerchant(merchantId: $merchantId, input: { name: "Kroger Supermarket" }) {
                         id name status
                     }
                 }
-                """, Map.of("id", merchantId));
+                """, Map.of("merchantId", merchantId));
 
         @SuppressWarnings("unchecked")
         var merchant = (Map<String, Object>) data(result).get("updateMerchant");
@@ -136,12 +136,12 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
         String merchantId = (String) ((Map<String, Object>) data(createResult).get("createMerchant")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!) {
-                    updateMerchant(id: $id, input: { status: ARCHIVED }) {
+                mutation($merchantId: ID!) {
+                    updateMerchant(merchantId: $merchantId, input: { status: ARCHIVED }) {
                         id name status
                     }
                 }
-                """, Map.of("id", merchantId));
+                """, Map.of("merchantId", merchantId));
 
         @SuppressWarnings("unchecked")
         var merchant = (Map<String, Object>) data(result).get("updateMerchant");
@@ -158,14 +158,14 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
         String merchantId = (String) ((Map<String, Object>) data(createResult).get("createMerchant")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!) { deleteMerchant(id: $id) }
-                """, Map.of("id", merchantId));
+                mutation($merchantId: ID!) { deleteMerchant(merchantId: $merchantId) }
+                """, Map.of("merchantId", merchantId));
         assertThat(data(result).get("deleteMerchant")).isEqualTo(true);
 
         // Verify it's actually deleted
         var getResult = graphql("""
-                query($id: ID!) { merchant(id: $id) { id } }
-                """, Map.of("id", merchantId));
+                query($merchantId: ID!) { merchant(merchantId: $merchantId) { id } }
+                """, Map.of("merchantId", merchantId));
         assertThat(getResult.get("errors")).isNotNull();
     }
 
@@ -183,8 +183,8 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
 
         // Try to access with different workspace token
         Map<String, Object> body = Map.of("query", """
-                query($id: ID!) { merchant(id: $id) { id } }
-                """, "variables", Map.of("id", merchantId));
+                query($merchantId: ID!) { merchant(merchantId: $merchantId) { id } }
+                """, "variables", Map.of("merchantId", merchantId));
         @SuppressWarnings("unchecked")
         var response = restTemplate.exchange(
                 "/graphql", HttpMethod.POST,
@@ -232,18 +232,18 @@ class MerchantGraphQLIT extends BaseIntegrationTest {
         String merchantId = (String) ((Map<String, Object>) data(createResult).get("createMerchant")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!) {
-                    updateMerchant(id: $id, input: { name: "Aldi" }) { id }
+                mutation($merchantId: ID!) {
+                    updateMerchant(merchantId: $merchantId, input: { name: "Aldi" }) { id }
                 }
-                """, Map.of("id", merchantId));
+                """, Map.of("merchantId", merchantId));
         assertThat(result.get("errors")).isNotNull();
     }
 
     @Test
     void getMerchant_notFound_returnsError() {
         var result = graphql("""
-                query($id: ID!) { merchant(id: $id) { id } }
-                """, Map.of("id", UUID.randomUUID().toString()));
+                query($merchantId: ID!) { merchant(merchantId: $merchantId) { id } }
+                """, Map.of("merchantId", UUID.randomUUID().toString()));
         assertThat(result.get("errors")).isNotNull();
     }
 }

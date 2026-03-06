@@ -1,7 +1,7 @@
 package com.dripl.transaction.mapper;
 
-import com.dripl.transaction.dto.TransactionDto;
-import com.dripl.transaction.dto.UpdateTransactionDto;
+import com.dripl.transaction.dto.TransactionResponse;
+import com.dripl.transaction.dto.UpdateTransactionInput;
 import com.dripl.transaction.entity.Transaction;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,9 +13,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface TransactionMapper {
 
-    TransactionDto toDto(Transaction transaction);
+    TransactionResponse toDto(Transaction transaction);
 
-    List<TransactionDto> toDtos(List<Transaction> transactions);
+    List<TransactionResponse> toDtos(List<Transaction> transactions);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -36,5 +36,5 @@ public interface TransactionMapper {
     @Mapping(target = "groupId", ignore = true)
     @Mapping(target = "splitId", ignore = true)
     @Mapping(target = "tagIds", ignore = true)
-    void updateEntity(UpdateTransactionDto dto, @MappingTarget Transaction transaction);
+    void updateEntity(UpdateTransactionInput dto, @MappingTarget Transaction transaction);
 }

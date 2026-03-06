@@ -33,9 +33,9 @@ public class MerchantResolver {
 
     @PreAuthorize("hasAuthority('READ')")
     @QueryMapping
-    public MerchantResponse merchant(@Argument UUID id) {
+    public MerchantResponse merchant(@Argument UUID merchantId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return merchantMapper.toDto(merchantService.getMerchant(id, workspaceId));
+        return merchantMapper.toDto(merchantService.getMerchant(merchantId, workspaceId));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -47,16 +47,16 @@ public class MerchantResolver {
 
     @PreAuthorize("hasAuthority('WRITE')")
     @MutationMapping
-    public MerchantResponse updateMerchant(@Argument UUID id, @Argument @Valid UpdateMerchantInput input) {
+    public MerchantResponse updateMerchant(@Argument UUID merchantId, @Argument @Valid UpdateMerchantInput input) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return merchantMapper.toDto(merchantService.updateMerchant(id, workspaceId, input));
+        return merchantMapper.toDto(merchantService.updateMerchant(merchantId, workspaceId, input));
     }
 
     @PreAuthorize("hasAuthority('DELETE')")
     @MutationMapping
-    public boolean deleteMerchant(@Argument UUID id) {
+    public boolean deleteMerchant(@Argument UUID merchantId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        merchantService.deleteMerchant(id, workspaceId);
+        merchantService.deleteMerchant(merchantId, workspaceId);
         return true;
     }
 }

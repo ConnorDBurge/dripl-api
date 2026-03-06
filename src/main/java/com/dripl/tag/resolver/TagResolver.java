@@ -33,9 +33,9 @@ public class TagResolver {
 
     @PreAuthorize("hasAuthority('READ')")
     @QueryMapping
-    public TagResponse tag(@Argument UUID id) {
+    public TagResponse tag(@Argument UUID tagId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return tagMapper.toDto(tagService.getTag(id, workspaceId));
+        return tagMapper.toDto(tagService.getTag(tagId, workspaceId));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -47,16 +47,16 @@ public class TagResolver {
 
     @PreAuthorize("hasAuthority('WRITE')")
     @MutationMapping
-    public TagResponse updateTag(@Argument UUID id, @Argument @Valid UpdateTagInput input) {
+    public TagResponse updateTag(@Argument UUID tagId, @Argument @Valid UpdateTagInput input) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return tagMapper.toDto(tagService.updateTag(id, workspaceId, input));
+        return tagMapper.toDto(tagService.updateTag(tagId, workspaceId, input));
     }
 
     @PreAuthorize("hasAuthority('DELETE')")
     @MutationMapping
-    public boolean deleteTag(@Argument UUID id) {
+    public boolean deleteTag(@Argument UUID tagId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        tagService.deleteTag(id, workspaceId);
+        tagService.deleteTag(tagId, workspaceId);
         return true;
     }
 }

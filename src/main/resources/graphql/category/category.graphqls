@@ -1,14 +1,14 @@
 extend type Query {
     categories(income: Boolean): [CategoryResponse!]!
     categoryTree: [CategoryTree!]!
-    category(id: ID!): CategoryResponse
+    category(categoryId: ID!): CategoryResponse
 }
 
 extend type Mutation {
     createCategory(input: CreateCategoryInput!): CategoryResponse!
-    updateCategory(id: ID!, input: UpdateCategoryInput!): CategoryResponse!
-    moveCategory(id: ID!, displayOrder: Int!): Boolean!
-    deleteCategory(id: ID!): Boolean!
+    updateCategory(categoryId: ID!, input: UpdateCategoryInput!): CategoryResponse!
+    moveCategory(categoryId: ID!, displayOrder: Int!): Boolean!
+    deleteCategory(categoryId: ID!): Boolean!
 }
 
 type CategoryResponse implements Base {

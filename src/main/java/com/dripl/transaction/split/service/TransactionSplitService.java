@@ -12,10 +12,10 @@ import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionAction;
 import com.dripl.transaction.enums.TransactionSource;
 import com.dripl.transaction.repository.TransactionRepository;
-import com.dripl.transaction.split.dto.CreateTransactionSplitDto;
-import com.dripl.transaction.split.dto.SplitChildDto;
-import com.dripl.transaction.split.dto.UpdateSplitChildDto;
-import com.dripl.transaction.split.dto.UpdateTransactionSplitDto;
+import com.dripl.transaction.split.dto.CreateTransactionSplitInput;
+import com.dripl.transaction.split.dto.SplitChildInput;
+import com.dripl.transaction.split.dto.UpdateSplitChildInput;
+import com.dripl.transaction.split.dto.UpdateTransactionSplitInput;
 import com.dripl.transaction.split.entity.TransactionSplit;
 import com.dripl.transaction.split.repository.TransactionSplitRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +61,7 @@ public class TransactionSplitService {
     }
 
     @Transactional
-    public TransactionSplit createTransactionSplit(UUID workspaceId, CreateTransactionSplitDto dto) {
+    public TransactionSplit createTransactionSplit(UUID workspaceId, CreateTransactionSplitInput dto) {
         // Validate source transaction
         Transaction source = transactionRepository.findByIdAndWorkspaceId(dto.getTransactionId(), workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Source transaction not found"));
@@ -74,8 +74,8 @@ public class TransactionSplitService {
         }
 
         // Validate amounts sum to source
-        validateAmountSum(dto.getChildren().stream().map(SplitChildDto::getAmount).toList(), source.getAmount());
-        validateChildAmountSigns(dto.getChildren().stream().map(SplitChildDto::getAmount).toList(), source.getAmount());
+        validateAmountSum(dto.getChildren().stream().map(SplitChildInput::getAmount).toList(), source.getAmount());
+        validateChildAmountSigns(dto.getChildren().stream().map(SplitChildInput::getAmount).toList(), source.getAmount());
 
         // Create a split entity from a source
         TransactionSplit split = TransactionSplit.builder()
@@ -88,7 +88,7 @@ public class TransactionSplitService {
         split = transactionSplitRepository.save(split);
 
         // Create child transactions
-        for (SplitChildDto child : dto.getChildren()) {
+        for (SplitChildInput child : dto.getChildren()) {
             Transaction childTxn = createChildTransaction(split, source, child, workspaceId);
             publishSplitEvent(childTxn.getId(), workspaceId, split.getId());
         }
@@ -102,19 +102,19 @@ public class TransactionSplitService {
     }
 
     @Transactional
-    public TransactionSplit updateTransactionSplit(UUID splitId, UUID workspaceId, UpdateTransactionSplitDto dto) {
+    public TransactionSplit updateTransactionSplit(UUID splitId, UUID workspaceId, UpdateTransactionSplitInput dto) {
         TransactionSplit split = getTransactionSplit(splitId, workspaceId);
 
         // Validate amounts sum to totalAmount
-        validateAmountSum(dto.getChildren().stream().map(UpdateSplitChildDto::getAmount).toList(), split.getTotalAmount());
-        validateChildAmountSigns(dto.getChildren().stream().map(UpdateSplitChildDto::getAmount).toList(), split.getTotalAmount());
+        validateAmountSum(dto.getChildren().stream().map(UpdateSplitChildInput::getAmount).toList(), split.getTotalAmount());
+        validateChildAmountSigns(dto.getChildren().stream().map(UpdateSplitChildInput::getAmount).toList(), split.getTotalAmount());
 
         List<Transaction> currentChildren = transactionRepository.findAllBySplitIdAndWorkspaceId(splitId, workspaceId);
         Set<UUID> currentIds = currentChildren.stream().map(Transaction::getId).collect(Collectors.toSet());
 
         // Determine which children are being kept (have id), and which are new (no id)
         Set<UUID> desiredIds = dto.getChildren().stream()
-                .map(UpdateSplitChildDto::getId)
+                .map(UpdateSplitChildInput::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -128,7 +128,7 @@ public class TransactionSplitService {
         }
 
         // Update existing children and create new ones
-        for (UpdateSplitChildDto child : dto.getChildren()) {
+        for (UpdateSplitChildInput child : dto.getChildren()) {
             if (child.getId() != null) {
                 // Update existing
                 if (!currentIds.contains(child.getId())) {
@@ -178,7 +178,7 @@ public class TransactionSplitService {
         accountService.recomputeBalance(accountId);
     }
 
-    private Transaction createChildTransaction(TransactionSplit split, Transaction source, SplitChildDto child, UUID workspaceId) {
+    private Transaction createChildTransaction(TransactionSplit split, Transaction source, SplitChildInput child, UUID workspaceId) {
         UUID merchantId = child.getMerchantName() != null
                 ? merchantService.resolveMerchant(child.getMerchantName(), workspaceId).getId()
                 : source.getMerchantId();
@@ -212,7 +212,7 @@ public class TransactionSplitService {
         return transactionRepository.save(txn);
     }
 
-    private void createChildFromUpdate(TransactionSplit split, UpdateSplitChildDto child, UUID workspaceId) {
+    private void createChildFromUpdate(TransactionSplit split, UpdateSplitChildInput child, UUID workspaceId) {
         UUID merchantId = child.getMerchantName() != null
                 ? merchantService.resolveMerchant(child.getMerchantName(), workspaceId).getId()
                 : null;

@@ -68,25 +68,31 @@ class BudgetIT extends BaseIntegrationTest {
     }
 
     private String createTransaction(String amount, String categoryId, String date) {
-        var resp = restTemplate.exchange(
-                "/api/v1/transactions", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"accountId":"%s","merchantName":"Store","amount":%s,"date":"%s","categoryId":"%s"}
-                        """.formatted(accountId, amount, date, categoryId), authHeaders(token)),
-                Map.class);
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return (String) resp.getBody().get("id");
+        String dateTime = date.contains("T") ? date : date + "T00:00:00";
+        @SuppressWarnings("unchecked")
+        var data = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createTransaction(input: {
+                        accountId: "%s", merchantName: "Store",
+                        amount: %s, date: "%s", categoryId: "%s"
+                    }) { id }
+                }
+                """.formatted(accountId, amount, dateTime, categoryId)).get("createTransaction");
+        return (String) data.get("id");
     }
 
     private String createTransactionOnAccount(String amount, String categoryId, String date, String acctId) {
-        var resp = restTemplate.exchange(
-                "/api/v1/transactions", HttpMethod.POST,
-                new HttpEntity<>("""
-                        {"accountId":"%s","merchantName":"Store","amount":%s,"date":"%s","categoryId":"%s"}
-                        """.formatted(acctId, amount, date, categoryId), authHeaders(token)),
-                Map.class);
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return (String) resp.getBody().get("id");
+        String dateTime = date.contains("T") ? date : date + "T00:00:00";
+        @SuppressWarnings("unchecked")
+        var data = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createTransaction(input: {
+                        accountId: "%s", merchantName: "Store",
+                        amount: %s, date: "%s", categoryId: "%s"
+                    }) { id }
+                }
+                """.formatted(acctId, amount, dateTime, categoryId)).get("createTransaction");
+        return (String) data.get("id");
     }
 
     // ── Budget CRUD Tests ───────────────────────────────────

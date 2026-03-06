@@ -369,13 +369,17 @@ class RecurringItemViewIT extends BaseIntegrationTest {
         String riId = createRecurringItemAndReturnId("Rent", "-1500.00", "MONTH", 1, "2026-03-10", "2026-01-01");
 
         // Create a transaction linked to this RI on the occurrence date
-        String txnBody = "{\"merchantName\":\"Rent\",\"accountId\":\"%s\",\"categoryId\":\"%s\",\"amount\":-1550.00,\"date\":\"2026-03-10\",\"recurringItemId\":\"%s\",\"occurrenceDate\":\"2026-03-10\"}"
-                .formatted(accountId, categoryId, riId);
-        var txnResp = restTemplate.exchange(
-                "/api/v1/transactions", HttpMethod.POST,
-                new HttpEntity<>(txnBody, authHeaders(token)), Map.class);
-        assertThat(txnResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        String txnId = (String) txnResp.getBody().get("id");
+        @SuppressWarnings("unchecked")
+        var txnData = (Map<String, Object>) graphqlData(token, """
+                mutation {
+                    createTransaction(input: {
+                        merchantName: "Rent", accountId: "%s", categoryId: "%s",
+                        amount: -1550.00, date: "2026-03-10T00:00:00",
+                        recurringItemId: "%s", occurrenceDate: "2026-03-10"
+                    }) { id }
+                }
+                """.formatted(accountId, categoryId, riId)).get("createTransaction");
+        String txnId = (String) txnData.get("id");
 
         var viewResp = restTemplate.exchange(
                 "/api/v1/recurring-items/view?month=2026-03", HttpMethod.GET,
@@ -406,11 +410,15 @@ class RecurringItemViewIT extends BaseIntegrationTest {
                 new HttpEntity<>("{\"occurrenceDate\":\"2026-03-05\",\"amount\":-150.00,\"notes\":\"Expected higher\"}", authHeaders(token)), Map.class);
 
         // Create a linked transaction (actual amount different from override)
-        String txnBody = "{\"merchantName\":\"Electric\",\"accountId\":\"%s\",\"categoryId\":\"%s\",\"amount\":-145.00,\"date\":\"2026-03-05\",\"recurringItemId\":\"%s\",\"occurrenceDate\":\"2026-03-05\"}"
-                .formatted(accountId, categoryId, riId);
-        restTemplate.exchange(
-                "/api/v1/transactions", HttpMethod.POST,
-                new HttpEntity<>(txnBody, authHeaders(token)), Map.class);
+        graphql(token, """
+                mutation {
+                    createTransaction(input: {
+                        merchantName: "Electric", accountId: "%s", categoryId: "%s",
+                        amount: -145.00, date: "2026-03-05T00:00:00",
+                        recurringItemId: "%s", occurrenceDate: "2026-03-05"
+                    }) { id }
+                }
+                """.formatted(accountId, categoryId, riId));
 
         var viewResp = restTemplate.exchange(
                 "/api/v1/recurring-items/view?month=2026-03", HttpMethod.GET,

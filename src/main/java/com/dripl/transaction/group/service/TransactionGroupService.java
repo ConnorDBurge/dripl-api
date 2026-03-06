@@ -8,8 +8,8 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionAction;
-import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
-import com.dripl.transaction.group.dto.UpdateTransactionGroupDto;
+import com.dripl.transaction.group.dto.CreateTransactionGroupInput;
+import com.dripl.transaction.group.dto.UpdateTransactionGroupInput;
 import com.dripl.transaction.group.entity.TransactionGroup;
 import com.dripl.transaction.group.repository.TransactionGroupRepository;
 import com.dripl.transaction.repository.TransactionRepository;
@@ -53,7 +53,7 @@ public class TransactionGroupService {
     }
 
     @Transactional
-    public TransactionGroup createTransactionGroup(UUID workspaceId, CreateTransactionGroupDto dto) {
+    public TransactionGroup createTransactionGroup(UUID workspaceId, CreateTransactionGroupInput dto) {
         UUID categoryId = null;
         if (dto.getCategoryId() != null) {
             categoryId = categoryService.getCategory(dto.getCategoryId(), workspaceId).getId();
@@ -97,7 +97,7 @@ public class TransactionGroupService {
     }
 
     @Transactional
-    public TransactionGroup updateTransactionGroup(UUID groupId, UUID workspaceId, UpdateTransactionGroupDto dto) {
+    public TransactionGroup updateTransactionGroup(UUID groupId, UUID workspaceId, UpdateTransactionGroupInput dto) {
         TransactionGroup group = getTransactionGroup(groupId, workspaceId);
         // Eagerly initialize tagIds before JPQL clears persistence context
         if (group.getTagIds() != null) {

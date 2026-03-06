@@ -1,7 +1,7 @@
 package com.dripl.transaction.group.mapper;
 
 import com.dripl.transaction.entity.Transaction;
-import com.dripl.transaction.group.dto.TransactionGroupDto;
+import com.dripl.transaction.group.dto.TransactionGroupResponse;
 import com.dripl.transaction.group.entity.TransactionGroup;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,10 +17,10 @@ public interface TransactionGroupMapper {
 
     @Mapping(target = "totalAmount", ignore = true)
     @Mapping(target = "transactionIds", ignore = true)
-    TransactionGroupDto toDto(TransactionGroup group);
+    TransactionGroupResponse toDto(TransactionGroup group);
 
-    default TransactionGroupDto toDto(TransactionGroup group, List<Transaction> transactions) {
-        TransactionGroupDto dto = toDto(group);
+    default TransactionGroupResponse toDto(TransactionGroup group, List<Transaction> transactions) {
+        TransactionGroupResponse dto = toDto(group);
         return dto.toBuilder()
                 .totalAmount(transactions.stream()
                         .map(Transaction::getAmount)
@@ -29,5 +29,14 @@ public interface TransactionGroupMapper {
                         .map(Transaction::getId)
                         .collect(Collectors.toSet()))
                 .build();
+    }
+
+    default List<TransactionGroupResponse> toDtos(
+            List<TransactionGroup> groups,
+            java.util.function.BiFunction<UUID, UUID, List<Transaction>> transactionsFetcher,
+            UUID workspaceId) {
+        return groups.stream()
+                .map(group -> toDto(group, transactionsFetcher.apply(group.getId(), workspaceId)))
+                .toList();
     }
 }

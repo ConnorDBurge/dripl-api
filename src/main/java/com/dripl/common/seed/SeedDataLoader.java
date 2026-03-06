@@ -24,14 +24,14 @@ import com.dripl.recurring.service.RecurringItemService;
 import com.dripl.tag.dto.CreateTagInput;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
-import com.dripl.transaction.dto.CreateTransactionDto;
+import com.dripl.transaction.dto.CreateTransactionInput;
 import com.dripl.transaction.entity.Transaction;
 import com.dripl.transaction.enums.TransactionStatus;
-import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
+import com.dripl.transaction.group.dto.CreateTransactionGroupInput;
 import com.dripl.transaction.group.service.TransactionGroupService;
 import com.dripl.transaction.service.TransactionService;
-import com.dripl.transaction.split.dto.CreateTransactionSplitDto;
-import com.dripl.transaction.split.dto.SplitChildDto;
+import com.dripl.transaction.split.dto.CreateTransactionSplitInput;
+import com.dripl.transaction.split.dto.SplitChildInput;
 import com.dripl.transaction.split.service.TransactionSplitService;
 import com.dripl.user.entity.User;
 import com.dripl.user.service.UserService;
@@ -318,7 +318,7 @@ public class SeedDataLoader implements CommandLineRunner {
             int daysAgo = ((Number) seed.get("daysAgo")).intValue();
             LocalDate txnDate = LocalDate.now().minusDays(daysAgo);
 
-            CreateTransactionDto dto = CreateTransactionDto.builder()
+            CreateTransactionInput dto = CreateTransactionInput.builder()
                     .accountId(accounts.get((String) seed.get("accountName")))
                     .merchantName((String) seed.get("merchantName"))
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
@@ -360,7 +360,7 @@ public class SeedDataLoader implements CommandLineRunner {
             List<UUID> txnIds = txnsByGroup.getOrDefault(groupName, List.of());
             if (txnIds.size() < 2) continue;
 
-            CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+            CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                     .name(groupName)
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
                     .notes((String) seed.get("notes"))
@@ -387,7 +387,7 @@ public class SeedDataLoader implements CommandLineRunner {
 
             String categoryName = (String) seed.get("categoryName");
             int daysAgo = ((Number) seed.get("daysAgo")).intValue();
-            CreateTransactionDto sourceDto = CreateTransactionDto.builder()
+            CreateTransactionInput sourceDto = CreateTransactionInput.builder()
                     .accountId(accounts.get((String) seed.get("accountName")))
                     .merchantName((String) seed.get("merchantName"))
                     .categoryId(categoryName != null ? categories.get(categoryName) : null)
@@ -398,12 +398,12 @@ public class SeedDataLoader implements CommandLineRunner {
 
             Transaction sourceTxn = transactionService.createTransaction(workspaceId, sourceDto);
 
-            List<SplitChildDto> childDtos = new ArrayList<>();
+            List<SplitChildInput> childDtos = new ArrayList<>();
             for (Map<String, Object> seedChild : seedChildren) {
                 String childCatName = (String) seedChild.get("categoryName");
                 Set<UUID> childTagIds = resolveTagIds((List<String>) seedChild.get("tagNames"), tags);
 
-                childDtos.add(SplitChildDto.builder()
+                childDtos.add(SplitChildInput.builder()
                         .amount(new java.math.BigDecimal(seedChild.get("amount").toString()))
                         .merchantName((String) seedChild.get("merchantName"))
                         .categoryId(childCatName != null ? categories.get(childCatName) : null)
@@ -413,7 +413,7 @@ public class SeedDataLoader implements CommandLineRunner {
             }
 
             transactionSplitService.createTransactionSplit(workspaceId,
-                    CreateTransactionSplitDto.builder()
+                    CreateTransactionSplitInput.builder()
                             .transactionId(sourceTxn.getId())
                             .children(childDtos)
                             .build());

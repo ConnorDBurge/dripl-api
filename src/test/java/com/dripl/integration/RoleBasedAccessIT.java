@@ -130,7 +130,7 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/graphql", HttpMethod.POST,
                 new HttpEntity<>(Map.of("query", """
-                        mutation { deleteMerchant(id: "%s") }
+                        mutation { deleteMerchant(merchantId: "%s") }
                         """.formatted(merchantId)), authHeaders(readOnlyToken)),
                 Map.class);
 
@@ -168,7 +168,7 @@ class RoleBasedAccessIT extends BaseIntegrationTest {
         var response = restTemplate.exchange(
                 "/graphql", HttpMethod.POST,
                 new HttpEntity<>(Map.of("query", """
-                        mutation { deleteMerchant(id: "%s") }
+                        mutation { deleteMerchant(merchantId: "%s") }
                         """.formatted(merchantId)), authHeaders(writeOnlyToken)),
                 Map.class);
 

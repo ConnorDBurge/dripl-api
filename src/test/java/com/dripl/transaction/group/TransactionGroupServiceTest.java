@@ -7,8 +7,8 @@ import com.dripl.common.exception.ResourceNotFoundException;
 import com.dripl.tag.entity.Tag;
 import com.dripl.tag.service.TagService;
 import com.dripl.transaction.entity.Transaction;
-import com.dripl.transaction.group.dto.CreateTransactionGroupDto;
-import com.dripl.transaction.group.dto.UpdateTransactionGroupDto;
+import com.dripl.transaction.group.dto.CreateTransactionGroupInput;
+import com.dripl.transaction.group.dto.UpdateTransactionGroupInput;
 import com.dripl.transaction.group.entity.TransactionGroup;
 import com.dripl.transaction.group.repository.TransactionGroupRepository;
 import com.dripl.transaction.group.service.TransactionGroupService;
@@ -106,7 +106,7 @@ class TransactionGroupServiceTest {
 
     @Test
     void createTransactionGroup_success() {
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Beach Vacation 2025")
                 .categoryId(categoryId)
                 .tagIds(Set.of(tagId))
@@ -140,7 +140,7 @@ class TransactionGroupServiceTest {
 
     @Test
     void createTransactionGroup_transactionAlreadyGrouped_throws() {
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Trip")
                 .transactionIds(Set.of(txn1Id, txn2Id))
                 .build();
@@ -156,7 +156,7 @@ class TransactionGroupServiceTest {
 
     @Test
     void createTransactionGroup_transactionNotFound_throws() {
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Trip")
                 .transactionIds(Set.of(txn1Id, txn2Id))
                 .build();
@@ -171,7 +171,7 @@ class TransactionGroupServiceTest {
 
     @Test
     void createTransactionGroup_noCategoryOrTags() {
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Simple Group")
                 .transactionIds(Set.of(txn1Id, txn2Id))
                 .build();
@@ -199,9 +199,9 @@ class TransactionGroupServiceTest {
 
     @Test
     void updateTransactionGroup_updateName() {
-        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
+        UpdateTransactionGroupInput dto = new UpdateTransactionGroupInput();
         // Use reflection-free approach: just set name
-        UpdateTransactionGroupDto nameDto = UpdateTransactionGroupDto.builder().name("New Name").build();
+        UpdateTransactionGroupInput nameDto = UpdateTransactionGroupInput.builder().name("New Name").build();
 
         when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId))
                 .thenReturn(Optional.of(buildGroup()));
@@ -215,8 +215,8 @@ class TransactionGroupServiceTest {
 
     @Test
     void updateTransactionGroup_setCategoryId() {
-        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
-        dto.assignCategoryId(categoryId);
+        UpdateTransactionGroupInput dto = new UpdateTransactionGroupInput();
+        dto.setCategoryId(categoryId);
 
         when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId))
                 .thenReturn(Optional.of(buildGroup()));
@@ -235,8 +235,8 @@ class TransactionGroupServiceTest {
         TransactionGroup group = buildGroup();
         group.setCategoryId(categoryId);
 
-        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
-        dto.assignCategoryId(null);
+        UpdateTransactionGroupInput dto = new UpdateTransactionGroupInput();
+        dto.setCategoryId(null);
 
         when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId))
                 .thenReturn(Optional.of(group));
@@ -250,8 +250,8 @@ class TransactionGroupServiceTest {
 
     @Test
     void updateTransactionGroup_setTags() {
-        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
-        dto.assignTagIds(Set.of(tagId));
+        UpdateTransactionGroupInput dto = new UpdateTransactionGroupInput();
+        dto.setTagIds(Set.of(tagId));
 
         when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId))
                 .thenReturn(Optional.of(buildGroup()));
@@ -284,7 +284,7 @@ class TransactionGroupServiceTest {
                 .thenReturn(Optional.of(newTxn));
         when(transactionRepository.setGroupId(groupId, Set.of(txn3Id), workspaceId)).thenReturn(1);
 
-        UpdateTransactionGroupDto dto = UpdateTransactionGroupDto.builder()
+        UpdateTransactionGroupInput dto = UpdateTransactionGroupInput.builder()
                 .transactionIds(Set.of(txn1Id, txn2Id, txn3Id))
                 .build();
 
@@ -309,7 +309,7 @@ class TransactionGroupServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(txn3Id, workspaceId))
                 .thenReturn(Optional.of(txn3));
 
-        UpdateTransactionGroupDto dto = UpdateTransactionGroupDto.builder()
+        UpdateTransactionGroupInput dto = UpdateTransactionGroupInput.builder()
                 .transactionIds(Set.of(txn1Id, txn2Id))
                 .build();
 
@@ -326,7 +326,7 @@ class TransactionGroupServiceTest {
                 .thenReturn(Optional.of(group));
         when(transactionGroupRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateTransactionGroupDto dto = UpdateTransactionGroupDto.builder()
+        UpdateTransactionGroupInput dto = UpdateTransactionGroupInput.builder()
                 .transactionIds(Set.of(txn1Id))
                 .build();
 
@@ -353,7 +353,7 @@ class TransactionGroupServiceTest {
 
     @Test
     void createTransactionGroup_recurringLinkedTransaction_throws() {
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Trip")
                 .transactionIds(Set.of(txn1Id, txn2Id))
                 .build();
@@ -386,7 +386,7 @@ class TransactionGroupServiceTest {
         when(transactionRepository.findByIdAndWorkspaceId(txn3Id, workspaceId))
                 .thenReturn(Optional.of(recurringTxn));
 
-        UpdateTransactionGroupDto dto = UpdateTransactionGroupDto.builder()
+        UpdateTransactionGroupInput dto = UpdateTransactionGroupInput.builder()
                 .transactionIds(Set.of(txn1Id, txn2Id, txn3Id))
                 .build();
 
@@ -403,7 +403,7 @@ class TransactionGroupServiceTest {
         Transaction txn1 = Transaction.builder().id(txn1Id).workspaceId(workspaceId).amount(new BigDecimal("50.00")).build();
         Transaction txn2 = Transaction.builder().id(txn2Id).workspaceId(workspaceId).amount(new BigDecimal("30.00")).build();
 
-        CreateTransactionGroupDto dto = CreateTransactionGroupDto.builder()
+        CreateTransactionGroupInput dto = CreateTransactionGroupInput.builder()
                 .name("Mixed Group")
                 .categoryId(categoryId)
                 .transactionIds(Set.of(txn1Id, txn2Id))
@@ -430,8 +430,8 @@ class TransactionGroupServiceTest {
         Transaction txn1 = Transaction.builder().id(txn1Id).workspaceId(workspaceId).amount(new BigDecimal("50.00")).build();
         Transaction txn2 = Transaction.builder().id(txn2Id).workspaceId(workspaceId).amount(new BigDecimal("30.00")).build();
 
-        UpdateTransactionGroupDto dto = new UpdateTransactionGroupDto();
-        dto.assignCategoryId(newCatId);
+        UpdateTransactionGroupInput dto = new UpdateTransactionGroupInput();
+        dto.setCategoryId(newCatId);
 
         when(transactionGroupRepository.findByIdAndWorkspaceId(groupId, workspaceId)).thenReturn(Optional.of(group));
         when(categoryService.getCategory(newCatId, workspaceId)).thenReturn(

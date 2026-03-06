@@ -23,7 +23,7 @@ class AccountResponseGraphQLIT extends BaseIntegrationTest {
     }
 
     private Map<String, Object> graphql(String query) {
-        return graphql(query, null);
+        return graphql(query, (Map<String, Object>) null);
     }
 
     @SuppressWarnings("unchecked")
@@ -96,8 +96,8 @@ class AccountResponseGraphQLIT extends BaseIntegrationTest {
 
         // Read single
         var getResult = graphql("""
-                query($id: ID!) { account(id: $id) { id name } }
-                """, Map.of("id", accountId));
+                query($accountId: ID!) { account(accountId: $accountId) { id name } }
+                """, Map.of("accountId", accountId));
         assertThat(getResult.get("errors")).isNull();
         var fetched = (Map<String, Object>) data(getResult).get("account");
         assertThat(fetched.get("name")).isEqualTo("Amex Gold");
@@ -110,18 +110,18 @@ class AccountResponseGraphQLIT extends BaseIntegrationTest {
 
         // Update
         var updateResult = graphql("""
-                mutation($id: ID!, $input: UpdateAccountInput!) {
-                    updateAccount(id: $id, input: $input) { id name }
+                mutation($accountId: ID!, $input: UpdateAccountInput!) {
+                    updateAccount(accountId: $accountId, input: $input) { id name }
                 }
-                """, Map.of("id", accountId, "input", Map.of("name", "Amex Platinum")));
+                """, Map.of("accountId", accountId, "input", Map.of("name", "Amex Platinum")));
         assertThat(updateResult.get("errors")).isNull();
         var updated = (Map<String, Object>) data(updateResult).get("updateAccount");
         assertThat(updated.get("name")).isEqualTo("Amex Platinum");
 
         // Delete
         var deleteResult = graphql("""
-                mutation($id: ID!) { deleteAccount(id: $id) }
-                """, Map.of("id", accountId));
+                mutation($accountId: ID!) { deleteAccount(accountId: $accountId) }
+                """, Map.of("accountId", accountId));
         assertThat(deleteResult.get("errors")).isNull();
         assertThat(data(deleteResult).get("deleteAccount")).isEqualTo(true);
 

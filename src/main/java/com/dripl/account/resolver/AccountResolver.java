@@ -33,9 +33,9 @@ public class AccountResolver {
 
     @PreAuthorize("hasAuthority('READ')")
     @QueryMapping
-    public AccountResponse account(@Argument UUID id) {
+    public AccountResponse account(@Argument UUID accountId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return accountMapper.toDto(accountService.getAccount(id, workspaceId));
+        return accountMapper.toDto(accountService.getAccount(accountId, workspaceId));
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -47,16 +47,16 @@ public class AccountResolver {
 
     @PreAuthorize("hasAuthority('WRITE')")
     @MutationMapping
-    public AccountResponse updateAccount(@Argument UUID id, @Argument @Valid UpdateAccountInput input) {
+    public AccountResponse updateAccount(@Argument UUID accountId, @Argument @Valid UpdateAccountInput input) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        return accountMapper.toDto(accountService.updateAccount(id, workspaceId, input));
+        return accountMapper.toDto(accountService.updateAccount(accountId, workspaceId, input));
     }
 
     @PreAuthorize("hasAuthority('DELETE')")
     @MutationMapping
-    public boolean deleteAccount(@Argument UUID id) {
+    public boolean deleteAccount(@Argument UUID accountId) {
         UUID workspaceId = GraphQLContext.workspaceId();
-        accountService.deleteAccount(id, workspaceId);
+        accountService.deleteAccount(accountId, workspaceId);
         return true;
     }
 }

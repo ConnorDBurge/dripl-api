@@ -1,15 +1,13 @@
 package com.dripl.transaction.dto;
 
 import com.dripl.account.enums.CurrencyCode;
-import com.dripl.common.config.FlexibleLocalDateTimeDeserializer;
 import com.dripl.transaction.enums.TransactionStatus;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,10 +16,11 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateTransactionDto {
+public class UpdateTransactionInput {
 
     private UUID accountId;
 
@@ -36,7 +35,6 @@ public class UpdateTransactionDto {
     @Getter
     private boolean categoryIdSpecified;
 
-    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime date;
 
     private BigDecimal amount;
@@ -70,50 +68,42 @@ public class UpdateTransactionDto {
     @Getter
     private boolean occurrenceDateSpecified;
 
-    @JsonSetter("merchantId")
-    public void assignMerchantId(UUID merchantId) {
+    public void setMerchantId(UUID merchantId) {
         this.merchantId = merchantId;
         this.merchantIdSpecified = true;
     }
 
-    @JsonSetter("categoryId")
-    public void assignCategoryId(UUID categoryId) {
+    public void setCategoryId(UUID categoryId) {
         this.categoryId = categoryId;
         this.categoryIdSpecified = true;
     }
 
-    @JsonSetter("notes")
-    public void assignNotes(String notes) {
+    public void setNotes(String notes) {
         this.notes = notes;
         this.notesSpecified = true;
     }
 
-    @JsonSetter("tagIds")
-    public void assignTagIds(Set<UUID> tagIds) {
+    public void setTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
         this.tagIdsSpecified = true;
     }
 
-    @JsonSetter("recurringItemId")
-    public void assignRecurringItemId(UUID recurringItemId) {
+    public void setRecurringItemId(UUID recurringItemId) {
         this.recurringItemId = recurringItemId;
         this.recurringItemIdSpecified = true;
     }
 
-    @JsonSetter("occurrenceDate")
-    public void assignOccurrenceDate(LocalDate occurrenceDate) {
+    public void setOccurrenceDate(LocalDate occurrenceDate) {
         this.occurrenceDate = occurrenceDate;
         this.occurrenceDateSpecified = true;
     }
 
-    @JsonSetter("groupId")
-    public void assignGroupId(UUID groupId) {
+    public void setGroupId(UUID groupId) {
         this.groupId = groupId;
         this.groupIdSpecified = true;
     }
 
-    @JsonSetter("splitId")
-    public void assignSplitId(UUID splitId) {
+    public void setSplitId(UUID splitId) {
         this.splitId = splitId;
         this.splitIdSpecified = true;
     }

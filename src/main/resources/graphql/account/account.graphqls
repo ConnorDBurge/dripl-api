@@ -1,12 +1,12 @@
 extend type Query {
     accounts: [AccountResponse!]!
-    account(id: ID!): AccountResponse
+    account(accountId: ID!): AccountResponse
 }
 
 extend type Mutation {
     createAccount(input: CreateAccountInput!): AccountResponse!
-    updateAccount(id: ID!, input: UpdateAccountInput!): AccountResponse!
-    deleteAccount(id: ID!): Boolean!
+    updateAccount(accountId: ID!, input: UpdateAccountInput!): AccountResponse!
+    deleteAccount(accountId: ID!): Boolean!
 }
 
 type AccountResponse implements Base {

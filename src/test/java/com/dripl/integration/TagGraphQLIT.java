@@ -32,7 +32,7 @@ class TagGraphQLIT extends BaseIntegrationTest {
     }
 
     private Map<String, Object> graphql(String query) {
-        return graphql(query, null);
+        return graphql(query, (Map<String, Object>) null);
     }
 
     @SuppressWarnings("unchecked")
@@ -122,18 +122,18 @@ class TagGraphQLIT extends BaseIntegrationTest {
 
         // Read single
         var getResult = graphql("""
-                query($id: ID!) { tag(id: $id) { id name } }
-                """, Map.of("id", tagId));
+                query($tagId: ID!) { tag(tagId: $tagId) { id name } }
+                """, Map.of("tagId", tagId));
         assertThat(getResult.get("errors")).isNull();
         var fetched = (Map<String, Object>) data(getResult).get("tag");
         assertThat(fetched.get("name")).isEqualTo("coffee");
 
         // Update name
         var updateResult = graphql("""
-                mutation($id: ID!, $input: UpdateTagInput!) {
-                    updateTag(id: $id, input: $input) { id name status }
+                mutation($tagId: ID!, $input: UpdateTagInput!) {
+                    updateTag(tagId: $tagId, input: $input) { id name status }
                 }
-                """, Map.of("id", tagId, "input", Map.of("name", "espresso")));
+                """, Map.of("tagId", tagId, "input", Map.of("name", "espresso")));
         assertThat(updateResult.get("errors")).isNull();
         var updated = (Map<String, Object>) data(updateResult).get("updateTag");
         assertThat(updated.get("name")).isEqualTo("espresso");
@@ -141,10 +141,10 @@ class TagGraphQLIT extends BaseIntegrationTest {
 
         // Update status
         var archiveResult = graphql("""
-                mutation($id: ID!, $input: UpdateTagInput!) {
-                    updateTag(id: $id, input: $input) { id name status }
+                mutation($tagId: ID!, $input: UpdateTagInput!) {
+                    updateTag(tagId: $tagId, input: $input) { id name status }
                 }
-                """, Map.of("id", tagId, "input", Map.of("status", "ARCHIVED")));
+                """, Map.of("tagId", tagId, "input", Map.of("status", "ARCHIVED")));
         assertThat(archiveResult.get("errors")).isNull();
         var archived = (Map<String, Object>) data(archiveResult).get("updateTag");
         assertThat(archived.get("status")).isEqualTo("ARCHIVED");
@@ -152,15 +152,15 @@ class TagGraphQLIT extends BaseIntegrationTest {
 
         // Delete
         var deleteResult = graphql("""
-                mutation($id: ID!) { deleteTag(id: $id) }
-                """, Map.of("id", tagId));
+                mutation($tagId: ID!) { deleteTag(tagId: $tagId) }
+                """, Map.of("tagId", tagId));
         assertThat(deleteResult.get("errors")).isNull();
         assertThat(data(deleteResult).get("deleteTag")).isEqualTo(true);
 
         // Verify deleted
         var afterDelete = graphql("""
-                query($id: ID!) { tag(id: $id) { id } }
-                """, Map.of("id", tagId));
+                query($tagId: ID!) { tag(tagId: $tagId) { id } }
+                """, Map.of("tagId", tagId));
         assertThat(afterDelete.get("errors")).isNotNull();
     }
 
@@ -202,10 +202,10 @@ class TagGraphQLIT extends BaseIntegrationTest {
         String tagId = (String) ((Map<String, Object>) data(createResult).get("createTag")).get("id");
 
         var result = graphql("""
-                mutation($id: ID!, $input: UpdateTagInput!) {
-                    updateTag(id: $id, input: $input) { id }
+                mutation($tagId: ID!, $input: UpdateTagInput!) {
+                    updateTag(tagId: $tagId, input: $input) { id }
                 }
-                """, Map.of("id", tagId, "input", Map.of("name", "existing")));
+                """, Map.of("tagId", tagId, "input", Map.of("name", "existing")));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -215,8 +215,8 @@ class TagGraphQLIT extends BaseIntegrationTest {
         UUID randomId = UUID.randomUUID();
 
         var result = graphql("""
-                query($id: ID!) { tag(id: $id) { id } }
-                """, Map.of("id", randomId.toString()));
+                query($tagId: ID!) { tag(tagId: $tagId) { id } }
+                """, Map.of("tagId", randomId.toString()));
 
         assertThat(result.get("errors")).isNotNull();
     }
@@ -235,8 +235,8 @@ class TagGraphQLIT extends BaseIntegrationTest {
 
         // Try to access with different workspace token
         Map<String, Object> body = Map.of("query", """
-                query($id: ID!) { tag(id: $id) { id } }
-                """, "variables", Map.of("id", tagId));
+                query($tagId: ID!) { tag(tagId: $tagId) { id } }
+                """, "variables", Map.of("tagId", tagId));
         @SuppressWarnings("unchecked")
         var response = restTemplate.exchange(
                 "/graphql", HttpMethod.POST,

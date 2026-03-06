@@ -1,12 +1,12 @@
 extend type Query {
     merchants: [MerchantResponse!]!
-    merchant(id: ID!): MerchantResponse
+    merchant(merchantId: ID!): MerchantResponse
 }
 
 extend type Mutation {
     createMerchant(input: CreateMerchantInput!): MerchantResponse!
-    updateMerchant(id: ID!, input: UpdateMerchantInput!): MerchantResponse!
-    deleteMerchant(id: ID!): Boolean!
+    updateMerchant(merchantId: ID!, input: UpdateMerchantInput!): MerchantResponse!
+    deleteMerchant(merchantId: ID!): Boolean!
 }
 
 type MerchantResponse implements Base {
