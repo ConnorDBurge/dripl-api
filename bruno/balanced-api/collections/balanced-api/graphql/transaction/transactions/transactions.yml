@@ -8,8 +8,8 @@ graphql:
   url: "{{balanced-base-url}}/graphql"
   body:
     query: |
-      query Transactions {
-        transactions {
+      query Transactions($filter: TransactionFilter) {
+        transactions(filter: $filter) {
           page {
             number
             size

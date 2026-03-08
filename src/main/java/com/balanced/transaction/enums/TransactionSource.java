@@ -1,5 +1,6 @@
 package com.balanced.transaction.enums;
 
 public enum TransactionSource {
-    MANUAL
+    MANUAL,
+    AUTOMATIC
 }

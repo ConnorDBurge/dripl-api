@@ -90,6 +90,9 @@ public class Transaction extends BaseEntity implements WorkspaceScoped {
     @Column(name = "occurrence_date")
     private LocalDate occurrenceDate;
 
+    @Column(name = "external_id")
+    private String externalId;
+
     @Audited(displayName = "tags")
     @Builder.Default
     @ElementCollection

@@ -6,12 +6,12 @@ extend type Query {
 }
 
 extend type Mutation {
-    provisionWorkspace(input: CreateWorkspaceInput!): WorkspaceAuthResponse!
-    switchWorkspace(input: SwitchWorkspaceInput!): WorkspaceAuthResponse!
-    updateCurrentWorkspace(input: UpdateWorkspaceInput!): WorkspaceResponse!
-    addWorkspaceMember(input: CreateMembershipInput!): WorkspaceMembershipResponse!
-    updateWorkspaceMember(userId: ID!, input: UpdateMembershipInput!): WorkspaceMembershipResponse!
-    removeWorkspaceMember(userId: ID!): Boolean!
+    provisionWorkspace(input: CreateWorkspaceInput!): WorkspaceAuthResponse
+    switchWorkspace(input: SwitchWorkspaceInput!): WorkspaceAuthResponse
+    updateCurrentWorkspace(input: UpdateWorkspaceInput!): WorkspaceResponse
+    addWorkspaceMember(input: CreateMembershipInput!): WorkspaceMembershipResponse
+    updateWorkspaceMember(userId: ID!, input: UpdateMembershipInput!): WorkspaceMembershipResponse
+    removeWorkspaceMember(userId: ID!): Boolean
 }
 
 type WorkspaceResponse implements Base {

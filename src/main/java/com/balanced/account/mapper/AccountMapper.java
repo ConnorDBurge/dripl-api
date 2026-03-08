@@ -31,6 +31,7 @@ public interface AccountMapper {
     @Mapping(target = "balanceLastUpdated", ignore = true)
     @Mapping(target = "closedAt", ignore = true)
     @Mapping(target = "externalId", ignore = true)
+    @Mapping(target = "bankConnectionId", ignore = true)
     void updateEntity(UpdateAccountInput dto, @MappingTarget Account account);
 
     @AfterMapping

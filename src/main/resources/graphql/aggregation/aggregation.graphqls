@@ -1,0 +1,41 @@
+extend type Query {
+    bankConnections: [BankConnectionResponse!]!
+    bankConnection(bankConnectionId: ID!): BankConnectionResponse
+}
+
+extend type Mutation {
+    linkBank(input: LinkBankInput!): BankConnectionResponse
+    syncTransactions(bankConnectionId: ID!): SyncResult
+    unlinkBank(bankConnectionId: ID!): Boolean
+}
+
+type BankConnectionResponse implements Base {
+    id: ID!
+    createdAt: LocalDateTime!
+    createdBy: String!
+    updatedAt: LocalDateTime!
+    updatedBy: String
+    workspaceId: ID!
+    provider: AggregationProvider!
+    enrollmentId: String!
+    institutionId: String
+    institutionName: String
+    status: Status!
+    lastSyncedAt: LocalDateTime
+}
+
+type SyncResult {
+    transactionsAdded: Int!
+    transactionsModified: Int!
+    transactionsRemoved: Int!
+    accountsSynced: Int!
+}
+
+input LinkBankInput {
+    accessToken: String!
+}
+
+enum AggregationProvider {
+    TELLER
+    PLAID
+}

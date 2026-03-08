@@ -1,6 +1,7 @@
 package com.balanced.account.repository;
 
 import com.balanced.account.entity.Account;
+import com.balanced.account.enums.AccountType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,13 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByIdAndWorkspaceId(UUID id, UUID workspaceId);
 
     boolean existsByWorkspaceIdAndNameIgnoreCase(UUID workspaceId, String name);
+
+    List<Account> findAllByBankConnectionId(UUID bankConnectionId);
+
+    Optional<Account> findByExternalIdAndWorkspaceId(String externalId, UUID workspaceId);
+
+    Optional<Account> findByWorkspaceIdAndInstitutionNameAndLastFourAndTypeAndBankConnectionIdIsNull(
+            UUID workspaceId, String institutionName, String lastFour, AccountType type);
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountId = :accountId")
     BigDecimal sumTransactionAmounts(UUID accountId);

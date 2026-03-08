@@ -5,10 +5,10 @@ extend type Query {
 }
 
 extend type Mutation {
-    createCategory(input: CreateCategoryInput!): CategoryResponse!
-    updateCategory(categoryId: ID!, input: UpdateCategoryInput!): CategoryResponse!
-    moveCategory(categoryId: ID!, displayOrder: Int!): Boolean!
-    deleteCategory(categoryId: ID!): Boolean!
+    createCategory(input: CreateCategoryInput!): CategoryResponse
+    updateCategory(categoryId: ID!, input: UpdateCategoryInput!): CategoryResponse
+    moveCategory(categoryId: ID!, displayOrder: Int!): Boolean
+    deleteCategory(categoryId: ID!): Boolean
 }
 
 type CategoryResponse implements Base {

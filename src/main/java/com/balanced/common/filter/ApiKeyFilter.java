@@ -31,7 +31,8 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         return uri.equals("/actuator/health")
                 || uri.startsWith("/api/v1/auth/")
-                || uri.startsWith("/graphiql");
+                || uri.startsWith("/graphiql")
+                || uri.equals("/teller-connect.html");
     }
 
     @Override

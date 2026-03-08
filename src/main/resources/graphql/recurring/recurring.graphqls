@@ -1,16 +1,16 @@
 extend type Query {
     recurringItems: [RecurringItemResponse!]!
     recurringItem(recurringItemId: ID!): RecurringItemResponse
-    recurringItemMonthView(month: String, periodOffset: Int): RecurringItemMonthViewResponse!
+    recurringItemMonthView(month: String, periodOffset: Int): RecurringItemMonthViewResponse
 }
 
 extend type Mutation {
-    createRecurringItem(input: CreateRecurringItemInput!): RecurringItemResponse!
-    updateRecurringItem(recurringItemId: ID!, input: UpdateRecurringItemInput!): RecurringItemResponse!
-    deleteRecurringItem(recurringItemId: ID!): Boolean!
-    createRecurringItemOverride(recurringItemId: ID!, input: SetOccurrenceOverrideInput!): RecurringItemOverrideResponse!
-    updateRecurringItemOverride(recurringItemId: ID!, overrideId: ID!, input: UpdateOccurrenceOverrideInput!): RecurringItemOverrideResponse!
-    deleteRecurringItemOverride(recurringItemId: ID!, overrideId: ID!): Boolean!
+    createRecurringItem(input: CreateRecurringItemInput!): RecurringItemResponse
+    updateRecurringItem(recurringItemId: ID!, input: UpdateRecurringItemInput!): RecurringItemResponse
+    deleteRecurringItem(recurringItemId: ID!): Boolean
+    createRecurringItemOverride(recurringItemId: ID!, input: SetOccurrenceOverrideInput!): RecurringItemOverrideResponse
+    updateRecurringItemOverride(recurringItemId: ID!, overrideId: ID!, input: UpdateOccurrenceOverrideInput!): RecurringItemOverrideResponse
+    deleteRecurringItemOverride(recurringItemId: ID!, overrideId: ID!): Boolean
 }
 
 type RecurringItemResponse implements Base {

@@ -22,7 +22,7 @@ graphql:
       }
     variables: |-
       {
-        "merchantId": "00000000-0000-0000-0000-000000000000"
+        "merchantId": "98dd68a4-5506-4ea0-bf72-9c2741846dde"
       }
   auth: inherit
 

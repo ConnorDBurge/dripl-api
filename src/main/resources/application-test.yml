@@ -4,3 +4,9 @@ spring:
       ddl-auto: update
   flyway:
     enabled: false
+
+balanced:
+  encryption:
+    key: YmFsYW5jZWQtdGVzdC1lbmNyeXB0aW9uLWtleS0zMmI=
+  aggregation:
+    provider: teller

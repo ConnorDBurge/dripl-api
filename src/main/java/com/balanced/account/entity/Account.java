@@ -82,6 +82,12 @@ public class Account extends BaseEntity {
     @Column(name = "external_id")
     private String externalId;
 
+    @Column(name = "last_four", length = 4)
+    private String lastFour;
+
+    @Column(name = "bank_connection_id")
+    private UUID bankConnectionId;
+
     @PrePersist
     private void validateOnCreate() {
         validateTypeAndSubType();

@@ -3,8 +3,8 @@ extend type Query {
 }
 
 extend type Mutation {
-    updateSelf(input: UpdateUserInput!): UserResponse!
-    deleteSelf: Boolean!
+    updateSelf(input: UpdateUserInput!): UserResponse
+    deleteSelf: Boolean
 }
 
 type UserResponse implements Base {

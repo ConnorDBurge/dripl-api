@@ -36,4 +36,5 @@ public class AccountResponse extends BaseDto {
     private LocalDateTime balanceLastUpdated;
     private LocalDateTime closedAt;
     private String externalId;
+    private UUID bankConnectionId;
 }

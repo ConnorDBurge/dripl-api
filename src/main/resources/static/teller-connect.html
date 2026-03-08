@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balanced — Teller Connect</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f12;
+      color: #e4e4e7;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 3rem 1rem;
+    }
+    .container { max-width: 540px; width: 100%; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .subtitle { color: #71717a; margin-bottom: 2rem; font-size: 0.9rem; }
+    label { display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 0.4rem; font-weight: 500; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: #1c1c22;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      color: #e4e4e7;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    input:focus { outline: none; border-color: #7c3aed; }
+    .field-group { margin-bottom: 0.5rem; }
+    .hint { font-size: 0.75rem; color: #52525b; margin-top: -0.75rem; margin-bottom: 1rem; }
+    button {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #7c3aed; color: white; }
+    .btn-secondary { background: #27272a; color: #e4e4e7; margin-left: 0.5rem; }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+    .log {
+      background: #0c0c0f;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #a1a1aa;
+    }
+    .log .success { color: #4ade80; }
+    .log .error { color: #f87171; }
+    .log .info { color: #60a5fa; }
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-badge.connected { background: #052e16; color: #4ade80; }
+    .status-badge.disconnected { background: #1c1917; color: #a8a29e; }
+    .section { margin-bottom: 1.5rem; }
+    .divider { border: none; border-top: 1px solid #27272a; margin: 1.5rem 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏦 Balanced — Teller Connect</h1>
+    <p class="subtitle">Link a bank account via Teller's sandbox environment</p>
+
+    <!-- Step 1: Configuration -->
+    <div class="card section">
+      <h2>1. Configuration</h2>
+      <div class="field-group">
+        <label for="appId">Teller Application ID</label>
+        <input type="text" id="appId" placeholder="app_xxxxxxxxxx">
+        <p class="hint">From your <a href="https://teller.io/settings/application" target="_blank" style="color:#7c3aed">Teller Dashboard</a></p>
+      </div>
+      <div class="field-group">
+        <label for="jwt">JWT Token</label>
+        <input type="password" id="jwt" placeholder="Paste your Balanced JWT here">
+        <p class="hint">Log in via the API first, then paste the token</p>
+      </div>
+      <div class="field-group">
+        <label for="apiKey">API Key</label>
+        <input type="text" id="apiKey" value="balanced-dev-api-key">
+        <p class="hint">X-API-Key header value (default works for local dev)</p>
+      </div>
+      <div class="field-group">
+        <label for="apiUrl">API Base URL</label>
+        <input type="text" id="apiUrl" value="http://localhost:8080">
+      </div>
+    </div>
+
+    <!-- Step 2: Connect -->
+    <div class="card section">
+      <h2>2. Link Bank Account</h2>
+      <p style="font-size:0.85rem; color:#71717a; margin-bottom:0.75rem;">
+        Sandbox credentials: <code style="color:#e4e4e7">username</code> / <code style="color:#e4e4e7">password</code>
+        &nbsp;(MFA: <code style="color:#e4e4e7">otp</code> / <code style="color:#e4e4e7">password</code>)
+      </p>
+      <button id="connectBtn" class="btn-primary" disabled>Connect Bank</button>
+    </div>
+
+    <!-- Step 3: Actions -->
+    <div class="card section">
+      <h2>3. Sync & Manage</h2>
+      <div class="btn-group">
+        <button id="listBtn" class="btn-secondary" disabled>List Connections</button>
+        <button id="syncTxnBtn" class="btn-secondary" disabled>Sync Transactions</button>
+        <button id="unlinkBtn" class="btn-secondary" disabled>Unlink</button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <h2>Log</h2>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.teller.io/connect/connect.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    const appIdInput = document.getElementById('appId');
+    const jwtInput = document.getElementById('jwt');
+    const apiKeyInput = document.getElementById('apiKey');
+    const apiUrlInput = document.getElementById('apiUrl');
+    const connectBtn = document.getElementById('connectBtn');
+    const listBtn = document.getElementById('listBtn');
+    const syncTxnBtn = document.getElementById('syncTxnBtn');
+    const unlinkBtn = document.getElementById('unlinkBtn');
+
+    let lastConnectionId = null;
+
+    function log(msg, type = '') {
+      const ts = new Date().toLocaleTimeString();
+      const span = document.createElement('span');
+      span.className = type;
+      span.textContent = `[${ts}] ${msg}\n`;
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function enableActions(enabled) {
+      [listBtn, syncTxnBtn, unlinkBtn].forEach(b => b.disabled = !enabled);
+    }
+
+    // Enable connect button when app ID is filled
+    function checkReady() {
+      connectBtn.disabled = !appIdInput.value.trim() || !jwtInput.value.trim();
+      enableActions(!!jwtInput.value.trim() && !!lastConnectionId);
+    }
+    appIdInput.addEventListener('input', checkReady);
+    jwtInput.addEventListener('input', checkReady);
+
+    // Persist config in localStorage
+    function saveConfig() {
+      localStorage.setItem('balanced_teller_appId', appIdInput.value);
+      localStorage.setItem('balanced_teller_apiUrl', apiUrlInput.value);
+      localStorage.setItem('balanced_teller_apiKey', apiKeyInput.value);
+    }
+    function loadConfig() {
+      const savedAppId = localStorage.getItem('balanced_teller_appId');
+      const savedApiUrl = localStorage.getItem('balanced_teller_apiUrl');
+      const savedApiKey = localStorage.getItem('balanced_teller_apiKey');
+      if (savedAppId) appIdInput.value = savedAppId;
+      if (savedApiUrl) apiUrlInput.value = savedApiUrl;
+      if (savedApiKey) apiKeyInput.value = savedApiKey;
+    }
+    loadConfig();
+    appIdInput.addEventListener('change', saveConfig);
+    apiUrlInput.addEventListener('change', saveConfig);
+    apiKeyInput.addEventListener('change', saveConfig);
+
+    async function graphql(query, variables = {}) {
+      const jwt = jwtInput.value.trim();
+      const baseUrl = apiUrlInput.value.trim();
+      const res = await fetch(`${baseUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`,
+          'X-API-Key': apiKeyInput.value.trim()
+        },
+        body: JSON.stringify({ query, variables })
+      });
+      const json = await res.json();
+      if (json.errors) {
+        throw new Error(json.errors.map(e => e.message).join(', '));
+      }
+      return json.data;
+    }
+
+    // Teller Connect
+    connectBtn.addEventListener('click', () => {
+      saveConfig();
+      const appId = appIdInput.value.trim();
+      if (!appId) { log('Enter your Teller Application ID first', 'error'); return; }
+
+      log('Opening Teller Connect (sandbox)...', 'info');
+      const tellerConnect = TellerConnect.setup({
+        applicationId: appId,
+        environment: 'sandbox',
+        onInit: () => log('Teller Connect initialized', 'info'),
+        onSuccess: async (enrollment) => {
+          log(`Enrolled! Token: ${enrollment.accessToken}`, 'success');
+          log('Calling linkBank mutation...', 'info');
+          try {
+            const data = await graphql(`
+              mutation LinkBank($input: LinkBankInput!) {
+                linkBank(input: $input) {
+                  id
+                  provider
+                  enrollmentId
+                  institutionName
+                  status
+                  lastSyncedAt
+                }
+              }
+            `, {
+              input: {
+                accessToken: enrollment.accessToken
+              }
+            });
+            const conn = data.linkBank;
+            lastConnectionId = conn.id;
+            log(`Bank linked! Connection: ${conn.id}`, 'success');
+            log(`  Institution: ${conn.institutionName}`, 'success');
+            log(`  Status: ${conn.status}`, 'success');
+            enableActions(true);
+          } catch (err) {
+            log(`linkBank failed: ${err.message}`, 'error');
+          }
+        },
+        onExit: () => log('Teller Connect closed', 'info'),
+        onFailure: (failure) => log(`Enrollment failed: ${failure.message}`, 'error')
+      });
+      tellerConnect.open();
+    });
+
+    // List connections
+    listBtn.addEventListener('click', async () => {
+      log('Fetching bank connections...', 'info');
+      try {
+        const data = await graphql(`
+          query {
+            bankConnections {
+              id
+              provider
+              enrollmentId
+              institutionName
+              status
+              lastSyncedAt
+            }
+          }
+        `);
+        const conns = data.bankConnections;
+        log(`Found ${conns.length} connection(s)`, 'success');
+        conns.forEach(c => {
+          log(`  [${c.id}] ${c.institutionName} (${c.status})`, 'info');
+        });
+        if (conns.length > 0) lastConnectionId = conns[0].id;
+      } catch (err) {
+        log(`Error: ${err.message}`, 'error');
+      }
+    });
+
+    // Sync transactions
+    syncTxnBtn.addEventListener('click', async () => {
+      if (!lastConnectionId) { log('No connection selected', 'error'); return; }
+      log(`Syncing transactions for ${lastConnectionId}...`, 'info');
+      try {
+        const data = await graphql(`
+          mutation SyncTransactions($id: ID!) {
+            syncTransactions(bankConnectionId: $id) {
+              transactionsAdded
+              transactionsModified
+              transactionsRemoved
+              accountsSynced
+            }
+          }
+        `, { id: lastConnectionId });
+        const r = data.syncTransactions;
+        log(`Sync complete: +${r.transactionsAdded} ~${r.transactionsModified} -${r.transactionsRemoved} (${r.accountsSynced} accounts)`, 'success');
+      } catch (err) {
+        log(`Error: ${err.message}`, 'error');
+      }
+    });
+
+    // Unlink
+    unlinkBtn.addEventListener('click', async () => {
+      if (!lastConnectionId) { log('No connection selected', 'error'); return; }
+      log(`Unlinking ${lastConnectionId}...`, 'info');
+      try {
+        await graphql(`
+          mutation UnlinkBank($id: ID!) {
+            unlinkBank(bankConnectionId: $id)
+          }
+        `, { id: lastConnectionId });
+        log('Bank unlinked!', 'success');
+        lastConnectionId = null;
+        enableActions(false);
+      } catch (err) {
+        log(`Error: ${err.message}`, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -4,9 +4,9 @@ extend type Query {
 }
 
 extend type Mutation {
-    createAccount(input: CreateAccountInput!): AccountResponse!
-    updateAccount(accountId: ID!, input: UpdateAccountInput!): AccountResponse!
-    deleteAccount(accountId: ID!): Boolean!
+    createAccount(input: CreateAccountInput!): AccountResponse
+    updateAccount(accountId: ID!, input: UpdateAccountInput!): AccountResponse
+    deleteAccount(accountId: ID!): Boolean
 }
 
 type AccountResponse implements Base {
@@ -28,6 +28,7 @@ type AccountResponse implements Base {
     balanceLastUpdated: LocalDateTime
     closedAt: LocalDateTime
     externalId: String
+    bankConnectionId: ID
 }
 
 input CreateAccountInput {

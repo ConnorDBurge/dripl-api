@@ -530,4 +530,5 @@ public class SeedDataLoader implements CommandLineRunner {
         jdbcTemplate.execute("DELETE FROM workspaces");
         jdbcTemplate.execute("DELETE FROM users");
     }
+
 }

@@ -1,0 +1,31 @@
+info:
+  name: bankConnections
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query BankConnections {
+        bankConnections {
+          id
+          createdAt
+          updatedAt
+          workspaceId
+          provider
+          enrollmentId
+          institutionId
+          institutionName
+          status
+          lastSyncedAt
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

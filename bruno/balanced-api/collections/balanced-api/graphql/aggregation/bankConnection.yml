@@ -1,0 +1,35 @@
+info:
+  name: bankConnection
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{balanced-base-url}}/graphql"
+  body:
+    query: |-
+      query BankConnection($bankConnectionId: ID!) {
+        bankConnection(bankConnectionId: $bankConnectionId) {
+          id
+          createdAt
+          updatedAt
+          workspaceId
+          provider
+          enrollmentId
+          institutionId
+          institutionName
+          status
+          lastSyncedAt
+        }
+      }
+    variables: |-
+      {
+        "bankConnectionId": "f61f146e-3877-4e90-98a3-e428bd11eb21"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

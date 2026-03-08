@@ -1,7 +1,7 @@
 extend type Query {
-    transactions(filter: TransactionFilter, sort: TransactionSort, page: Int, size: Int): TransactionConnection!
+    transactions(filter: TransactionFilter, sort: TransactionSort, page: Int, size: Int): TransactionConnection
     transaction(transactionId: ID!): TransactionResponse
-    transactionEvents(transactionId: ID!): [TransactionEvent!]!
+    transactionEvents(transactionId: ID!): [TransactionEvent!]
     transactionSplits: [TransactionSplit!]!
     transactionSplit(transactionSplitId: ID!): TransactionSplit
     transactionGroups: [TransactionGroup!]!
@@ -9,17 +9,17 @@ extend type Query {
 }
 
 extend type Mutation {
-    createTransaction(input: CreateTransactionInput!): TransactionResponse!
-    updateTransaction(transactionId: ID!, input: UpdateTransactionInput!): TransactionResponse!
-    deleteTransaction(transactionId: ID!): Boolean!
+    createTransaction(input: CreateTransactionInput!): TransactionResponse
+    updateTransaction(transactionId: ID!, input: UpdateTransactionInput!): TransactionResponse
+    deleteTransaction(transactionId: ID!): Boolean
 
-    createTransactionSplit(input: CreateTransactionSplitInput!): TransactionSplit!
-    updateTransactionSplit(transactionSplitId: ID!, input: UpdateTransactionSplitInput!): TransactionSplit!
-    deleteTransactionSplit(transactionSplitId: ID!): Boolean!
+    createTransactionSplit(input: CreateTransactionSplitInput!): TransactionSplit
+    updateTransactionSplit(transactionSplitId: ID!, input: UpdateTransactionSplitInput!): TransactionSplit
+    deleteTransactionSplit(transactionSplitId: ID!): Boolean
 
-    createTransactionGroup(input: CreateTransactionGroupInput!): TransactionGroup!
-    updateTransactionGroup(transactionGroupId: ID!, input: UpdateTransactionGroupInput!): TransactionGroup!
-    deleteTransactionGroup(transactionGroupId: ID!): Boolean!
+    createTransactionGroup(input: CreateTransactionGroupInput!): TransactionGroup
+    updateTransactionGroup(transactionGroupId: ID!, input: UpdateTransactionGroupInput!): TransactionGroup
+    deleteTransactionGroup(transactionGroupId: ID!): Boolean
 }
 
 # --- Types ---
@@ -108,6 +108,7 @@ enum TransactionStatus {
 
 enum TransactionSource {
     MANUAL
+    AUTOMATIC
 }
 
 # --- Filter & Sort ---

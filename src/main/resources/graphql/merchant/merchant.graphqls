@@ -4,9 +4,9 @@ extend type Query {
 }
 
 extend type Mutation {
-    createMerchant(input: CreateMerchantInput!): MerchantResponse!
-    updateMerchant(merchantId: ID!, input: UpdateMerchantInput!): MerchantResponse!
-    deleteMerchant(merchantId: ID!): Boolean!
+    createMerchant(input: CreateMerchantInput!): MerchantResponse
+    updateMerchant(merchantId: ID!, input: UpdateMerchantInput!): MerchantResponse
+    deleteMerchant(merchantId: ID!): Boolean
 }
 
 type MerchantResponse implements Base {

@@ -30,6 +30,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     List<Transaction> findAllByRecurringItemIdAndWorkspaceId(UUID recurringItemId, UUID workspaceId);
 
+    boolean existsByExternalIdAndWorkspaceId(String externalId, UUID workspaceId);
+
+    Optional<Transaction> findByExternalIdAndWorkspaceId(String externalId, UUID workspaceId);
+
+    List<Transaction> findAllByAccountIdAndWorkspaceId(UUID accountId, UUID workspaceId);
+
     @Query("SELECT t FROM Transaction t WHERE t.workspaceId = :workspaceId " +
            "AND t.recurringItemId IS NOT NULL AND t.occurrenceDate >= :startDate AND t.occurrenceDate <= :endDate")
     List<Transaction> findLinkedToRecurringItemsInDateRange(UUID workspaceId, LocalDate startDate, LocalDate endDate);

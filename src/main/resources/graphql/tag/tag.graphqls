@@ -4,9 +4,9 @@ extend type Query {
 }
 
 extend type Mutation {
-    createTag(input: CreateTagInput!): Tag!
-    updateTag(tagId: ID!, input: UpdateTagInput!): Tag!
-    deleteTag(tagId: ID!): Boolean!
+    createTag(input: CreateTagInput!): Tag
+    updateTag(tagId: ID!, input: UpdateTagInput!): Tag
+    deleteTag(tagId: ID!): Boolean
 }
 
 type Tag implements Base {

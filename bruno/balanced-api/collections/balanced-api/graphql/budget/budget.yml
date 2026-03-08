@@ -27,7 +27,7 @@ graphql:
       }
     variables: |-
       {
-        "budgetId": "6ad9cbd8-f4c5-40f0-b426-0170311dddad"
+        "budgetId": "bc93dfb4-152d-44ab-abc7-286a704b4d37"
       }
   auth: inherit
 
